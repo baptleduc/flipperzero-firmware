@@ -40,6 +40,14 @@ static void furi_event_loop_process_pending_callbacks(FuriEventLoop* instance) {
     }
 }
 
+static void furi_event_loop_process_deleted_items(FuriEventLoop* instance) {
+    while(!WaitingList_empty_p(instance->waiting_list)) {
+        FuriEventLoopItem* item = WaitingList_pop_front(instance->waiting_list);
+        furi_check(!item->owner);
+        furi_event_loop_item_free(item);
+    }
+}
+
 static bool furi_event_loop_signal_callback(uint32_t signal, void* arg, void* context) {
     furi_assert(context);
     FuriEventLoop* instance = context;
@@ -85,6 +93,7 @@ void furi_event_loop_free(FuriEventLoop* instance) {
 
     furi_event_loop_process_timer_queue(instance);
     furi_check(TimerList_empty_p(instance->timer_list));
+    furi_event_loop_process_deleted_items(instance);
     furi_check(WaitingList_empty_p(instance->waiting_list));
 
     FuriEventLoopTree_clear(instance->tree);
@@ -124,23 +133,19 @@ static inline FuriEventLoopProcessStatus
 
 static inline FuriEventLoopProcessStatus
     furi_event_loop_process_event(FuriEventLoop* instance, FuriEventLoopItem* item) {
-    FuriEventLoopProcessStatus status;
+    if(item->owner == NULL) {
+        return FuriEventLoopProcessStatusFreeLater;
+    }
 
     if(item->event & FuriEventLoopEventFlagOnce) {
         furi_event_loop_unsubscribe(instance, item->object);
     }
 
     if(item->event & FuriEventLoopEventFlagEdge) {
-        status = furi_event_loop_process_edge_event(item);
+        return furi_event_loop_process_edge_event(item);
     } else {
-        status = furi_event_loop_process_level_event(item);
+        return furi_event_loop_process_level_event(item);
     }
-
-    if(item->owner == NULL) {
-        status = FuriEventLoopProcessStatusFreeLater;
-    }
-
-    return status;
 }
 
 static inline FuriEventLoopItem* furi_event_loop_get_waiting_item(FuriEventLoop* instance) {
@@ -501,7 +506,9 @@ static void furi_event_loop_item_free(FuriEventLoopItem* instance) {
 
 static void furi_event_loop_item_free_later(FuriEventLoopItem* instance) {
     furi_assert(instance);
+    furi_assert(instance->owner);
     furi_assert(!furi_event_loop_item_is_waiting(instance));
+    WaitingList_push_back(instance->owner->waiting_list, instance);
     instance->owner = NULL;
 }
 
