@@ -91,6 +91,8 @@ void cli_command_help(PipeSide* pipe, FuriString* args, void* context) {
         }
     }
 
+    printf(ANSI_RESET
+           "\r\nIf you just added a new command and can't see it above, run `reload_ext_cmds`");
     printf(ANSI_RESET "\r\nFind out more: https://docs.flipper.net/development/cli");
 
     cli_unlock_commands(cli);
@@ -512,10 +514,22 @@ void cli_command_i2c(PipeSide* pipe, FuriString* args, void* context) {
     furi_hal_i2c_release(&furi_hal_i2c_handle_external);
 }
 
+void cli_command_reload_external(PipeSide* pipe, FuriString* args, void* context) {
+    UNUSED(pipe);
+    UNUSED(args);
+    UNUSED(context);
+    Cli* cli = furi_record_open(RECORD_CLI);
+    cli_enumerate_external_commands(cli);
+    furi_record_close(RECORD_CLI);
+    printf("OK!");
+}
+
 void cli_commands_init(Cli* cli) {
     cli_add_command(cli, "!", CliCommandFlagDefault, cli_command_info, (void*)true);
     cli_add_command(cli, "info", CliCommandFlagDefault, cli_command_info, NULL);
     cli_add_command(cli, "device_info", CliCommandFlagDefault, cli_command_info, (void*)true);
+    cli_add_command(
+        cli, "reload_ext_cmds", CliCommandFlagDefault, cli_command_reload_external, NULL);
 
     cli_add_command(cli, "?", CliCommandFlagDefault, cli_command_help, NULL);
     cli_add_command(cli, "help", CliCommandFlagDefault, cli_command_help, NULL);

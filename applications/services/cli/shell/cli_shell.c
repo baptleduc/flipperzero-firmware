@@ -50,7 +50,7 @@ typedef struct {
 // Execution
 // =========
 
-void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
+static void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
     // split command into command and args
     size_t space = furi_string_search_char(command, ' ');
     if(space == FURI_STRING_FAILURE) space = furi_string_size(command);
@@ -59,6 +59,7 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
     FuriString* args = furi_string_alloc_set(command);
     furi_string_right(args, space + 1);
 
+    PluginManager* plugin_manager = NULL;
     Loader* loader = NULL;
     CliCommand command_data;
 
@@ -69,6 +70,31 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
                 ANSI_FG_RED "could not find command `%s`, try `help`" ANSI_RESET,
                 furi_string_get_cstr(command_name));
             break;
+        }
+
+        // load external command
+        if(command_data.flags & CliCommandFlagExternal) {
+            plugin_manager =
+                plugin_manager_alloc(PLUGIN_APP_ID, PLUGIN_API_VERSION, firmware_api_interface);
+            FuriString* path = furi_string_alloc_printf(
+                "%s/cli_%s.fal", CLI_COMMANDS_PATH, furi_string_get_cstr(command_name));
+            uint32_t plugin_cnt_last = plugin_manager_get_count(plugin_manager);
+            PluginManagerError error =
+                plugin_manager_load_single(plugin_manager, furi_string_get_cstr(path));
+            furi_string_free(path);
+
+            if(error != PluginManagerErrorNone) {
+                printf(ANSI_FG_RED "failed to load external command" ANSI_RESET);
+                break;
+            }
+
+            const CliCommandDescriptor* plugin =
+                plugin_manager_get_ep(plugin_manager, plugin_cnt_last);
+            furi_assert(plugin);
+            furi_check(furi_string_cmp_str(command_name, plugin->name) == 0);
+            command_data.execute_callback = plugin->execute_callback;
+            command_data.flags = plugin->flags | CliCommandFlagExternal;
+            command_data.stack_depth = plugin->stack_depth;
         }
 
         // lock loader
@@ -82,7 +108,20 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
             }
         }
 
-        command_data.execute_callback(cli_shell->pipe, args, command_data.context);
+        // run command in separate thread
+        CliCommandThreadData thread_data = {
+            .command = &command_data,
+            .pipe = cli_shell->pipe,
+            .args = args,
+        };
+        FuriThread* thread = furi_thread_alloc_ex(
+            furi_string_get_cstr(command_name),
+            command_data.stack_depth,
+            cli_command_thread,
+            &thread_data);
+        furi_thread_start(thread);
+        furi_thread_join(thread);
+        furi_thread_free(thread);
     } while(0);
 
     furi_string_free(command_name);
@@ -91,6 +130,9 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
     // unlock loader
     if(loader) loader_unlock(loader);
     furi_record_close(RECORD_LOADER);
+
+    // unload external command
+    if(plugin_manager) plugin_manager_free(plugin_manager);
 }
 
 // ==============
