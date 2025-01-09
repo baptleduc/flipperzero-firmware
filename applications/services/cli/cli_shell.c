@@ -681,7 +681,9 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
 }
 
 static void cli_shell_pipe_broken(PipeSide* pipe, void* context) {
-    UNUSED(pipe);
+    // allow commands to be processed before we stop the shell
+    if(pipe_bytes_available(pipe)) return;
+
     CliShell* cli_shell = context;
     furi_event_loop_stop(cli_shell->event_loop);
 }
@@ -734,7 +736,7 @@ static CliShell* cli_shell_alloc(PipeSide* pipe) {
     pipe_attach_to_event_loop(cli_shell->pipe, cli_shell->event_loop);
     pipe_set_callback_context(cli_shell->pipe, cli_shell);
     pipe_set_data_arrived_callback(cli_shell->pipe, cli_shell_data_available, 0);
-    pipe_set_broken_callback(cli_shell->pipe, cli_shell_pipe_broken, FuriEventLoopEventFlagEdge);
+    pipe_set_broken_callback(cli_shell->pipe, cli_shell_pipe_broken, 0);
 
     return cli_shell;
 }
