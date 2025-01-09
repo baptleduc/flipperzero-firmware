@@ -854,13 +854,13 @@ Function,-,cfree,void,void*
 Function,-,clearerr,void,FILE*
 Function,-,clearerr_unlocked,void,FILE*
 Function,+,cli_add_command,void,"Cli*, const char*, CliCommandFlag, CliExecuteCallback, void*"
-Function,+,cli_add_command_ex,void,"Cli*, const char*, CliCommandFlag, CliExecuteCallback, void*, size_t"
 Function,+,cli_ansi_parser_alloc,CliAnsiParser*,
 Function,+,cli_ansi_parser_feed,CliAnsiParserResult,"CliAnsiParser*, char"
 Function,+,cli_ansi_parser_feed_timeout,CliAnsiParserResult,CliAnsiParser*
 Function,+,cli_ansi_parser_free,void,CliAnsiParser*
 Function,+,cli_app_should_stop,_Bool,PipeSide*
 Function,+,cli_delete_command,void,"Cli*, const char*"
+Function,+,cli_enumerate_external_commands,void,Cli*
 Function,+,cli_print_usage,void,"const char*, const char*, const char*"
 Function,+,cli_vcp_disable,void,CliVcp*
 Function,+,cli_vcp_enable,void,CliVcp*
@@ -3442,13 +3442,13 @@ Function,+,subghz_file_encoder_worker_get_level_duration,LevelDuration,void*
 Function,+,subghz_file_encoder_worker_is_running,_Bool,SubGhzFileEncoderWorker*
 Function,+,subghz_file_encoder_worker_start,_Bool,"SubGhzFileEncoderWorker*, const char*, const char*"
 Function,+,subghz_file_encoder_worker_stop,void,SubGhzFileEncoderWorker*
-Function,-,subghz_keystore_alloc,SubGhzKeystore*,
-Function,-,subghz_keystore_free,void,SubGhzKeystore*
-Function,-,subghz_keystore_get_data,SubGhzKeyArray_t*,SubGhzKeystore*
-Function,-,subghz_keystore_load,_Bool,"SubGhzKeystore*, const char*"
-Function,-,subghz_keystore_raw_encrypted_save,_Bool,"const char*, const char*, uint8_t*"
-Function,-,subghz_keystore_raw_get_data,_Bool,"const char*, size_t, uint8_t*, size_t"
-Function,-,subghz_keystore_save,_Bool,"SubGhzKeystore*, const char*, uint8_t*"
+Function,+,subghz_keystore_alloc,SubGhzKeystore*,
+Function,+,subghz_keystore_free,void,SubGhzKeystore*
+Function,+,subghz_keystore_get_data,SubGhzKeyArray_t*,SubGhzKeystore*
+Function,+,subghz_keystore_load,_Bool,"SubGhzKeystore*, const char*"
+Function,+,subghz_keystore_raw_encrypted_save,_Bool,"const char*, const char*, uint8_t*"
+Function,+,subghz_keystore_raw_get_data,_Bool,"const char*, size_t, uint8_t*, size_t"
+Function,+,subghz_keystore_save,_Bool,"SubGhzKeystore*, const char*, uint8_t*"
 Function,+,subghz_protocol_blocks_add_bit,void,"SubGhzBlockDecoder*, uint8_t"
 Function,+,subghz_protocol_blocks_add_bytes,uint8_t,"const uint8_t[], size_t"
 Function,+,subghz_protocol_blocks_add_to_128_bit,void,"SubGhzBlockDecoder*, uint8_t, uint64_t*"

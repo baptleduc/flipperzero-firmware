@@ -41,7 +41,7 @@ static void onewire_cli_search(PipeSide* pipe) {
     onewire_host_free(onewire);
 }
 
-static void onewire_cli(PipeSide* pipe, FuriString* args, void* context) {
+static void execute(PipeSide* pipe, FuriString* args, void* context) {
     UNUSED(context);
     FuriString* cmd;
     cmd = furi_string_alloc();
@@ -58,3 +58,5 @@ static void onewire_cli(PipeSide* pipe, FuriString* args, void* context) {
 
     furi_string_free(cmd);
 }
+
+CLI_COMMAND_INTERFACE(onewire, execute, CliCommandFlagDefault, 1024);
