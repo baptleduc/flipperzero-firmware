@@ -1,5 +1,4 @@
-#include <cli/cli.h>
-#include <cli/cli_i.h>
+#include <cli/cli_commands.h>
 #include <infrared.h>
 #include <infrared_worker.h>
 #include <furi_hal_infrared.h>
@@ -528,7 +527,7 @@ static void infrared_cli_process_universal(PipeSide* pipe, FuriString* args) {
     furi_string_free(arg2);
 }
 
-static void infrared_cli_start_ir(PipeSide* pipe, FuriString* args, void* context) {
+static void execute(PipeSide* pipe, FuriString* args, void* context) {
     UNUSED(context);
     if(furi_hal_infrared_is_busy()) {
         printf("INFRARED is busy. Exiting.");
@@ -555,12 +554,5 @@ static void infrared_cli_start_ir(PipeSide* pipe, FuriString* args, void* contex
 
     furi_string_free(command);
 }
-void infrared_on_system_start(void) {
-#ifdef SRV_CLI
-    Cli* cli = (Cli*)furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "ir", CliCommandFlagDefault, infrared_cli_start_ir, NULL);
-    furi_record_close(RECORD_CLI);
-#else
-    UNUSED(infrared_cli_start_ir);
-#endif
-}
+
+CLI_COMMAND_INTERFACE(ir, execute, CliCommandFlagDefault, 2048);

@@ -1,22 +1,10 @@
 #include <furi.h>
 #include <furi_hal.h>
 
-#include <cli/cli.h>
+#include <cli/cli_commands.h>
 #include <toolbox/args.h>
 
 #include <one_wire/one_wire_host.h>
-
-static void onewire_cli(PipeSide* pipe, FuriString* args, void* context);
-
-void onewire_on_system_start(void) {
-#ifdef SRV_CLI
-    Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "onewire", CliCommandFlagDefault, onewire_cli, cli);
-    furi_record_close(RECORD_CLI);
-#else
-    UNUSED(onewire_cli);
-#endif
-}
 
 static void onewire_cli_print_usage(void) {
     printf("Usage:\r\n");
@@ -53,7 +41,7 @@ static void onewire_cli_search(PipeSide* pipe) {
     onewire_host_free(onewire);
 }
 
-void onewire_cli(PipeSide* pipe, FuriString* args, void* context) {
+static void execute(PipeSide* pipe, FuriString* args, void* context) {
     UNUSED(context);
     FuriString* cmd;
     cmd = furi_string_alloc();
@@ -70,3 +58,5 @@ void onewire_cli(PipeSide* pipe, FuriString* args, void* context) {
 
     furi_string_free(cmd);
 }
+
+CLI_COMMAND_INTERFACE(onewire, execute, CliCommandFlagDefault, 1024);

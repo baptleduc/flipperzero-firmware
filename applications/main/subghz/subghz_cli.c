@@ -4,7 +4,7 @@
 #include <furi_hal.h>
 
 #include <applications/drivers/subghz/cc1101_ext/cc1101_ext_interconnect.h>
-#include <cli/cli_ansi.h>
+#include <cli/cli_commands.h>
 
 #include <lib/subghz/subghz_keystore.h>
 #include <lib/subghz/receiver.h>
@@ -1120,7 +1120,7 @@ static void subghz_cli_command_chat(PipeSide* pipe, FuriString* args) {
     printf("\r\nExit chat\r\n");
 }
 
-static void subghz_cli_command(PipeSide* pipe, FuriString* args, void* context) {
+static void execute(PipeSide* pipe, FuriString* args, void* context) {
     FuriString* cmd;
     cmd = furi_string_alloc();
 
@@ -1188,12 +1188,4 @@ static void subghz_cli_command(PipeSide* pipe, FuriString* args, void* context) 
     furi_string_free(cmd);
 }
 
-void subghz_on_system_start(void) {
-#ifdef SRV_CLI
-    Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "subghz", CliCommandFlagDefault, subghz_cli_command, NULL);
-    furi_record_close(RECORD_CLI);
-#else
-    UNUSED(subghz_cli_command);
-#endif
-}
+CLI_COMMAND_INTERFACE(subghz, execute, CliCommandFlagDefault, 2048);

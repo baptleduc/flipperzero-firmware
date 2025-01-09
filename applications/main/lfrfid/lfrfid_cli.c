@@ -1,7 +1,7 @@
 #include <furi.h>
 #include <furi_hal.h>
 #include <stdarg.h>
-#include <cli/cli.h>
+#include <cli/cli_commands.h>
 #include <lib/toolbox/args.h>
 #include <lib/lfrfid/lfrfid_worker.h>
 #include <storage/storage.h>
@@ -14,15 +14,6 @@
 #include <lfrfid/protocols/lfrfid_protocols.h>
 #include <lfrfid/lfrfid_raw_file.h>
 #include <toolbox/pulse_protocols/pulse_glue.h>
-
-static void lfrfid_cli(PipeSide* pipe, FuriString* args, void* context);
-
-// app cli function
-void lfrfid_on_system_start(void) {
-    Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "rfid", CliCommandFlagDefault, lfrfid_cli, NULL);
-    furi_record_close(RECORD_CLI);
-}
 
 static void lfrfid_cli_print_usage(void) {
     printf("Usage:\r\n");
@@ -545,7 +536,7 @@ static void lfrfid_cli_raw_emulate(PipeSide* pipe, FuriString* args) {
     furi_string_free(filepath);
 }
 
-static void lfrfid_cli(PipeSide* pipe, FuriString* args, void* context) {
+static void execute(PipeSide* pipe, FuriString* args, void* context) {
     UNUSED(context);
     FuriString* cmd;
     cmd = furi_string_alloc();
@@ -574,3 +565,5 @@ static void lfrfid_cli(PipeSide* pipe, FuriString* args, void* context) {
 
     furi_string_free(cmd);
 }
+
+CLI_COMMAND_INTERFACE(rfid, execute, CliCommandFlagDefault, 2048);

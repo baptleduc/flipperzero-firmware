@@ -44,6 +44,22 @@ typedef struct {
     FuriString* args;
 } CliCommandThreadData;
 
+// ===============
+// History helpers
+// ===============
+
+static FuriString* cli_shell_history_selected_line(CliShell* cli_shell) {
+    return *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+}
+
+static FuriString* cli_shell_history_editing_line(CliShell* cli_shell) {
+    return *ShellHistory_front(cli_shell->history);
+}
+
+// =========
+// Execution
+// =========
+
 static int32_t cli_command_thread(void* context) {
     CliCommandThreadData* thread_data = context;
     if(!(thread_data->command->flags & CliCommandFlagDontAttachStdio))
@@ -141,6 +157,10 @@ static void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) 
     if(plugin_manager) plugin_manager_free(plugin_manager);
 }
 
+// ====================
+// Line editing helpers
+// ====================
+
 static size_t cli_shell_prompt_length(CliShell* cli_shell) {
     UNUSED(cli_shell);
     return strlen(">: ");
@@ -163,8 +183,8 @@ static void cli_shell_prompt(CliShell* cli_shell) {
  */
 static void cli_shell_ensure_not_overwriting_history(CliShell* cli_shell) {
     if(cli_shell->history_position > 0) {
-        FuriString* source = *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
-        FuriString* destination = *ShellHistory_front(cli_shell->history);
+        FuriString* source = cli_shell_history_selected_line(cli_shell);
+        FuriString* destination = cli_shell_history_editing_line(cli_shell);
         furi_string_set(destination, source);
         cli_shell->history_position = 0;
     }
@@ -229,6 +249,10 @@ static size_t cli_skip_run(FuriString* string, size_t original_pos, CliSkipDirec
     return MAX(0, position);
 }
 
+// ============
+// Autocomplete
+// ============
+
 /**
  * @brief Update for the completions menu
  */
@@ -257,7 +281,7 @@ typedef struct {
 static CliShellCompletionSegment cli_shell_completion_segment(CliShell* cli_shell) {
     CliShellCompletionSegment segment;
 
-    FuriString* input = furi_string_alloc_set(*ShellHistory_front(cli_shell->history));
+    FuriString* input = furi_string_alloc_set(cli_shell_history_editing_line(cli_shell));
     furi_string_left(input, cli_shell->line_position);
 
     // find index of first non-space character
@@ -277,7 +301,9 @@ static CliShellCompletionSegment cli_shell_completion_segment(CliShell* cli_shel
         segment.length = furi_string_size(input) - first_non_space;
     } else {
         segment.type = CliShellCompletionSegmentTypeArguments;
-        furi_crash("TODO:");
+        segment.start = 0;
+        segment.length = 0;
+        // support removed, might reimplement in the future
     }
 
     furi_string_free(input);
@@ -288,7 +314,7 @@ static void cli_shell_fill_completions(CliShell* cli_shell) {
     CommandCompletions_reset(cli_shell->completions);
 
     CliShellCompletionSegment segment = cli_shell_completion_segment(cli_shell);
-    FuriString* input = furi_string_alloc_set(*ShellHistory_front(cli_shell->history));
+    FuriString* input = furi_string_alloc_set(cli_shell_history_editing_line(cli_shell));
     furi_string_right(input, segment.start);
     furi_string_left(input, segment.length);
 
@@ -303,7 +329,7 @@ static void cli_shell_fill_completions(CliShell* cli_shell) {
             }
 
     } else {
-        furi_crash("TODO:");
+        // support removed, might reimplement in the future
     }
 
     furi_string_free(input);
@@ -355,10 +381,7 @@ static void cli_shell_completions_render(CliShell* cli_shell, CliShellCompletion
         printf(
             ANSI_CURSOR_HOR_POS("%zu") ANSI_ERASE_DISPLAY(ANSI_ERASE_FROM_CURSOR_TO_END)
                 ANSI_CURSOR_HOR_POS("%zu"),
-            strlen(prompt) +
-                furi_string_size(
-                    *ShellHistory_cget(cli_shell->history, cli_shell->history_position)) +
-                1,
+            strlen(prompt) + furi_string_size(cli_shell_history_selected_line(cli_shell)) + 1,
             strlen(prompt) + cli_shell->line_position + 1);
         cli_shell->is_displaying_completions = false;
 
@@ -408,16 +431,13 @@ static void cli_shell_completions_render(CliShell* cli_shell, CliShellCompletion
             printf(ANSI_CURSOR_UP_BY("%zu"), new_y + 1);
             printf(
                 ANSI_CURSOR_HOR_POS("%zu"),
-                strlen(prompt) +
-                    furi_string_size(
-                        *ShellHistory_cget(cli_shell->history, cli_shell->history_position)) +
-                    1);
+                strlen(prompt) + furi_string_size(cli_shell_history_selected_line(cli_shell)) + 1);
         }
 
     } else if(action == CliShellCompletionsActionSelect) {
         // insert selection into prompt
         CliShellCompletionSegment segment = cli_shell_completion_segment(cli_shell);
-        FuriString* input = *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+        FuriString* input = cli_shell_history_selected_line(cli_shell);
         FuriString* completion =
             *CommandCompletions_cget(cli_shell->completions, cli_shell->selected_completion);
         furi_string_replace_at(
@@ -439,6 +459,10 @@ static void cli_shell_completions_render(CliShell* cli_shell, CliShellCompletion
     fflush(stdout);
 }
 
+// =============
+// Input handler
+// =============
+
 static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
     FURI_LOG_T(
         TAG, "mod=%d, key=%d='%c'", key_combo.modifiers, key_combo.key, (char)key_combo.key);
@@ -447,7 +471,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
         // reset input
         if(cli_shell->is_displaying_completions)
             cli_shell_completions_render(cli_shell, CliShellCompletionsActionClose);
-        furi_string_reset(*ShellHistory_front(cli_shell->history));
+        furi_string_reset(cli_shell_history_editing_line(cli_shell));
         cli_shell->line_position = 0;
         cli_shell->history_position = 0;
         printf("^C");
@@ -455,7 +479,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
 
     } else if(key_combo.modifiers == 0 && key_combo.key == CliKeyFF) { // usually Ctrl+L
         // clear screen
-        FuriString* command = *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+        FuriString* command = cli_shell_history_selected_line(cli_shell);
         char prompt[64];
         cli_shell_format_prompt(cli_shell, prompt, sizeof(prompt));
         printf(
@@ -510,8 +534,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
             // print prompt with selected command
             if(new_pos != cli_shell->history_position) {
                 cli_shell->history_position = new_pos;
-                FuriString* command =
-                    *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+                FuriString* command = cli_shell_history_selected_line(cli_shell);
                 printf(
                     ANSI_CURSOR_HOR_POS("1") ">: %s" ANSI_ERASE_LINE(
                         ANSI_ERASE_FROM_CURSOR_TO_END),
@@ -532,8 +555,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
 
         } else {
             // go left and right in the current line
-            FuriString* command =
-                *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+            FuriString* command = cli_shell_history_selected_line(cli_shell);
             int increment = (key_combo.key == CliKeyRight) ? 1 : -1;
             size_t new_pos = CLAMP(
                 (int)cli_shell->line_position + increment, (int)furi_string_size(command), 0);
@@ -559,7 +581,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
         // go to the end
         if(cli_shell->is_displaying_completions)
             cli_shell_completions_render(cli_shell, CliShellCompletionsActionClose);
-        FuriString* line = *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+        FuriString* line = cli_shell_history_selected_line(cli_shell);
         cli_shell->line_position = furi_string_size(line);
         printf(
             ANSI_CURSOR_HOR_POS("%zu"),
@@ -571,7 +593,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
         (key_combo.key == CliKeyBackspace || key_combo.key == CliKeyDEL)) {
         // erase one character
         cli_shell_ensure_not_overwriting_history(cli_shell);
-        FuriString* line = *ShellHistory_front(cli_shell->history);
+        FuriString* line = cli_shell_history_editing_line(cli_shell);
         if(cli_shell->line_position == 0) {
             putc(CliKeyBell, stdout);
             fflush(stdout);
@@ -598,7 +620,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
         // skip run of similar chars to the left or right
         if(cli_shell->is_displaying_completions)
             cli_shell_completions_render(cli_shell, CliShellCompletionsActionClose);
-        FuriString* line = *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+        FuriString* line = cli_shell_history_selected_line(cli_shell);
         CliSkipDirection direction = (key_combo.key == CliKeyLeft) ? CliSkipDirectionLeft :
                                                                      CliSkipDirectionRight;
         cli_shell->line_position = cli_skip_run(line, cli_shell->line_position, direction);
@@ -610,7 +632,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
     } else if(key_combo.modifiers == 0 && key_combo.key == CliKeyETB) {
         // delete run of similar chars to the left
         cli_shell_ensure_not_overwriting_history(cli_shell);
-        FuriString* line = *ShellHistory_cget(cli_shell->history, cli_shell->history_position);
+        FuriString* line = cli_shell_history_selected_line(cli_shell);
         size_t run_start = cli_skip_run(line, cli_shell->line_position, CliSkipDirectionLeft);
         furi_string_replace_at(line, run_start, cli_shell->line_position - run_start, "");
         cli_shell->line_position = run_start;
@@ -641,7 +663,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
     } else if(key_combo.modifiers == 0 && key_combo.key >= CliKeySpace && key_combo.key < CliKeyDEL) {
         // insert character
         cli_shell_ensure_not_overwriting_history(cli_shell);
-        FuriString* line = *ShellHistory_front(cli_shell->history);
+        FuriString* line = cli_shell_history_editing_line(cli_shell);
         if(cli_shell->line_position == furi_string_size(line)) {
             furi_string_push_back(line, key_combo.key);
             printf("%c", key_combo.key);

@@ -1,26 +1,13 @@
 #include <furi.h>
 #include <furi_hal.h>
 
-#include <cli/cli.h>
+#include <cli/cli_commands.h>
 #include <toolbox/args.h>
 #include <toolbox/pipe.h>
 
 #include <ibutton/ibutton_key.h>
 #include <ibutton/ibutton_worker.h>
 #include <ibutton/ibutton_protocols.h>
-
-static void ibutton_cli(PipeSide* pipe, FuriString* args, void* context);
-
-// app cli function
-void ibutton_on_system_start(void) {
-#ifdef SRV_CLI
-    Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "ikey", CliCommandFlagParallelUnsafe, ibutton_cli, cli);
-    furi_record_close(RECORD_CLI);
-#else
-    UNUSED(ibutton_cli);
-#endif
-}
 
 static void ibutton_cli_print_usage(void) {
     printf("Usage:\r\n");
@@ -229,7 +216,7 @@ void ibutton_cli_emulate(PipeSide* pipe, FuriString* args) {
     ibutton_protocols_free(protocols);
 }
 
-void ibutton_cli(PipeSide* pipe, FuriString* args, void* context) {
+static void execute(PipeSide* pipe, FuriString* args, void* context) {
     UNUSED(context);
     FuriString* cmd;
     cmd = furi_string_alloc();
@@ -252,3 +239,5 @@ void ibutton_cli(PipeSide* pipe, FuriString* args, void* context) {
 
     furi_string_free(cmd);
 }
+
+CLI_COMMAND_INTERFACE(ikey, execute, CliCommandFlagDefault, 1024);

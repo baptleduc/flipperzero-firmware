@@ -12,6 +12,6 @@ App(
         "display_test",
         "text_box_test",
         "file_browser_test",
-        # "speaker_debug", # TODO: external fap support
+        "speaker_debug",
     ],
 )
