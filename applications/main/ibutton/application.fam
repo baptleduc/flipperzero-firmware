@@ -20,4 +20,3 @@ App(
     requires=["cli"],
     sources=["ibutton_cli.c"],
 )
-
