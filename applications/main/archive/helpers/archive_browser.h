@@ -34,6 +34,7 @@ static const char* known_ext[] = {
     [ArchiveFileTypeFolder] = "?",
     [ArchiveFileTypeUnknown] = "*",
     [ArchiveFileTypeAppOrJs] = ".fap|.js",
+    [ArchiveFileTypeSetting] = "?",
 };
 
 static const ArchiveFileTypeEnum known_type[] = {
