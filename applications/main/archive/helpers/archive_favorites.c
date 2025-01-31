@@ -352,15 +352,15 @@ void archive_favorites_handle_setting_pin_unpin(const char* app_name, const char
     bool is_favorite = archive_is_favorite("/app:setting/%s", setting_path_str);
     dialog_message_set_header(
         message,
-        is_favorite ? "Unpin this setting?" : "Pin this setting?",
+        is_favorite ? "Unpin This Setting?" : "Pin This Setting?",
         64,
         0,
         AlignCenter,
         AlignTop);
     dialog_message_set_text(
         message,
-        is_favorite ? "It will no longer be\naccessible from the\n\"Favorites\" menu" :
-                      "It will be accessible from the\n\"Favorites\" menu",
+        is_favorite ? "It will no longer be\naccessible from the\nFavorites menu" :
+                      "It will be accessible from the\nFavorites menu",
         64,
         32,
         AlignCenter,
