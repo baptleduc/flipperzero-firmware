@@ -77,9 +77,9 @@ bool lfrfid_scene_t5577_password_input_on_event(void* context, SceneManagerEvent
             }
         }
     } else if(event.type == SceneManagerEventTypeBack) {
-        scene_manager_set_scene_state(scene_manager, LfRfidSceneSaveData, 0);
-        size_t size = protocol_dict_get_data_size(app->dict, app->protocol_id);
-        protocol_dict_set_data(app->dict, app->protocol_id, app->old_key_data, size);
+        if(app->current_password_set) {
+            app->current_password_set = false;
+        }
     }
 
     return consumed;

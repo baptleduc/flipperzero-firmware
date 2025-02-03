@@ -18,9 +18,9 @@ void lfrfid_scene_t5577_passwords_on_enter(void* context) {
     Submenu* submenu = app->submenu;
 
     lfrfid_worker_set_current_t5577_password(app->lfworker, 0);
-    app->t5577_current_password = 0;
+    memset(app->t5577_current_password, 0, T5577_PASSWORD_SIZE);
     lfrfid_worker_set_new_t5577_password(app->lfworker, 0);
-    app->t5577_new_password = 0;
+    memset(app->t5577_new_password, 0, T5577_PASSWORD_SIZE);
     lfrfid_worker_set_write_mode(app->lfworker, LFRFIDWorkerWriteModeDefault);
     app->current_password_set = false;
 
