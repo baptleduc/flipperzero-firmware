@@ -20,10 +20,13 @@ typedef enum {
     CliCommandFlagParallelUnsafe = (1 << 0), /**< Unsafe to run in parallel with other apps */
     CliCommandFlagInsomniaSafe = (1 << 1), /**< Safe to run with insomnia mode on */
     CliCommandFlagDontAttachStdio = (1 << 2), /**< Do no attach I/O pipe to thread stdio */
+    CliCommandFlagUseShellThread =
+        (1
+         << 3), /**< Don't start a separate thread to run the command in. Incompatible with DontAttachStdio */
 
     // internal flags (do not set them yourselves!)
 
-    CliCommandFlagExternal = (1 << 3), /**< The command comes from a .fal file */
+    CliCommandFlagExternal = (1 << 4), /**< The command comes from a .fal file */
 } CliCommandFlag;
 
 /** Cli type anonymous structure */

@@ -38,6 +38,9 @@ void cli_add_command_ex(
     furi_check(name);
     furi_check(callback);
 
+    // the shell always attaches the pipe to the stdio, thus both flags can't be used at once
+    if(flags & CliCommandFlagUseShellThread) furi_check(!(flags & CliCommandFlagDontAttachStdio));
+
     FuriString* name_str;
     name_str = furi_string_alloc_set(name);
     // command cannot contain spaces

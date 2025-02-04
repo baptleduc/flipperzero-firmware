@@ -854,6 +854,7 @@ Function,-,cfree,void,void*
 Function,-,clearerr,void,FILE*
 Function,-,clearerr_unlocked,void,FILE*
 Function,+,cli_add_command,void,"Cli*, const char*, CliCommandFlag, CliExecuteCallback, void*"
+Function,+,cli_add_command_ex,void,"Cli*, const char*, CliCommandFlag, CliExecuteCallback, void*, size_t"
 Function,+,cli_ansi_parser_alloc,CliAnsiParser*,
 Function,+,cli_ansi_parser_feed,CliAnsiParserResult,"CliAnsiParser*, char"
 Function,+,cli_ansi_parser_feed_timeout,CliAnsiParserResult,CliAnsiParser*
