@@ -24,9 +24,22 @@ void cli_add_command(
     CliCommandFlag flags,
     CliExecuteCallback callback,
     void* context) {
+    cli_add_command_ex(cli, name, flags, callback, context, CLI_BUILTIN_COMMAND_STACK_SIZE);
+}
+
+void cli_add_command_ex(
+    Cli* cli,
+    const char* name,
+    CliCommandFlag flags,
+    CliExecuteCallback callback,
+    void* context,
+    size_t stack_size) {
     furi_check(cli);
     furi_check(name);
     furi_check(callback);
+
+    // the shell always attaches the pipe to the stdio, thus both flags can't be used at once
+    if(flags & CliCommandFlagUseShellThread) furi_check(!(flags & CliCommandFlagDontAttachStdio));
 
     FuriString* name_str;
     name_str = furi_string_alloc_set(name);
@@ -37,7 +50,7 @@ void cli_add_command(
         .context = context,
         .execute_callback = callback,
         .flags = flags,
-        .stack_depth = CLI_BUILTIN_COMMAND_STACK_SIZE,
+        .stack_depth = stack_size,
     };
 
     furi_check(furi_mutex_acquire(cli->mutex, FuriWaitForever) == FuriStatusOk);

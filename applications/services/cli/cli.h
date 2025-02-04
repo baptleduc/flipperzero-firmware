@@ -20,10 +20,13 @@ typedef enum {
     CliCommandFlagParallelUnsafe = (1 << 0), /**< Unsafe to run in parallel with other apps */
     CliCommandFlagInsomniaSafe = (1 << 1), /**< Safe to run with insomnia mode on */
     CliCommandFlagDontAttachStdio = (1 << 2), /**< Do no attach I/O pipe to thread stdio */
+    CliCommandFlagUseShellThread =
+        (1
+         << 3), /**< Don't start a separate thread to run the command in. Incompatible with DontAttachStdio */
 
     // internal flags (do not set them yourselves!)
 
-    CliCommandFlagExternal = (1 << 3), /**< The command comes from a .fal file */
+    CliCommandFlagExternal = (1 << 4), /**< The command comes from a .fal file */
 } CliCommandFlag;
 
 /** Cli type anonymous structure */
@@ -48,7 +51,8 @@ typedef struct Cli Cli;
 typedef void (*CliExecuteCallback)(PipeSide* pipe, FuriString* args, void* context);
 
 /**
- * @brief Registers a command with the CLI.
+ * @brief Registers a command with the CLI. Provides less options than the `_ex`
+ * counterpart.
  *
  * @param [in] cli       Pointer to CLI instance
  * @param [in] name      Command name
@@ -62,6 +66,25 @@ void cli_add_command(
     CliCommandFlag flags,
     CliExecuteCallback callback,
     void* context);
+
+/**
+ * @brief Registers a command with the CLI. Provides more options than the
+ * non-`_ex` counterpart.
+ *
+ * @param [in] cli        Pointer to CLI instance
+ * @param [in] name       Command name
+ * @param [in] flags      CliCommandFlag
+ * @param [in] callback   Callback function
+ * @param [in] context    Custom context
+ * @param [in] stack_size Thread stack size
+ */
+void cli_add_command_ex(
+    Cli* cli,
+    const char* name,
+    CliCommandFlag flags,
+    CliExecuteCallback callback,
+    void* context,
+    size_t stack_size);
 
 /**
  * @brief Deletes a cli command

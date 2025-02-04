@@ -117,6 +117,9 @@ static void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) 
             command_data.execute_callback = plugin->execute_callback;
             command_data.flags = plugin->flags | CliCommandFlagExternal;
             command_data.stack_depth = plugin->stack_depth;
+
+            // external commands have to run in an external thread
+            furi_check(!(command_data.flags & CliCommandFlagUseShellThread));
         }
 
         // lock loader
@@ -130,20 +133,25 @@ static void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) 
             }
         }
 
-        // run command in separate thread
-        CliCommandThreadData thread_data = {
-            .command = &command_data,
-            .pipe = cli_shell->pipe,
-            .args = args,
-        };
-        FuriThread* thread = furi_thread_alloc_ex(
-            furi_string_get_cstr(command_name),
-            command_data.stack_depth,
-            cli_command_thread,
-            &thread_data);
-        furi_thread_start(thread);
-        furi_thread_join(thread);
-        furi_thread_free(thread);
+        if(command_data.flags & CliCommandFlagUseShellThread) {
+            // run command in this thread
+            command_data.execute_callback(cli_shell->pipe, args, command_data.context);
+        } else {
+            // run command in separate thread
+            CliCommandThreadData thread_data = {
+                .command = &command_data,
+                .pipe = cli_shell->pipe,
+                .args = args,
+            };
+            FuriThread* thread = furi_thread_alloc_ex(
+                furi_string_get_cstr(command_name),
+                command_data.stack_depth,
+                cli_command_thread,
+                &thread_data);
+            furi_thread_start(thread);
+            furi_thread_join(thread);
+            furi_thread_free(thread);
+        }
     } while(0);
 
     furi_string_free(command_name);

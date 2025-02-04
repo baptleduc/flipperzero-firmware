@@ -8,12 +8,16 @@
 
 #define TAG "CliVcp"
 
-#define USB_CDC_PKT_LEN CDC_DATA_SZ
-#define VCP_BUF_SIZE    (USB_CDC_PKT_LEN * 3)
-
-#define VCP_IF_NUM 0
-
+#define USB_CDC_PKT_LEN   CDC_DATA_SZ
+#define VCP_BUF_SIZE      (USB_CDC_PKT_LEN * 3)
+#define VCP_IF_NUM        0
 #define VCP_MESSAGE_Q_LEN 8
+
+#ifdef CLI_VCP_TRACE
+#define VCP_TRACE(...) FURI_LOG_T(TAG, __VA_ARGS__)
+#else
+#define VCP_TRACE(...)
+#endif
 
 typedef struct {
     enum {
@@ -61,7 +65,7 @@ static void cli_vcp_maybe_send_data(CliVcp* cli_vcp) {
     uint8_t buf[USB_CDC_PKT_LEN];
     size_t length = pipe_receive(cli_vcp->own_pipe, buf, sizeof(buf), 0);
     if(length > 0 || cli_vcp->previous_tx_length == USB_CDC_PKT_LEN) {
-        FURI_LOG_T(TAG, "cdc_send length=%zu", length);
+        VCP_TRACE(TAG, "cdc_send length=%zu", length);
         cli_vcp->is_currently_transmitting = true;
         furi_hal_cdc_send(VCP_IF_NUM, buf, length);
     }
@@ -79,7 +83,7 @@ static void cli_vcp_maybe_receive_data(CliVcp* cli_vcp) {
 
     uint8_t buf[USB_CDC_PKT_LEN];
     size_t length = furi_hal_cdc_receive(VCP_IF_NUM, buf, sizeof(buf));
-    FURI_LOG_T(TAG, "cdc_receive length=%zu", length);
+    VCP_TRACE(TAG, "cdc_receive length=%zu", length);
     furi_check(pipe_send(cli_vcp->own_pipe, buf, length, 0) == length);
 }
 
@@ -185,13 +189,13 @@ static void cli_vcp_internal_message_received(FuriEventLoopObject* object, void*
 
     switch(message) {
     case CliVcpInternalMessageTxDone:
-        FURI_LOG_T(TAG, "TxDone");
+        VCP_TRACE(TAG, "TxDone");
         cli_vcp->is_currently_transmitting = false;
         cli_vcp_maybe_send_data(cli_vcp);
         break;
 
     case CliVcpInternalMessageRx:
-        FURI_LOG_T(TAG, "Rx");
+        VCP_TRACE(TAG, "Rx");
         cli_vcp_maybe_receive_data(cli_vcp);
         break;
 
