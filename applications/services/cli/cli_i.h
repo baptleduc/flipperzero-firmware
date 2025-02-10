@@ -36,9 +36,6 @@ BPTREE_DEF2(
     M_POD_OPLIST);
 #define M_OPL_CliCommandTree_t() BPTREE_OPLIST(CliCommandTree, M_POD_OPLIST)
 
-ARRAY_DEF(CommandCompletions, FuriString*, FURI_STRING_OPLIST); // -V524
-#define M_OPL_CommandCompletions_t() ARRAY_OPLIST(CommandCompletions)
-
 bool cli_get_command(Cli* cli, FuriString* command, CliCommand* result);
 
 void cli_lock_commands(Cli* cli);

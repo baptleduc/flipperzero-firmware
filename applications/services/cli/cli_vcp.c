@@ -1,5 +1,5 @@
 #include "cli_vcp.h"
-#include "cli_shell.h"
+#include "shell/cli_shell.h"
 #include <furi_hal_usb_cdc.h>
 #include <furi_hal.h>
 #include <furi.h>
