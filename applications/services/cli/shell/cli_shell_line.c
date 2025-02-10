@@ -67,6 +67,14 @@ void cli_shell_line_ensure_not_overwriting_history(CliShellLine* line) {
     }
 }
 
+size_t cli_shell_line_get_line_position(CliShellLine* line) {
+    return line->line_position;
+}
+
+void cli_shell_line_set_line_position(CliShellLine* line, size_t position) {
+    line->line_position = position;
+}
+
 // ==============
 // Input handlers
 // ==============
