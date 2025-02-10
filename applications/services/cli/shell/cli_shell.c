@@ -283,7 +283,7 @@ static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
                 cli_shell->cli,
                 CliShellCompletionsActionClose);
         cli_shell->line.line_position = 0;
-        printf(ANSI_CURSOR_HOR_POS("%d"), cli_shell_line_prompt_length(&cli_shell->line) + 1);
+        printf(ANSI_CURSOR_HOR_POS("%zu"), cli_shell_line_prompt_length(&cli_shell->line) + 1);
         fflush(stdout);
 
     } else if(key_combo.modifiers == 0 && key_combo.key == CliKeyEnd) {
