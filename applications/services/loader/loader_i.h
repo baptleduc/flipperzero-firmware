@@ -2,6 +2,11 @@
 #include <furi.h>
 #include <toolbox/api_lock.h>
 #include <flipper_application/flipper_application.h>
+
+#include <gui/gui.h>
+#include <gui/view_holder.h>
+#include <gui/modules/loading.h>
+
 #include "loader.h"
 #include "loader_menu.h"
 #include "loader_applications.h"
@@ -13,12 +18,26 @@ typedef struct {
     FlipperApplication* fap;
 } LoaderAppData;
 
+typedef struct {
+    FuriString* prev_app;
+    FuriString* prev_app_name;
+
+    FuriString* next_app;
+    FuriString* next_app_args;
+    LoaderDeferredLaunchErrorReport error_report;
+} LoaderAppChainData;
+
 struct Loader {
     FuriPubSub* pubsub;
     FuriMessageQueue* queue;
     LoaderMenu* loader_menu;
     LoaderApplications* loader_applications;
     LoaderAppData app;
+    LoaderAppChainData chain;
+
+    Gui* gui;
+    ViewHolder* view_holder;
+    Loading* loading;
 };
 
 typedef enum {
@@ -33,6 +52,8 @@ typedef enum {
     LoaderMessageTypeStartByNameDetachedWithGuiError,
     LoaderMessageTypeSignal,
     LoaderMessageTypeGetApplicationName,
+    LoaderMessageTypeRememberNextApp,
+    LoaderMessageTypeGetReferrerName,
 } LoaderMessageType;
 
 typedef struct {
@@ -40,6 +61,13 @@ typedef struct {
     const char* args;
     FuriString* error_message;
 } LoaderMessageStartByName;
+
+typedef struct {
+    const char* name;
+    const char* args;
+    const char* caller_name;
+    LoaderDeferredLaunchErrorReport error_report;
+} LoaderMessageDeferStart;
 
 typedef struct {
     uint32_t signal;
@@ -72,6 +100,7 @@ typedef struct {
 
     union {
         LoaderMessageStartByName start;
+        LoaderMessageDeferStart defer_start;
         LoaderMessageSignal signal;
         FuriString* application_name;
     };

@@ -28,6 +28,21 @@ typedef struct {
 } LoaderEvent;
 
 /**
+ * Error reporting mechanism selector for `loader_launch_app_after_current`:
+ *   - `Gui`: Report errors to the user via a dialog
+ *   - `Args`: Report errors to the referring app via args
+ * 
+ * The argument used to report an error takes the form of
+ * `loader:deferred_launch_err:Message goes here`
+ */
+typedef enum {
+    LoaderDeferredLaunchErrorReportDiscard = 0, //<! Silently ignore any errors
+    LoaderDeferredLaunchErrorReportGui = (1 << 1), //<! Report errors to the user via a dialog
+    LoaderDeferredLaunchErrorReportArgs =
+        (1 << 2), //<! Report errors to the referring app via args
+} LoaderDeferredLaunchErrorReport;
+
+/**
  * @brief Start application
  * @param[in] instance loader instance
  * @param[in] name application name or id
@@ -93,7 +108,7 @@ FuriPubSub* loader_get_pubsub(Loader* instance);
  *
  * @param[in] instance pointer to the loader instance
  * @param[in] signal signal value to be sent
- * @param[in,out] arg optional argument (can be of any value, including NULL)
+ * @param[inout] arg optional argument (can be of any value, including NULL)
  *
  * @return true if the signal was handled by the application, false otherwise
  */
@@ -103,10 +118,37 @@ bool loader_signal(Loader* instance, uint32_t signal, void* arg);
  * @brief Get the name of the currently running application
  *
  * @param[in] instance pointer to the loader instance
- * @param[in,out] name pointer to the string to contain the name (must be allocated)
+ * @param[inout] name pointer to the string to contain the name (must be allocated)
  * @return true if it was possible to get an application name, false otherwise
  */
 bool loader_get_application_name(Loader* instance, FuriString* name);
+
+/**
+ * @brief Sets the application to launch after the calling application exits
+ * 
+ * @param[in] instance pointer to the loader instance
+ * @param[in] name pointer to the name or path of the application, or NULL to
+ *                 cancel a previous request
+ * @param[in] args pointer to argument to provide to the next app
+ * @param[in] error_report which way(s) to report launch errors in. see enum
+ *                         documentation for more info
+ * @return true if the operation succeeded, false otherwise
+ */
+bool loader_launch_app_after_current(
+    Loader* instance,
+    const char* name,
+    const char* args,
+    LoaderDeferredLaunchErrorReport error_report);
+
+/**
+ * @brief Lets the application find out what other application launched it using
+ * `loader_launch_app_after_current`
+ * 
+ * @param [in] instance pointer to the loader instance
+ * @param [inout] name pointer to the string to contain the name (must be allocated)
+ * @return true if the operation succeeded, false otherwise
+ */
+bool loader_get_referring_application(Loader* instance, FuriString* name);
 
 #ifdef __cplusplus
 }

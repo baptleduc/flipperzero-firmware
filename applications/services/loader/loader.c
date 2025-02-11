@@ -292,6 +292,52 @@ bool loader_get_application_name(Loader* loader, FuriString* name) {
     return result.value;
 }
 
+bool loader_launch_app_after_current(
+    Loader* loader,
+    const char* name,
+    const char* args,
+    LoaderDeferredLaunchErrorReport error_report) {
+    furi_check(loader);
+
+    LoaderMessageBoolResult result;
+
+    LoaderMessage message = {
+        .type = LoaderMessageTypeRememberNextApp,
+        .api_lock = api_lock_alloc_locked(),
+        .defer_start =
+            {
+                .name = name,
+                .args = args,
+                .error_report = error_report,
+                .caller_name = furi_thread_get_name(furi_thread_get_current_id()),
+            },
+        .bool_value = &result,
+    };
+
+    furi_message_queue_put(loader->queue, &message, FuriWaitForever);
+    api_lock_wait_unlock_and_free(message.api_lock);
+
+    return result.value;
+}
+
+bool loader_get_referring_application(Loader* loader, FuriString* name) {
+    furi_check(loader);
+
+    LoaderMessageBoolResult result;
+
+    LoaderMessage message = {
+        .type = LoaderMessageTypeGetReferrerName,
+        .api_lock = api_lock_alloc_locked(),
+        .application_name = name,
+        .bool_value = &result,
+    };
+
+    furi_message_queue_put(loader->queue, &message, FuriWaitForever);
+    api_lock_wait_unlock_and_free(message.api_lock);
+
+    return result.value;
+}
+
 // callbacks
 
 static void loader_menu_closed_callback(void* context) {
@@ -334,6 +380,15 @@ static Loader* loader_alloc(void) {
     loader->app.thread = NULL;
     loader->app.insomniac = false;
     loader->app.fap = NULL;
+    loader->chain.prev_app = furi_string_alloc();
+    loader->chain.prev_app_name = furi_string_alloc();
+    loader->chain.next_app = furi_string_alloc();
+    loader->chain.next_app_args = furi_string_alloc();
+
+    loader->gui = furi_record_open(RECORD_GUI);
+    loader->view_holder = view_holder_alloc();
+    loader->loading = loading_alloc();
+    view_holder_attach_to_gui(loader->view_holder, loader->gui);
     return loader;
 }
 
@@ -656,6 +711,10 @@ static LoaderMessageLoaderStatusResult loader_do_start_by_name(
             LoaderStatusErrorUnknownApp, error_message, "Application \"%s\" not found", name);
     } while(false);
 
+    if(status.value == LoaderStatusOk) {
+        furi_string_set(loader->chain.prev_app, name);
+    }
+
     return status;
 }
 
@@ -671,6 +730,56 @@ static bool loader_do_lock(Loader* loader) {
 static void loader_do_unlock(Loader* loader) {
     furi_check(loader->app.thread == (FuriThread*)LOADER_MAGIC_THREAD_VALUE);
     loader->app.thread = NULL;
+}
+
+static void loader_do_maybe_run_next_app(Loader* loader) {
+    if(!furi_string_size(loader->chain.next_app)) return;
+
+    FuriString* app_name = furi_string_alloc();
+    FuriString* error_message = furi_string_alloc();
+    FuriString* second_error_message = furi_string_alloc();
+
+    // display hourglass animation
+    view_holder_set_view(loader->view_holder, loading_get_view(loader->loading));
+    view_holder_send_to_front(loader->view_holder);
+
+    do {
+        // we do this copying to clear `next_app` before the app is launched,
+        // therefore preventing launch loops
+        furi_string_set(app_name, loader->chain.next_app);
+        const char* app_name_str = furi_string_get_cstr(app_name);
+        furi_string_reset(loader->chain.next_app);
+
+        const char* app_args = furi_string_get_cstr(loader->chain.next_app_args);
+        FURI_LOG_I(TAG, "Launching chained application: %s", app_name_str);
+
+        LoaderMessageLoaderStatusResult result =
+            loader_do_start_by_name(loader, app_name_str, app_args, error_message);
+        if(result.value == LoaderStatusOk) break;
+
+        if(loader->chain.error_report & LoaderDeferredLaunchErrorReportGui)
+            loader_show_gui_error(result, app_name_str, error_message);
+
+        if(loader->chain.error_report & LoaderDeferredLaunchErrorReportArgs) {
+            furi_string_replace_at(error_message, 0, 0, "loader:deferred_launch_err:");
+            result = loader_do_start_by_name(
+                loader,
+                furi_string_get_cstr(loader->chain.prev_app),
+                furi_string_get_cstr(error_message),
+                second_error_message);
+
+            if(result.value != LoaderStatusOk)
+                FURI_LOG_E(
+                    TAG,
+                    "Launching chained application failed and reporting the error back failed too. Discarding error.");
+        }
+    } while(false);
+
+    view_holder_set_view(loader->view_holder, NULL);
+
+    furi_string_free(second_error_message);
+    furi_string_free(error_message);
+    furi_string_free(app_name);
 }
 
 static void loader_do_app_closed(Loader* loader) {
@@ -702,6 +811,8 @@ static void loader_do_app_closed(Loader* loader) {
     LoaderEvent event;
     event.type = LoaderEventTypeApplicationStopped;
     furi_pubsub_publish(loader->pubsub, &event);
+
+    loader_do_maybe_run_next_app(loader);
 }
 
 static bool loader_is_application_running(Loader* loader) {
@@ -724,6 +835,35 @@ static bool loader_do_get_application_name(Loader* loader, FuriString* name) {
     }
 
     return false;
+}
+
+static bool loader_do_remember_next_app(Loader* loader, LoaderMessageDeferStart defer_start) {
+    const char* current_app = furi_thread_get_name(furi_thread_get_id(loader->app.thread));
+    if(strcmp(current_app, defer_start.caller_name) != 0) return false;
+
+    if(defer_start.name) {
+        furi_string_set_str(loader->chain.prev_app_name, current_app);
+        furi_string_set_str(loader->chain.next_app, defer_start.name);
+        loader->chain.error_report = defer_start.error_report;
+        if(defer_start.args)
+            furi_string_set_str(loader->chain.next_app_args, defer_start.args);
+        else
+            furi_string_reset(loader->chain.next_app_args);
+    } else {
+        furi_string_reset(loader->chain.prev_app_name);
+        furi_string_reset(loader->chain.next_app);
+        furi_string_reset(loader->chain.next_app_args);
+    }
+
+    return true;
+}
+
+static bool loader_do_get_referrer_name(Loader* loader, FuriString* name) {
+    if(!loader_is_application_running(loader)) return false;
+    if(!furi_string_size(loader->chain.prev_app_name)) return false;
+
+    furi_string_set(name, loader->chain.prev_app_name);
+    return true;
 }
 
 // app
@@ -794,6 +934,16 @@ int32_t loader_srv(void* p) {
             case LoaderMessageTypeGetApplicationName:
                 message.bool_value->value =
                     loader_do_get_application_name(loader, message.application_name);
+                api_lock_unlock(message.api_lock);
+                break;
+            case LoaderMessageTypeRememberNextApp:
+                message.bool_value->value =
+                    loader_do_remember_next_app(loader, message.defer_start);
+                api_lock_unlock(message.api_lock);
+                break;
+            case LoaderMessageTypeGetReferrerName:
+                message.bool_value->value =
+                    loader_do_get_referrer_name(loader, message.application_name);
                 api_lock_unlock(message.api_lock);
                 break;
             }
