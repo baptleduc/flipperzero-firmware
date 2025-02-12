@@ -377,12 +377,12 @@ static void
 
 // implementation
 
-static void loader_autonomous_launch_data_init(LoaderAutonomousAppLaunchData* data) {
+static void loader_deferred_launch_data_init(LoaderDeferredLaunchData* data) {
     if(!data->name_or_path) data->name_or_path = furi_string_alloc();
     if(!data->args) data->args = furi_string_alloc();
 }
 
-static void loader_autonomous_launch_data_reset(LoaderAutonomousAppLaunchData* data) {
+static void loader_deferred_launch_data_reset(LoaderDeferredLaunchData* data) {
     furi_string_free(data->name_or_path);
     furi_string_free(data->args);
     data->name_or_path = NULL;
@@ -741,10 +741,10 @@ static void loader_do_unlock(Loader* loader) {
     loader->app.thread = NULL;
 }
 
-static bool loader_do_autonomous_launch(
+static bool loader_do_deferred_launch(
     Loader* loader,
-    LoaderAutonomousAppLaunchData* launch_data,
-    LoaderAutonomousAppLaunchData* error_report_launch_data) {
+    LoaderDeferredLaunchData* launch_data,
+    LoaderDeferredLaunchData* error_report_launch_data) {
     furi_assert(launch_data);
 
     bool is_successful = false;
@@ -772,7 +772,7 @@ static bool loader_do_autonomous_launch(
                 error_report_launch_data->args,
                 "loader:deferred_launch_err:%s",
                 furi_string_get_cstr(error_message));
-            loader_do_autonomous_launch(loader, error_report_launch_data, NULL);
+            loader_do_deferred_launch(loader, error_report_launch_data, NULL);
         }
     } while(false);
 
@@ -815,13 +815,13 @@ static void loader_do_app_closed(Loader* loader) {
 
     if(loader->chain.next.do_launch) {
         loader->chain.next.do_launch = false;
-        if(!loader_do_autonomous_launch(loader, &loader->chain.next, &loader->chain.previous))
-            loader_autonomous_launch_data_reset(&loader->chain.previous);
-        loader_autonomous_launch_data_reset(&loader->chain.next);
+        if(!loader_do_deferred_launch(loader, &loader->chain.next, &loader->chain.previous))
+            loader_deferred_launch_data_reset(&loader->chain.previous);
+        loader_deferred_launch_data_reset(&loader->chain.next);
     } else if(loader->chain.previous.do_launch) {
         loader->chain.previous.do_launch = false;
-        loader_do_autonomous_launch(loader, &loader->chain.previous, NULL);
-        loader_autonomous_launch_data_reset(&loader->chain.previous);
+        loader_do_deferred_launch(loader, &loader->chain.previous, NULL);
+        loader_deferred_launch_data_reset(&loader->chain.previous);
     }
 }
 
@@ -852,8 +852,8 @@ static bool loader_do_remember_next_app(Loader* loader, LoaderMessageDeferStart 
     if(!loader->chain.next.do_launch && loader->chain.previous.do_launch) return false;
 
     if(defer_start.name) {
-        loader_autonomous_launch_data_init(&loader->chain.previous);
-        loader_autonomous_launch_data_init(&loader->chain.next);
+        loader_deferred_launch_data_init(&loader->chain.previous);
+        loader_deferred_launch_data_init(&loader->chain.next);
         loader->chain.next.do_launch = true;
 
         furi_string_set(loader->chain.previous.name_or_path, loader->app.launch_path);
@@ -865,8 +865,8 @@ static bool loader_do_remember_next_app(Loader* loader, LoaderMessageDeferStart 
         else
             furi_string_reset(loader->chain.next.args);
     } else {
-        loader_autonomous_launch_data_reset(&loader->chain.previous);
-        loader_autonomous_launch_data_reset(&loader->chain.next);
+        loader_deferred_launch_data_reset(&loader->chain.previous);
+        loader_deferred_launch_data_reset(&loader->chain.next);
     }
 
     return true;
@@ -878,7 +878,7 @@ static bool
     if(!loader->chain.next.do_launch) return false;
     if(defer_start.error_report & LoaderDeferredLaunchErrorReportArgs) return false;
 
-    loader_autonomous_launch_data_init(&loader->chain.previous);
+    loader_deferred_launch_data_init(&loader->chain.previous);
     loader->chain.previous.do_launch = true;
 
     loader->chain.previous.error_report = defer_start.error_report;

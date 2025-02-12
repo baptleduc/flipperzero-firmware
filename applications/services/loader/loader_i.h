@@ -24,11 +24,11 @@ typedef struct {
     FuriString* name_or_path;
     FuriString* args;
     LoaderDeferredLaunchErrorReport error_report;
-} LoaderAutonomousAppLaunchData;
+} LoaderDeferredLaunchData;
 
 typedef struct {
-    LoaderAutonomousAppLaunchData previous;
-    LoaderAutonomousAppLaunchData next;
+    LoaderDeferredLaunchData previous;
+    LoaderDeferredLaunchData next;
 } LoaderAppChainData;
 
 struct Loader {
