@@ -12,6 +12,7 @@
 #include "loader_applications.h"
 
 typedef struct {
+    FuriString* launch_path;
     char* args;
     FuriThread* thread;
     bool insomniac;
@@ -19,12 +20,15 @@ typedef struct {
 } LoaderAppData;
 
 typedef struct {
-    FuriString* prev_app;
-    FuriString* prev_app_name;
-
-    FuriString* next_app;
-    FuriString* next_app_args;
+    bool do_launch;
+    FuriString* name_or_path;
+    FuriString* args;
     LoaderDeferredLaunchErrorReport error_report;
+} LoaderAutonomousAppLaunchData;
+
+typedef struct {
+    LoaderAutonomousAppLaunchData previous;
+    LoaderAutonomousAppLaunchData next;
 } LoaderAppChainData;
 
 struct Loader {
@@ -53,7 +57,7 @@ typedef enum {
     LoaderMessageTypeSignal,
     LoaderMessageTypeGetApplicationName,
     LoaderMessageTypeRememberNextApp,
-    LoaderMessageTypeGetReferrerName,
+    LoaderMessageTypeStartSelfAfterDeferred,
 } LoaderMessageType;
 
 typedef struct {
@@ -65,7 +69,6 @@ typedef struct {
 typedef struct {
     const char* name;
     const char* args;
-    const char* caller_name;
     LoaderDeferredLaunchErrorReport error_report;
 } LoaderMessageDeferStart;
 

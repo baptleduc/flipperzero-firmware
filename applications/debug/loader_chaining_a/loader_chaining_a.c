@@ -21,6 +21,7 @@ typedef struct {
 
 typedef enum {
     LoaderChainingASubmenuLaunchB,
+    LoaderChainingASubmenuLaunchBThenA,
     LoaderChainingASubmenuLaunchNonexistentSilent,
     LoaderChainingASubmenuLaunchNonexistentGui,
     LoaderChainingASubmenuLaunchNonexistentArgs,
@@ -34,6 +35,14 @@ static void loader_chaining_a_submenu_callback(void* context, uint32_t index) {
     case LoaderChainingASubmenuLaunchB:
         loader_launch_app_after_current(
             app->loader, CHAINING_TEST_B, "Hello", LoaderDeferredLaunchErrorReportGui);
+        view_dispatcher_stop(app->view_dispatcher);
+        break;
+
+    case LoaderChainingASubmenuLaunchBThenA:
+        loader_launch_app_after_current(
+            app->loader, CHAINING_TEST_B, "Hello", LoaderDeferredLaunchErrorReportGui);
+        loader_launch_current_app_after_deferred(
+            app->loader, "Hello to you from the future", LoaderDeferredLaunchErrorReportGui);
         view_dispatcher_stop(app->view_dispatcher);
         break;
 
@@ -88,6 +97,12 @@ LoaderChainingA* loader_chaining_a_alloc(void) {
         app);
     submenu_add_item(
         app->submenu,
+        "Launch B, then A",
+        LoaderChainingASubmenuLaunchBThenA,
+        loader_chaining_a_submenu_callback,
+        app);
+    submenu_add_item(
+        app->submenu,
         "Trigger error: silent",
         LoaderChainingASubmenuLaunchNonexistentSilent,
         loader_chaining_a_submenu_callback,
@@ -136,17 +151,24 @@ int32_t chaining_test_app_a(const char* arg) {
     LoaderChainingA* app = loader_chaining_a_alloc();
 
     if(arg) {
-        FURI_LOG_I(TAG, "Input argument: \"%s\"", arg);
-        const char* loader_error_beginning = "loader:deferred_launch_err:";
-        size_t beginning_len = strlen(loader_error_beginning);
-        if(strncmp(arg, loader_error_beginning, beginning_len) == 0) {
+        if(strlen(arg)) {
+            const char* loader_error_beginning = "loader:deferred_launch_err:";
+            size_t beginning_len = strlen(loader_error_beginning);
             DialogMessage* message = dialog_message_alloc();
-            dialog_message_set_header(message, "Hi, I am A", 64, 0, AlignCenter, AlignTop);
-            FuriString* text =
-                furi_string_alloc_printf("Couldn't launch app:\n%s", arg + beginning_len);
+            FuriString* text;
+
+            if(strncmp(arg, loader_error_beginning, beginning_len) == 0) {
+                dialog_message_set_header(message, "Hi, I am A", 64, 0, AlignCenter, AlignTop);
+                text = furi_string_alloc_printf("Couldn't launch app:\n%s", arg + beginning_len);
+                dialog_message_set_buttons(message, NULL, "ok :(", NULL);
+            } else {
+                dialog_message_set_header(message, "Hi, I am A", 64, 0, AlignCenter, AlignTop);
+                text = furi_string_alloc_printf("Me from the past says:\n%s", arg);
+                dialog_message_set_buttons(message, NULL, "ok!", NULL);
+            }
+
             dialog_message_set_text(
                 message, furi_string_get_cstr(text), 64, 32, AlignCenter, AlignCenter);
-            dialog_message_set_buttons(message, NULL, "ok :(", NULL);
             dialog_message_show(app->dialogs, message);
             dialog_message_free(message);
             furi_string_free(text);

@@ -141,14 +141,19 @@ bool loader_launch_app_after_current(
     LoaderDeferredLaunchErrorReport error_report);
 
 /**
- * @brief Lets the application find out what other application launched it using
- * `loader_launch_app_after_current`
+ * @brief Enqueues a request to launch the current application after the
+ * deferred one (as set via `loader_launch_app_after_current`) exits
  * 
- * @param [in] instance pointer to the loader instance
- * @param [inout] name pointer to the string to contain the name (must be allocated)
+ * @param[in] instance pointer to the loader instance
+ * @param[in] args args to provide to the current application when it is
+ *                 next launched via this mechanism
+ * @param[in] error_report see enum documentation. only the `Gui` flag is valid.
  * @return true if the operation succeeded, false otherwise
  */
-bool loader_get_referring_application(Loader* instance, FuriString* name);
+bool loader_launch_current_app_after_deferred(
+    Loader* instance,
+    const char* args,
+    LoaderDeferredLaunchErrorReport error_report);
 
 #ifdef __cplusplus
 }

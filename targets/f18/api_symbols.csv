@@ -1843,9 +1843,9 @@ Function,-,llroundf,long long int,float
 Function,-,llroundl,long long int,long double
 Function,+,loader_get_application_name,_Bool,"Loader*, FuriString*"
 Function,+,loader_get_pubsub,FuriPubSub*,Loader*
-Function,+,loader_get_referring_application,_Bool,"Loader*, FuriString*"
 Function,+,loader_is_locked,_Bool,Loader*
 Function,+,loader_launch_app_after_current,_Bool,"Loader*, const char*, const char*, LoaderDeferredLaunchErrorReport"
+Function,+,loader_launch_current_app_after_deferred,_Bool,"Loader*, const char*, LoaderDeferredLaunchErrorReport"
 Function,+,loader_lock,_Bool,Loader*
 Function,+,loader_show_menu,void,Loader*
 Function,+,loader_signal,_Bool,"Loader*, uint32_t, void*"
