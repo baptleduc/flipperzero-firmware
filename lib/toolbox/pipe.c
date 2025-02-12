@@ -74,7 +74,6 @@ PipeRole pipe_role(PipeSide* pipe) {
 PipeState pipe_state(PipeSide* pipe) {
     furi_check(pipe);
     uint32_t count = furi_semaphore_get_count(pipe->shared->instance_count);
-    FURI_LOG_I("pipe", "cnt=%ld", count);
     return (count == 1) ? PipeStateOpen : PipeStateBroken;
 }
 
@@ -86,8 +85,6 @@ void pipe_free(PipeSide* pipe) {
     FuriStatus status = furi_semaphore_acquire(pipe->shared->instance_count, 0);
 
     if(status == FuriStatusOk) {
-        FURI_LOG_I(
-            "pipe", "i am gone, cnt=%ld", furi_semaphore_get_count(pipe->shared->instance_count));
         // the other side is still intact
         furi_mutex_release(pipe->shared->state_transition);
         free(pipe);
