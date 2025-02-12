@@ -474,6 +474,7 @@ static CliShell* cli_shell_alloc(PipeSide* pipe) {
     pipe_set_callback_context(cli_shell->pipe, cli_shell);
     pipe_set_data_arrived_callback(cli_shell->pipe, cli_shell_data_available, 0);
     pipe_set_broken_callback(cli_shell->pipe, cli_shell_pipe_broken, 0);
+    pipe_set_stdout_timeout(cli_shell->pipe, furi_ms_to_ticks(50));
 
     return cli_shell;
 }
@@ -526,13 +527,22 @@ static void cli_shell_motd(void) {
 
 static int32_t cli_shell_thread(void* context) {
     PipeSide* pipe = context;
+
+    // Sometimes, the other side closes the pipe even before our thread is started. Although the
+    // rest of the code will eventually find this out if this check is removed, there's no point in
+    // wasting time.
+    if(pipe_state(pipe) == PipeStateBroken) return 0;
+
     CliShell* cli_shell = cli_shell_alloc(pipe);
 
     FURI_LOG_D(TAG, "Started");
     cli_enumerate_external_commands(cli_shell->cli);
     cli_shell_motd();
     cli_shell_line_prompt(&cli_shell->line);
-    furi_event_loop_run(cli_shell->event_loop);
+
+    // FIXME: we shouldn't have to do this check. Talk with @gsurkov about `Out` event race conditions
+    if(pipe_state(pipe) == PipeStateOpen) furi_event_loop_run(cli_shell->event_loop);
+
     FURI_LOG_D(TAG, "Stopped");
 
     cli_shell_free(cli_shell);
