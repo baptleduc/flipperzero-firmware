@@ -292,24 +292,15 @@ bool loader_get_application_name(Loader* loader, FuriString* name) {
     return result.value;
 }
 
-bool loader_launch_app_after_current(
-    Loader* loader,
-    const char* name,
-    const char* args,
-    LoaderDeferredLaunchErrorReport error_report) {
+bool loader_get_application_launch_path(Loader* loader, FuriString* name) {
     furi_check(loader);
 
     LoaderMessageBoolResult result;
 
     LoaderMessage message = {
-        .type = LoaderMessageTypeRememberNextApp,
+        .type = LoaderMessageTypeGetApplicationLaunchPath,
         .api_lock = api_lock_alloc_locked(),
-        .defer_start =
-            {
-                .name = name,
-                .args = args,
-                .error_report = error_report,
-            },
+        .application_name = name,
         .bool_value = &result,
     };
 
@@ -319,30 +310,38 @@ bool loader_launch_app_after_current(
     return result.value;
 }
 
-bool loader_launch_current_app_after_deferred(
+void loader_enqueue_launch(
     Loader* loader,
+    const char* name,
     const char* args,
-    LoaderDeferredLaunchErrorReport error_report) {
+    LoaderDeferredLaunchFlag flags) {
     furi_check(loader);
 
-    LoaderMessageBoolResult result;
-
     LoaderMessage message = {
-        .type = LoaderMessageTypeStartSelfAfterDeferred,
+        .type = LoaderMessageTypeEnqueueLaunch,
         .api_lock = api_lock_alloc_locked(),
         .defer_start =
             {
-                /* name unset */
+                .name = name,
                 .args = args,
-                .error_report = error_report,
+                .flags = flags,
             },
-        .bool_value = &result,
     };
 
     furi_message_queue_put(loader->queue, &message, FuriWaitForever);
     api_lock_wait_unlock_and_free(message.api_lock);
+}
 
-    return result.value;
+void loader_clear_launch_queue(Loader* loader) {
+    furi_check(loader);
+
+    LoaderMessage message = {
+        .type = LoaderMessageTypeClearLaunchQueue,
+        .api_lock = api_lock_alloc_locked(),
+    };
+
+    furi_message_queue_put(loader->queue, &message, FuriWaitForever);
+    api_lock_wait_unlock_and_free(message.api_lock);
 }
 
 // callbacks
@@ -377,19 +376,6 @@ static void
 
 // implementation
 
-static void loader_deferred_launch_data_init(LoaderDeferredLaunchData* data) {
-    if(!data->name_or_path) data->name_or_path = furi_string_alloc();
-    if(!data->args) data->args = furi_string_alloc();
-}
-
-static void loader_deferred_launch_data_reset(LoaderDeferredLaunchData* data) {
-    furi_string_free(data->name_or_path);
-    furi_string_free(data->args);
-    data->name_or_path = NULL;
-    data->args = NULL;
-    data->do_launch = false;
-}
-
 static Loader* loader_alloc(void) {
     Loader* loader = malloc(sizeof(Loader));
     loader->pubsub = furi_pubsub_alloc();
@@ -397,6 +383,7 @@ static Loader* loader_alloc(void) {
     loader->gui = furi_record_open(RECORD_GUI);
     loader->view_holder = view_holder_alloc();
     loader->loading = loading_alloc();
+    LoaderDeferredLaunchRecordArray_init(loader->launch_queue);
     view_holder_attach_to_gui(loader->view_holder, loader->gui);
     return loader;
 }
@@ -741,11 +728,9 @@ static void loader_do_unlock(Loader* loader) {
     loader->app.thread = NULL;
 }
 
-static bool loader_do_deferred_launch(
-    Loader* loader,
-    LoaderDeferredLaunchData* launch_data,
-    LoaderDeferredLaunchData* error_report_launch_data) {
-    furi_assert(launch_data);
+static bool loader_do_deferred_launch(Loader* loader, LoaderDeferredLaunchRecord* record) {
+    furi_assert(loader);
+    furi_assert(record);
 
     bool is_successful = false;
     FuriString* error_message = furi_string_alloc();
@@ -753,27 +738,19 @@ static bool loader_do_deferred_launch(
     view_holder_send_to_front(loader->view_holder);
 
     do {
-        const char* app_name_str = furi_string_get_cstr(launch_data->name_or_path);
-        const char* app_args = furi_string_get_cstr(launch_data->args);
-        FURI_LOG_I(TAG, "Autonomous launch: %s", app_name_str);
+        const char* app_name_str = furi_string_get_cstr(record->name_or_path);
+        const char* app_args = furi_string_get_cstr(record->args);
+        FURI_LOG_I(TAG, "Deferred launch: %s", app_name_str);
 
         LoaderMessageLoaderStatusResult result =
             loader_do_start_by_name(loader, app_name_str, app_args, error_message);
         if(result.value == LoaderStatusOk) {
             is_successful = true;
+            break;
         }
 
-        if(launch_data->error_report & LoaderDeferredLaunchErrorReportGui)
+        if(record->flags & LoaderDeferredLaunchFlagGui)
             loader_show_gui_error(result, app_name_str, error_message);
-
-        if((launch_data->error_report & LoaderDeferredLaunchErrorReportArgs) &&
-           error_report_launch_data) {
-            furi_string_printf(
-                error_report_launch_data->args,
-                "loader:deferred_launch_err:%s",
-                furi_string_get_cstr(error_message));
-            loader_do_deferred_launch(loader, error_report_launch_data, NULL);
-        }
     } while(false);
 
     view_holder_set_view(loader->view_holder, NULL);
@@ -813,15 +790,10 @@ static void loader_do_app_closed(Loader* loader) {
     event.type = LoaderEventTypeApplicationStopped;
     furi_pubsub_publish(loader->pubsub, &event);
 
-    if(loader->chain.next.do_launch) {
-        loader->chain.next.do_launch = false;
-        if(!loader_do_deferred_launch(loader, &loader->chain.next, &loader->chain.previous))
-            loader_deferred_launch_data_reset(&loader->chain.previous);
-        loader_deferred_launch_data_reset(&loader->chain.next);
-    } else if(loader->chain.previous.do_launch) {
-        loader->chain.previous.do_launch = false;
-        loader_do_deferred_launch(loader, &loader->chain.previous, NULL);
-        loader_deferred_launch_data_reset(&loader->chain.previous);
+    if(LoaderDeferredLaunchRecordArray_size(loader->launch_queue)) {
+        loader_do_deferred_launch(
+            loader, LoaderDeferredLaunchRecordArray_front(loader->launch_queue));
+        LoaderDeferredLaunchRecordArray_pop_at(NULL, loader->launch_queue, 0);
     }
 }
 
@@ -847,48 +819,25 @@ static bool loader_do_get_application_name(Loader* loader, FuriString* name) {
     return false;
 }
 
-static bool loader_do_remember_next_app(Loader* loader, LoaderMessageDeferStart defer_start) {
-    if(!loader_is_application_running(loader)) return false;
-    if(!loader->chain.next.do_launch && loader->chain.previous.do_launch) return false;
-
-    if(defer_start.name) {
-        loader_deferred_launch_data_init(&loader->chain.previous);
-        loader_deferred_launch_data_init(&loader->chain.next);
-        loader->chain.next.do_launch = true;
-
-        furi_string_set(loader->chain.previous.name_or_path, loader->app.launch_path);
-        furi_string_set_str(loader->chain.next.name_or_path, defer_start.name);
-        loader->chain.next.error_report = defer_start.error_report;
-
-        if(defer_start.args)
-            furi_string_set_str(loader->chain.next.args, defer_start.args);
-        else
-            furi_string_reset(loader->chain.next.args);
-    } else {
-        loader_deferred_launch_data_reset(&loader->chain.previous);
-        loader_deferred_launch_data_reset(&loader->chain.next);
+static bool loader_do_get_application_launch_path(Loader* loader, FuriString* path) {
+    if(loader_is_application_running(loader)) {
+        furi_string_set(path, loader->app.launch_path);
+        return true;
     }
 
-    return true;
+    return false;
 }
 
-static bool
-    loader_do_remember_to_launch_current(Loader* loader, LoaderMessageDeferStart defer_start) {
-    if(!loader_is_application_running(loader)) return false;
-    if(!loader->chain.next.do_launch) return false;
-    if(defer_start.error_report & LoaderDeferredLaunchErrorReportArgs) return false;
+static void loader_do_enqueue_launch(Loader* loader, LoaderMessageDeferStart* data) {
+    furi_check(LoaderDeferredLaunchRecordArray_size(loader->launch_queue) < LAUNCH_QUEUE_MAX_SIZE);
 
-    loader_deferred_launch_data_init(&loader->chain.previous);
-    loader->chain.previous.do_launch = true;
-
-    loader->chain.previous.error_report = defer_start.error_report;
-
-    if(defer_start.args)
-        furi_string_set_str(loader->chain.previous.args, defer_start.args);
-    else
-        furi_string_reset(loader->chain.previous.args);
-
-    return true;
+    LoaderDeferredLaunchRecordArray_push_back(
+        loader->launch_queue,
+        (LoaderDeferredLaunchRecord){
+            .name_or_path = furi_string_alloc_set_str(data->name),
+            .args = data->args ? furi_string_alloc_set_str(data->args) : furi_string_alloc(),
+            .flags = data->flags,
+        });
 }
 
 // app
@@ -961,14 +910,17 @@ int32_t loader_srv(void* p) {
                     loader_do_get_application_name(loader, message.application_name);
                 api_lock_unlock(message.api_lock);
                 break;
-            case LoaderMessageTypeRememberNextApp:
+            case LoaderMessageTypeGetApplicationLaunchPath:
                 message.bool_value->value =
-                    loader_do_remember_next_app(loader, message.defer_start);
+                    loader_do_get_application_launch_path(loader, message.application_name);
                 api_lock_unlock(message.api_lock);
                 break;
-            case LoaderMessageTypeStartSelfAfterDeferred:
-                message.bool_value->value =
-                    loader_do_remember_to_launch_current(loader, message.defer_start);
+            case LoaderMessageTypeEnqueueLaunch:
+                loader_do_enqueue_launch(loader, &message.defer_start);
+                api_lock_unlock(message.api_lock);
+                break;
+            case LoaderMessageTypeClearLaunchQueue:
+                LoaderDeferredLaunchRecordArray_reset(loader->launch_queue);
                 api_lock_unlock(message.api_lock);
                 break;
             }

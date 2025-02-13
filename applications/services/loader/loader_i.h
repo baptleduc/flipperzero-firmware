@@ -7,9 +7,13 @@
 #include <gui/view_holder.h>
 #include <gui/modules/loading.h>
 
+#include <m-array.h>
+
 #include "loader.h"
 #include "loader_menu.h"
 #include "loader_applications.h"
+
+#define LAUNCH_QUEUE_MAX_SIZE 5
 
 typedef struct {
     FuriString* launch_path;
@@ -20,16 +24,48 @@ typedef struct {
 } LoaderAppData;
 
 typedef struct {
-    bool do_launch;
     FuriString* name_or_path;
     FuriString* args;
-    LoaderDeferredLaunchErrorReport error_report;
-} LoaderDeferredLaunchData;
+    LoaderDeferredLaunchFlag flags;
+} LoaderDeferredLaunchRecord;
 
-typedef struct {
-    LoaderDeferredLaunchData previous;
-    LoaderDeferredLaunchData next;
-} LoaderAppChainData;
+static inline void loader_dl_record_init(LoaderDeferredLaunchRecord* record) {
+    record->name_or_path = furi_string_alloc();
+    record->args = furi_string_alloc();
+    record->flags = LoaderDeferredLaunchFlagNone;
+}
+#define LOADER_DL_RECORD_INIT(r) (loader_dl_record_init(&(r)))
+
+static inline void loader_dl_record_init_set(
+    LoaderDeferredLaunchRecord* dest,
+    const LoaderDeferredLaunchRecord* src) {
+    dest->name_or_path = furi_string_alloc_set(src->name_or_path);
+    dest->args = furi_string_alloc_set(src->args);
+    dest->flags = src->flags;
+}
+#define LOADER_DL_RECORD_INIT_SET(d, s) (loader_dl_record_init_set(&(d), &(s)))
+
+static inline void
+    loader_dl_record_set(LoaderDeferredLaunchRecord* dest, const LoaderDeferredLaunchRecord* src) {
+    furi_string_set(dest->name_or_path, src->name_or_path);
+    furi_string_set(dest->args, src->args);
+    dest->flags = src->flags;
+}
+#define LOADER_DL_RECORD_SET(d, s) (loader_dl_record_set(&(d), &(s)))
+
+static inline void loader_dl_record_clear(LoaderDeferredLaunchRecord* record) {
+    furi_string_free(record->name_or_path);
+    furi_string_free(record->args);
+}
+#define LOADER_DL_RECORD_CLEAR(r) (loader_dl_record_clear(&(r)))
+
+#define LOADER_DL_RECORD_OPLIST           \
+    (INIT(LOADER_DL_RECORD_INIT),         \
+     INIT_SET(LOADER_DL_RECORD_INIT_SET), \
+     SET(LOADER_DL_RECORD_SET),           \
+     CLEAR(LOADER_DL_RECORD_CLEAR))
+
+ARRAY_DEF(LoaderDeferredLaunchRecordArray, LoaderDeferredLaunchRecord, LOADER_DL_RECORD_OPLIST);
 
 struct Loader {
     FuriPubSub* pubsub;
@@ -37,7 +73,7 @@ struct Loader {
     LoaderMenu* loader_menu;
     LoaderApplications* loader_applications;
     LoaderAppData app;
-    LoaderAppChainData chain;
+    LoaderDeferredLaunchRecordArray_t launch_queue;
 
     Gui* gui;
     ViewHolder* view_holder;
@@ -56,8 +92,9 @@ typedef enum {
     LoaderMessageTypeStartByNameDetachedWithGuiError,
     LoaderMessageTypeSignal,
     LoaderMessageTypeGetApplicationName,
-    LoaderMessageTypeRememberNextApp,
-    LoaderMessageTypeStartSelfAfterDeferred,
+    LoaderMessageTypeGetApplicationLaunchPath,
+    LoaderMessageTypeEnqueueLaunch,
+    LoaderMessageTypeClearLaunchQueue,
 } LoaderMessageType;
 
 typedef struct {
@@ -69,7 +106,7 @@ typedef struct {
 typedef struct {
     const char* name;
     const char* args;
-    LoaderDeferredLaunchErrorReport error_report;
+    LoaderDeferredLaunchFlag flags;
 } LoaderMessageDeferStart;
 
 typedef struct {

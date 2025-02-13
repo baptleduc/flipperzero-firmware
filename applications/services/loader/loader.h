@@ -27,20 +27,10 @@ typedef struct {
     LoaderEventType type;
 } LoaderEvent;
 
-/**
- * Error reporting mechanism selector for `loader_launch_app_after_current`:
- *   - `Gui`: Report errors to the user via a dialog
- *   - `Args`: Report errors to the referring app via args
- * 
- * The argument used to report an error takes the form of
- * `loader:deferred_launch_err:Message goes here`
- */
 typedef enum {
-    LoaderDeferredLaunchErrorReportDiscard = 0, //<! Silently ignore any errors
-    LoaderDeferredLaunchErrorReportGui = (1 << 1), //<! Report errors to the user via a dialog
-    LoaderDeferredLaunchErrorReportArgs =
-        (1 << 2), //<! Report errors to the referring app via args
-} LoaderDeferredLaunchErrorReport;
+    LoaderDeferredLaunchFlagNone = 0,
+    LoaderDeferredLaunchFlagGui = (1 << 1), //<! Report launch to the user via a dialog
+} LoaderDeferredLaunchFlag;
 
 /**
  * @brief Start application
@@ -124,36 +114,37 @@ bool loader_signal(Loader* instance, uint32_t signal, void* arg);
 bool loader_get_application_name(Loader* instance, FuriString* name);
 
 /**
- * @brief Sets the application to launch after the calling application exits
+ * @brief Get the launch path or name of the currently running application
+ *
+ * @param[in] instance pointer to the loader instance
+ * @param[inout] name pointer to the string to contain the path or name
+ *                    (must be allocated)
+ * @return true if it was possible to get an application path, false otherwise
+ */
+bool loader_get_application_launch_path(Loader* instance, FuriString* name);
+
+/**
+ * @brief Enqueues a request to launch an application after the current one
  * 
  * @param[in] instance pointer to the loader instance
  * @param[in] name pointer to the name or path of the application, or NULL to
  *                 cancel a previous request
  * @param[in] args pointer to argument to provide to the next app
- * @param[in] error_report which way(s) to report launch errors in. see enum
- *                         documentation for more info
- * @return true if the operation succeeded, false otherwise
+ * @param[in] flags additional flags. see enum documentation for more info
  */
-bool loader_launch_app_after_current(
+void loader_enqueue_launch(
     Loader* instance,
     const char* name,
     const char* args,
-    LoaderDeferredLaunchErrorReport error_report);
+    LoaderDeferredLaunchFlag flags);
 
 /**
- * @brief Enqueues a request to launch the current application after the
- * deferred one (as set via `loader_launch_app_after_current`) exits
+ * @brief Removes all requests to launch applications after the current one
+ * exits
  * 
  * @param[in] instance pointer to the loader instance
- * @param[in] args args to provide to the current application when it is
- *                 next launched via this mechanism
- * @param[in] error_report see enum documentation. only the `Gui` flag is valid.
- * @return true if the operation succeeded, false otherwise
  */
-bool loader_launch_current_app_after_deferred(
-    Loader* instance,
-    const char* args,
-    LoaderDeferredLaunchErrorReport error_report);
+void loader_clear_launch_queue(Loader* instance);
 
 #ifdef __cplusplus
 }

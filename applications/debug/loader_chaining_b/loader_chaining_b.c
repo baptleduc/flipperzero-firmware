@@ -18,11 +18,8 @@ int32_t chaining_test_app_b(const char* arg) {
     furi_string_free(text);
 
     if(result == DialogMessageButtonRight)
-        furi_check(loader_launch_app_after_current(
-            loader,
-            "/ext/apps/Debug/loader_chaining_a.fap",
-            NULL,
-            LoaderDeferredLaunchErrorReportDiscard));
+        loader_enqueue_launch(
+            loader, "/ext/apps/Debug/loader_chaining_a.fap", NULL, LoaderDeferredLaunchFlagGui);
 
     furi_record_close(RECORD_LOADER);
     furi_record_close(RECORD_DIALOGS);

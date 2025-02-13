@@ -7,7 +7,7 @@
 
 #define TAG             "LoaderChainingA"
 #define CHAINING_TEST_B "/ext/apps/Debug/loader_chaining_b.fap"
-#define NONEXISTENT_APP "Some nonexistent app that will definitely trigger an error"
+#define NONEXISTENT_APP "Some nonexistent app"
 
 typedef struct {
     Gui* gui;
@@ -24,8 +24,6 @@ typedef enum {
     LoaderChainingASubmenuLaunchBThenA,
     LoaderChainingASubmenuLaunchNonexistentSilent,
     LoaderChainingASubmenuLaunchNonexistentGui,
-    LoaderChainingASubmenuLaunchNonexistentArgs,
-    LoaderChainingASubmenuLaunchNonexistentGuiArgs,
 } LoaderChainingASubmenu;
 
 static void loader_chaining_a_submenu_callback(void* context, uint32_t index) {
@@ -33,43 +31,32 @@ static void loader_chaining_a_submenu_callback(void* context, uint32_t index) {
 
     switch(index) {
     case LoaderChainingASubmenuLaunchB:
-        loader_launch_app_after_current(
-            app->loader, CHAINING_TEST_B, "Hello", LoaderDeferredLaunchErrorReportGui);
+        loader_enqueue_launch(app->loader, CHAINING_TEST_B, "Hello", LoaderDeferredLaunchFlagGui);
         view_dispatcher_stop(app->view_dispatcher);
         break;
 
     case LoaderChainingASubmenuLaunchBThenA:
-        loader_launch_app_after_current(
-            app->loader, CHAINING_TEST_B, "Hello", LoaderDeferredLaunchErrorReportGui);
-        loader_launch_current_app_after_deferred(
-            app->loader, "Hello to you from the future", LoaderDeferredLaunchErrorReportGui);
+        loader_enqueue_launch(app->loader, CHAINING_TEST_B, "Hello", LoaderDeferredLaunchFlagGui);
+
+        FuriString* self_path = furi_string_alloc();
+        furi_check(loader_get_application_launch_path(app->loader, self_path));
+        loader_enqueue_launch(
+            app->loader,
+            furi_string_get_cstr(self_path),
+            "Hello to you from the future",
+            LoaderDeferredLaunchFlagGui);
+        furi_string_free(self_path);
+
         view_dispatcher_stop(app->view_dispatcher);
         break;
 
     case LoaderChainingASubmenuLaunchNonexistentSilent:
-        loader_launch_app_after_current(
-            app->loader, NONEXISTENT_APP, NULL, LoaderDeferredLaunchErrorReportDiscard);
+        loader_enqueue_launch(app->loader, NONEXISTENT_APP, NULL, LoaderDeferredLaunchFlagNone);
         view_dispatcher_stop(app->view_dispatcher);
         break;
 
     case LoaderChainingASubmenuLaunchNonexistentGui:
-        loader_launch_app_after_current(
-            app->loader, NONEXISTENT_APP, NULL, LoaderDeferredLaunchErrorReportGui);
-        view_dispatcher_stop(app->view_dispatcher);
-        break;
-
-    case LoaderChainingASubmenuLaunchNonexistentArgs:
-        loader_launch_app_after_current(
-            app->loader, NONEXISTENT_APP, NULL, LoaderDeferredLaunchErrorReportArgs);
-        view_dispatcher_stop(app->view_dispatcher);
-        break;
-
-    case LoaderChainingASubmenuLaunchNonexistentGuiArgs:
-        loader_launch_app_after_current(
-            app->loader,
-            NONEXISTENT_APP,
-            NULL,
-            LoaderDeferredLaunchErrorReportGui | LoaderDeferredLaunchErrorReportArgs);
+        loader_enqueue_launch(app->loader, NONEXISTENT_APP, NULL, LoaderDeferredLaunchFlagGui);
         view_dispatcher_stop(app->view_dispatcher);
         break;
     }
@@ -113,18 +100,6 @@ LoaderChainingA* loader_chaining_a_alloc(void) {
         LoaderChainingASubmenuLaunchNonexistentGui,
         loader_chaining_a_submenu_callback,
         app);
-    submenu_add_item(
-        app->submenu,
-        "Trigger error: Args",
-        LoaderChainingASubmenuLaunchNonexistentArgs,
-        loader_chaining_a_submenu_callback,
-        app);
-    submenu_add_item(
-        app->submenu,
-        "Trigger error: GUI+Args",
-        LoaderChainingASubmenuLaunchNonexistentGuiArgs,
-        loader_chaining_a_submenu_callback,
-        app);
 
     view_dispatcher_add_view(app->view_dispatcher, 0, submenu_get_view(app->submenu));
     view_dispatcher_set_navigation_event_callback(
@@ -152,20 +127,12 @@ int32_t chaining_test_app_a(const char* arg) {
 
     if(arg) {
         if(strlen(arg)) {
-            const char* loader_error_beginning = "loader:deferred_launch_err:";
-            size_t beginning_len = strlen(loader_error_beginning);
             DialogMessage* message = dialog_message_alloc();
             FuriString* text;
 
-            if(strncmp(arg, loader_error_beginning, beginning_len) == 0) {
-                dialog_message_set_header(message, "Hi, I am A", 64, 0, AlignCenter, AlignTop);
-                text = furi_string_alloc_printf("Couldn't launch app:\n%s", arg + beginning_len);
-                dialog_message_set_buttons(message, NULL, "ok :(", NULL);
-            } else {
-                dialog_message_set_header(message, "Hi, I am A", 64, 0, AlignCenter, AlignTop);
-                text = furi_string_alloc_printf("Me from the past says:\n%s", arg);
-                dialog_message_set_buttons(message, NULL, "ok!", NULL);
-            }
+            dialog_message_set_header(message, "Hi, I am A", 64, 0, AlignCenter, AlignTop);
+            text = furi_string_alloc_printf("Me from the past says:\n%s", arg);
+            dialog_message_set_buttons(message, NULL, "ok!", NULL);
 
             dialog_message_set_text(
                 message, furi_string_get_cstr(text), 64, 32, AlignCenter, AlignCenter);
