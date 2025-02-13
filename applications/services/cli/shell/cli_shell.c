@@ -540,8 +540,7 @@ static int32_t cli_shell_thread(void* context) {
     cli_shell_motd();
     cli_shell_line_prompt(&cli_shell->line);
 
-    // FIXME: we shouldn't have to do this check. Talk with @gsurkov about `Out` event race conditions
-    if(pipe_state(pipe) == PipeStateOpen) furi_event_loop_run(cli_shell->event_loop);
+    furi_event_loop_run(cli_shell->event_loop);
 
     FURI_LOG_D(TAG, "Stopped");
 
