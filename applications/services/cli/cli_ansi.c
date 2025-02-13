@@ -61,7 +61,7 @@ CliAnsiParserResult cli_ansi_parser_feed(CliAnsiParser* parser, char c) {
     switch(parser->state) {
     case CliAnsiParserStateInitial:
         // <key> -> <key>
-        if(c != CliKeyEsc) PARSER_RESET_AND_RETURN(parser, CliModKeyNo, c);
+        if(c != CliKeyEsc) PARSER_RESET_AND_RETURN(parser, CliModKeyNo, c); // -V1048
 
         // <ESC> ...
         parser->state = CliAnsiParserStateEscape;

@@ -56,7 +56,6 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
     FuriString* args = furi_string_alloc_set(command);
     furi_string_right(args, space + 1);
 
-    PluginManager* plugin_manager = NULL;
     Loader* loader = NULL;
     CliCommand command_data;
 
@@ -89,9 +88,6 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
     // unlock loader
     if(loader) loader_unlock(loader);
     furi_record_close(RECORD_LOADER);
-
-    // unload external command
-    if(plugin_manager) plugin_manager_free(plugin_manager);
 }
 
 // ==============
@@ -99,7 +95,7 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
 // ==============
 
 static void cli_shell_process_key(CliShell* cli_shell, CliKeyCombo key_combo) {
-    for(size_t i = 0; i < CliShellComponentMAX; i++) {
+    for(size_t i = 0; i < CliShellComponentMAX; i++) { // -V1008
         CliShellKeyComboSet* set = component_key_combo_sets[i];
         void* component_context = cli_shell->components[i];
 
