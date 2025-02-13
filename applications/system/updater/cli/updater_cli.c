@@ -7,6 +7,7 @@
 #include <toolbox/path.h>
 #include <toolbox/tar/tar_archive.h>
 #include <toolbox/args.h>
+#include <toolbox/pipe.h>
 #include <update_util/update_manifest.h>
 #include <update_util/int_backup.h>
 #include <update_util/update_operation.h>
@@ -63,8 +64,8 @@ static const CliSubcommand update_cli_subcommands[] = {
     {.command = "help", .handler = updater_cli_help},
 };
 
-static void updater_cli_ep(Cli* cli, FuriString* args, void* context) {
-    UNUSED(cli);
+static void updater_cli_ep(PipeSide* pipe, FuriString* args, void* context) {
+    UNUSED(pipe);
     UNUSED(context);
     FuriString* subcommand;
     subcommand = furi_string_alloc();
@@ -106,7 +107,7 @@ static void updater_start_app(void* context, uint32_t arg) {
 void updater_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = (Cli*)furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "update", CliCommandFlagDefault, updater_cli_ep, NULL);
+    cli_add_command(cli, "update", CliCommandFlagParallelUnsafe, updater_cli_ep, NULL);
     furi_record_close(RECORD_CLI);
 #else
     UNUSED(updater_cli_ep);

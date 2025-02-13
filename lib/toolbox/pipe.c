@@ -151,14 +151,14 @@ static void pipe_receiving_buffer_callback(FuriEventLoopObject* buffer, void* co
     UNUSED(buffer);
     PipeSide* pipe = context;
     furi_assert(pipe);
-    if(pipe->on_space_freed) pipe->on_data_arrived(pipe, pipe->callback_context);
+    if(pipe->on_data_arrived) pipe->on_data_arrived(pipe, pipe->callback_context);
 }
 
 static void pipe_sending_buffer_callback(FuriEventLoopObject* buffer, void* context) {
     UNUSED(buffer);
     PipeSide* pipe = context;
     furi_assert(pipe);
-    if(pipe->on_data_arrived) pipe->on_space_freed(pipe, pipe->callback_context);
+    if(pipe->on_space_freed) pipe->on_space_freed(pipe, pipe->callback_context);
 }
 
 static void pipe_semaphore_callback(FuriEventLoopObject* semaphore, void* context) {

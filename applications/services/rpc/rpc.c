@@ -437,7 +437,7 @@ void rpc_on_system_start(void* p) {
 
     Cli* cli = furi_record_open(RECORD_CLI);
     cli_add_command(
-        cli, "start_rpc_session", CliCommandFlagParallelSafe, rpc_cli_command_start_session, rpc);
+        cli, "start_rpc_session", CliCommandFlagDefault, rpc_cli_command_start_session, rpc);
 
     furi_record_create(RECORD_RPC, rpc);
 }

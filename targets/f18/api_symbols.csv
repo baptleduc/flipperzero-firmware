@@ -1,8 +1,9 @@
 entry,status,name,type,params
-Version,+,81.0,,
+Version,v,82.0,,
 Header,+,applications/services/bt/bt_service/bt.h,,
 Header,+,applications/services/bt/bt_service/bt_keys_storage.h,,
 Header,+,applications/services/cli/cli.h,,
+Header,?,applications/services/cli/cli_ansi.h,,
 Header,+,applications/services/cli/cli_vcp.h,,
 Header,+,applications/services/dialogs/dialogs.h,,
 Header,+,applications/services/dolphin/dolphin.h,,
@@ -775,18 +776,17 @@ Function,-,ceill,long double,long double
 Function,-,cfree,void,void*
 Function,-,clearerr,void,FILE*
 Function,-,clearerr_unlocked,void,FILE*
-Function,+,cli_add_command,void,"Cli*, const char*, CliCommandFlag, CliCallback, void*"
-Function,+,cli_cmd_interrupt_received,_Bool,Cli*
+Function,?,cli_add_command,void,"Cli*, const char*, CliCommandFlag, CliExecuteCallback, void*"
+Function,?,cli_add_command_ex,void,"Cli*, const char*, CliCommandFlag, CliExecuteCallback, void*, size_t"
+Function,?,cli_ansi_parser_alloc,CliAnsiParser*,
+Function,?,cli_ansi_parser_feed,CliAnsiParserResult,"CliAnsiParser*, char"
+Function,?,cli_ansi_parser_feed_timeout,CliAnsiParserResult,CliAnsiParser*
+Function,?,cli_ansi_parser_free,void,CliAnsiParser*
+Function,?,cli_app_should_stop,_Bool,PipeSide*
 Function,+,cli_delete_command,void,"Cli*, const char*"
-Function,+,cli_getc,char,Cli*
-Function,+,cli_is_connected,_Bool,Cli*
-Function,+,cli_nl,void,Cli*
 Function,+,cli_print_usage,void,"const char*, const char*, const char*"
-Function,+,cli_read,size_t,"Cli*, uint8_t*, size_t"
-Function,+,cli_read_timeout,size_t,"Cli*, uint8_t*, size_t, uint32_t"
-Function,+,cli_session_close,void,Cli*
-Function,+,cli_session_open,void,"Cli*, void*"
-Function,+,cli_write,void,"Cli*, const uint8_t*, size_t"
+Function,?,cli_vcp_disable,void,CliVcp*
+Function,?,cli_vcp_enable,void,CliVcp*
 Function,+,composite_api_resolver_add,void,"CompositeApiResolver*, const ElfApiInterface*"
 Function,+,composite_api_resolver_alloc,CompositeApiResolver*,
 Function,+,composite_api_resolver_free,void,CompositeApiResolver*
@@ -2928,7 +2928,6 @@ Variable,-,_sys_errlist,const char*[],
 Variable,-,_sys_nerr,int,
 Variable,-,ble_profile_hid,const FuriHalBleProfileTemplate*,
 Variable,-,ble_profile_serial,const FuriHalBleProfileTemplate*,
-Variable,+,cli_vcp,CliSession,
 Variable,+,compress_config_heatshrink_default,const CompressConfigHeatshrink,
 Variable,+,firmware_api_interface,const ElfApiInterface*,
 Variable,+,furi_hal_i2c_bus_external,FuriHalI2cBus,
