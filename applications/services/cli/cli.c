@@ -169,5 +169,6 @@ void cli_print_usage(const char* cmd, const char* usage, const char* arg) {
 void cli_on_system_start(void) {
     Cli* cli = cli_alloc();
     cli_commands_init(cli);
+    cli_enumerate_external_commands(cli);
     furi_record_create(RECORD_CLI, cli);
 }

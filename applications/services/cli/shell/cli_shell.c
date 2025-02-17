@@ -50,7 +50,19 @@ typedef struct {
 // Execution
 // =========
 
-static void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
+static int32_t cli_command_thread(void* context) {
+    CliCommandThreadData* thread_data = context;
+    if(!(thread_data->command->flags & CliCommandFlagDontAttachStdio))
+        pipe_install_as_stdio(thread_data->pipe);
+
+    thread_data->command->execute_callback(
+        thread_data->pipe, thread_data->args, thread_data->command->context);
+
+    fflush(stdout);
+    return 0;
+}
+
+void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
     // split command into command and args
     size_t space = furi_string_search_char(command, ' ');
     if(space == FURI_STRING_FAILURE) space = furi_string_size(command);
