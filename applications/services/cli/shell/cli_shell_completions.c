@@ -26,7 +26,6 @@ typedef enum {
     CliShellCompletionsActionDown,
     CliShellCompletionsActionLeft,
     CliShellCompletionsActionRight,
-    CliShellCompletionsActionInput,
     CliShellCompletionsActionSelect,
 } CliShellCompletionsAction;
 
@@ -129,14 +128,13 @@ void cli_shell_completions_render(
     CliShellCompletionsAction action) {
     furi_assert(completions);
     if(action == CliShellCompletionsActionOpen) furi_check(!completions->is_displaying);
-    if(action == CliShellCompletionsActionInput) furi_check(completions->is_displaying);
     if(action == CliShellCompletionsActionClose) furi_check(completions->is_displaying);
 
     char prompt[64];
     cli_shell_line_format_prompt(completions->line, prompt, sizeof(prompt));
 
-    if(action == CliShellCompletionsActionOpen || action == CliShellCompletionsActionInput) {
-        // show or update completions menu (full re-render)
+    if(action == CliShellCompletionsActionOpen) {
+        // show completions menu (full re-render)
         cli_shell_completions_fill_variants(completions);
         completions->selected = 0;
 
@@ -260,12 +258,12 @@ void cli_shell_completions_render(
 // Input handlers
 // ==============
 
-static bool key_combo_ctrl_c(CliKeyCombo combo, void* context) {
+static bool hide_if_open_and_continue_handling(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellCompletions* completions = context;
     if(completions->is_displaying)
         cli_shell_completions_render(completions, CliShellCompletionsActionClose);
-    return false; // process other ctrl+c events
+    return false; // process other home events
 }
 
 static bool key_combo_cr(CliKeyCombo combo, void* context) {
@@ -290,32 +288,9 @@ static bool key_combo_left_right(CliKeyCombo combo, void* context) {
     if(!completions->is_displaying) return false;
     cli_shell_completions_render(
         completions,
-        (combo.key == CliKeyUp) ? CliShellCompletionsActionLeft : CliShellCompletionsActionRight);
+        (combo.key == CliKeyLeft) ? CliShellCompletionsActionLeft :
+                                    CliShellCompletionsActionRight);
     return true;
-}
-
-static bool key_combo_home(CliKeyCombo combo, void* context) {
-    UNUSED(combo);
-    CliShellCompletions* completions = context;
-    if(completions->is_displaying)
-        cli_shell_completions_render(completions, CliShellCompletionsActionClose);
-    return false; // process other home events
-}
-
-static bool key_combo_end(CliKeyCombo combo, void* context) {
-    UNUSED(combo);
-    CliShellCompletions* completions = context;
-    if(completions->is_displaying)
-        cli_shell_completions_render(completions, CliShellCompletionsActionClose);
-    return false; // process other end events
-}
-
-static bool key_combo_bksp(CliKeyCombo combo, void* context) {
-    UNUSED(combo);
-    CliShellCompletions* completions = context;
-    if(completions->is_displaying)
-        cli_shell_completions_render(completions, CliShellCompletionsActionClose);
-    return false; // process other bksp events
 }
 
 static bool key_combo_tab(CliKeyCombo combo, void* context) {
@@ -336,30 +311,16 @@ static bool key_combo_esc(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool normal_input(CliKeyCombo combo, void* context) {
-    CliShellCompletions* completions = context;
-    if(combo.modifiers != CliModKeyNo) return false;
-    if(combo.key < CliKeySpace || combo.key >= CliKeyDEL) return false;
-    if(completions->is_displaying)
-        cli_shell_completions_render(completions, CliShellCompletionsActionClose);
-    return false; // process other input events
-}
-
 CliShellKeyComboSet cli_shell_completions_key_combo_set = {
-    .fallback = normal_input,
-    .count = 12,
+    .fallback = hide_if_open_and_continue_handling,
+    .count = 7,
     .records =
         {
-            {{CliModKeyNo, CliKeyETX}, key_combo_ctrl_c},
             {{CliModKeyNo, CliKeyCR}, key_combo_cr},
             {{CliModKeyNo, CliKeyUp}, key_combo_up_down},
             {{CliModKeyNo, CliKeyDown}, key_combo_up_down},
             {{CliModKeyNo, CliKeyLeft}, key_combo_left_right},
             {{CliModKeyNo, CliKeyRight}, key_combo_left_right},
-            {{CliModKeyNo, CliKeyHome}, key_combo_home},
-            {{CliModKeyNo, CliKeyEnd}, key_combo_end},
-            {{CliModKeyNo, CliKeyBackspace}, key_combo_bksp},
-            {{CliModKeyNo, CliKeyDEL}, key_combo_bksp},
             {{CliModKeyNo, CliKeyTab}, key_combo_tab},
             {{CliModKeyNo, CliKeyEsc}, key_combo_esc},
         },
