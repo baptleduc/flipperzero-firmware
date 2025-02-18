@@ -841,13 +841,16 @@ static bool loader_do_get_application_launch_path(Loader* loader, FuriString* pa
 static void loader_do_enqueue_launch(Loader* loader, LoaderMessageDeferStart* data) {
     furi_check(LoaderDeferredLaunchRecordArray_size(loader->launch_queue) < LAUNCH_QUEUE_MAX_SIZE);
 
-    LoaderDeferredLaunchRecordArray_push_back(
-        loader->launch_queue,
-        (LoaderDeferredLaunchRecord){
-            .name_or_path = furi_string_alloc_set_str(data->name),
-            .args = data->args ? furi_string_alloc_set_str(data->args) : furi_string_alloc(),
-            .flags = data->flags,
-        });
+    LoaderDeferredLaunchRecord record;
+    LOADER_DL_RECORD_INIT(record);
+
+    furi_string_set(record.name_or_path, data->name);
+    if(data->args) furi_string_set(record.args, data->args);
+    record.flags = data->flags;
+
+    LoaderDeferredLaunchRecordArray_push_back(loader->launch_queue, record);
+
+    LOADER_DL_RECORD_CLEAR(record);
 }
 
 // app
