@@ -21,6 +21,7 @@
 #include <gui/modules/byte_input.h>
 #include <gui/modules/text_box.h>
 #include <gui/modules/widget.h>
+#include <gui/modules/variable_item_list.h>
 #include "views/dict_attack.h"
 #include "views/detect_reader.h"
 #include "views/dict_attack.h"
@@ -35,6 +36,7 @@
 #include "helpers/nfc_supported_cards.h"
 #include "helpers/felica_auth.h"
 #include "helpers/slix_unlock.h"
+#include "helpers/nfc_settings.h"
 
 #include <dialogs/dialogs.h>
 #include <storage/storage.h>
@@ -119,6 +121,8 @@ struct NfcApp {
 
     NfcDetectedProtocols* detected_protocols;
 
+    NfcSettings* debug_settings;
+
     RpcAppSystem* rpc_ctx;
     NfcRpcState rpc_state;
 
@@ -131,6 +135,7 @@ struct NfcApp {
     ByteInput* byte_input;
     TextBox* text_box;
     Widget* widget;
+    VariableItemList* var_item_list;
     DetectReader* detect_reader;
     DictAttack* dict_attack;
 
@@ -164,6 +169,7 @@ typedef enum {
     NfcViewByteInput,
     NfcViewTextBox,
     NfcViewWidget,
+    NfcViewVariableItemList,
     NfcViewDictAttack,
     NfcViewDetectReader,
 } NfcView;

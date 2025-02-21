@@ -60,6 +60,10 @@ NfcApp* nfc_app_alloc(void) {
     instance->nfc_device = nfc_device_alloc();
     nfc_device_set_loading_callback(instance->nfc_device, nfc_show_loading_popup, instance);
 
+    // Debug settings
+    instance->debug_settings = malloc(sizeof(NfcSettings));
+    nfc_settings_load(instance->debug_settings);
+
     // Open GUI record
     instance->gui = furi_record_open(RECORD_GUI);
 
@@ -113,6 +117,13 @@ NfcApp* nfc_app_alloc(void) {
     view_dispatcher_add_view(
         instance->view_dispatcher, NfcViewWidget, widget_get_view(instance->widget));
 
+    // Variable Item List
+    instance->var_item_list = variable_item_list_alloc();
+    view_dispatcher_add_view(
+        instance->view_dispatcher,
+        NfcViewVariableItemList,
+        variable_item_list_get_view(instance->var_item_list));
+
     // Dict attack
     instance->dict_attack = dict_attack_alloc();
     view_dispatcher_add_view(
@@ -152,6 +163,10 @@ void nfc_app_free(NfcApp* instance) {
     // Nfc device
     nfc_device_free(instance->nfc_device);
 
+    // Debug settings
+    nfc_settings_save(instance->debug_settings);
+    free(instance->debug_settings);
+
     // Submenu
     view_dispatcher_remove_view(instance->view_dispatcher, NfcViewMenu);
     submenu_free(instance->submenu);
@@ -184,6 +199,10 @@ void nfc_app_free(NfcApp* instance) {
     // Custom Widget
     view_dispatcher_remove_view(instance->view_dispatcher, NfcViewWidget);
     widget_free(instance->widget);
+
+    // Variable Item List
+    view_dispatcher_remove_view(instance->view_dispatcher, NfcViewVariableItemList);
+    variable_item_list_free(instance->var_item_list);
 
     // Dict attack
     view_dispatcher_remove_view(instance->view_dispatcher, NfcViewDictAttack);

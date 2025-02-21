@@ -479,9 +479,12 @@ bool mosgortrans_parse_transport_block(const MfClassicBlock* block, FuriString* 
     BlockData data_block = {};
     const uint16_t valid_departments[] = {0x106, 0x108, 0x10A, 0x10E, 0x110, 0x117};
     uint16_t transport_department = bit_lib_get_bits_16(block->data, 0, 10);
-    if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug)) {
+    NfcSettings* settings = malloc(sizeof(NfcSettings));
+    nfc_settings_load(settings);
+    if(settings->parser_debug) {
         furi_string_cat_printf(result, "Transport department: %x\n", transport_department);
     }
+    free(settings);
     bool department_valid = false;
     for(uint8_t i = 0; i < 6; i++) {
         if(transport_department == valid_departments[i]) {
@@ -499,9 +502,12 @@ bool mosgortrans_parse_transport_block(const MfClassicBlock* block, FuriString* 
     } else if(layout_type == 0xF) {
         layout_type = bit_lib_get_bits_16(block->data, 52, 14);
     }
-    if(furi_hal_rtc_is_flag_set(FuriHalRtcFlagDebug)) {
+    settings = malloc(sizeof(NfcSettings));
+    nfc_settings_load(settings);
+    if(settings->parser_debug) {
         furi_string_cat_printf(result, "Layout: %x\n", layout_type);
     }
+    free(settings);
     FURI_LOG_D(TAG, "Layout type %x", layout_type);
     switch(layout_type) {
     case 0x02: {
