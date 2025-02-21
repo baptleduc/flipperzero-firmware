@@ -31,13 +31,16 @@ void power_cli_reboot2dfu(PipeSide* pipe, FuriString* args) {
 
 void power_cli_5v(PipeSide* pipe, FuriString* args) {
     UNUSED(pipe);
+    Power* power = furi_record_open(RECORD_POWER);
     if(!furi_string_cmp(args, "0")) {
-        furi_hal_power_disable_otg();
+        power_enable_otg(power, false);
     } else if(!furi_string_cmp(args, "1")) {
-        furi_hal_power_enable_otg();
+        power_enable_otg(power, true);
     } else {
         cli_print_usage("power_otg", "<1|0>", furi_string_get_cstr(args));
     }
+
+    furi_record_close(RECORD_POWER);
 }
 
 void power_cli_3v3(PipeSide* pipe, FuriString* args) {
