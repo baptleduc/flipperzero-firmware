@@ -107,7 +107,7 @@ static void updater_start_app(void* context, uint32_t arg) {
 void updater_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = (Cli*)furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "update", CliCommandFlagParallelUnsafe, updater_cli_ep, NULL);
+    cli_add_command(cli, "update", CliCommandFlagDefault, updater_cli_ep, NULL);
     furi_record_close(RECORD_CLI);
 #else
     UNUSED(updater_cli_ep);

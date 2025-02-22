@@ -1185,7 +1185,7 @@ void subghz_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
 
-    cli_add_command(cli, "subghz", CliCommandFlagParallelUnsafe, subghz_cli_command, NULL);
+    cli_add_command(cli, "subghz", CliCommandFlagDefault, subghz_cli_command, NULL);
 
     furi_record_close(RECORD_CLI);
 #else

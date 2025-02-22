@@ -513,23 +513,23 @@ void cli_command_i2c(PipeSide* pipe, FuriString* args, void* context) {
 }
 
 void cli_commands_init(Cli* cli) {
-    cli_add_command(cli, "!", CliCommandFlagDefault, cli_command_info, (void*)true);
-    cli_add_command(cli, "info", CliCommandFlagDefault, cli_command_info, NULL);
-    cli_add_command(cli, "device_info", CliCommandFlagDefault, cli_command_info, (void*)true);
+    cli_add_command(cli, "!", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
+    cli_add_command(cli, "info", CliCommandFlagParallelSafe, cli_command_info, NULL);
+    cli_add_command(cli, "device_info", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
 
-    cli_add_command(cli, "?", CliCommandFlagDefault, cli_command_help, NULL);
-    cli_add_command(cli, "help", CliCommandFlagDefault, cli_command_help, NULL);
+    cli_add_command(cli, "?", CliCommandFlagParallelSafe, cli_command_help, NULL);
+    cli_add_command(cli, "help", CliCommandFlagParallelSafe, cli_command_help, NULL);
 
-    cli_add_command(cli, "uptime", CliCommandFlagParallelUnsafe, cli_command_uptime, NULL);
-    cli_add_command(cli, "date", CliCommandFlagDefault, cli_command_date, NULL);
-    cli_add_command(cli, "log", CliCommandFlagDefault, cli_command_log, NULL);
-    cli_add_command(cli, "sysctl", CliCommandFlagParallelUnsafe, cli_command_sysctl, NULL);
-    cli_add_command(cli, "top", CliCommandFlagDefault, cli_command_top, NULL);
-    cli_add_command(cli, "free", CliCommandFlagDefault, cli_command_free, NULL);
-    cli_add_command(cli, "free_blocks", CliCommandFlagDefault, cli_command_free_blocks, NULL);
+    cli_add_command(cli, "uptime", CliCommandFlagDefault, cli_command_uptime, NULL);
+    cli_add_command(cli, "date", CliCommandFlagParallelSafe, cli_command_date, NULL);
+    cli_add_command(cli, "log", CliCommandFlagParallelSafe, cli_command_log, NULL);
+    cli_add_command(cli, "sysctl", CliCommandFlagDefault, cli_command_sysctl, NULL);
+    cli_add_command(cli, "top", CliCommandFlagParallelSafe, cli_command_top, NULL);
+    cli_add_command(cli, "free", CliCommandFlagParallelSafe, cli_command_free, NULL);
+    cli_add_command(cli, "free_blocks", CliCommandFlagParallelSafe, cli_command_free_blocks, NULL);
 
-    cli_add_command(cli, "vibro", CliCommandFlagParallelUnsafe, cli_command_vibro, NULL);
-    cli_add_command(cli, "led", CliCommandFlagParallelUnsafe, cli_command_led, NULL);
-    cli_add_command(cli, "gpio", CliCommandFlagParallelUnsafe, cli_command_gpio, NULL);
-    cli_add_command(cli, "i2c", CliCommandFlagParallelUnsafe, cli_command_i2c, NULL);
+    cli_add_command(cli, "vibro", CliCommandFlagDefault, cli_command_vibro, NULL);
+    cli_add_command(cli, "led", CliCommandFlagDefault, cli_command_led, NULL);
+    cli_add_command(cli, "gpio", CliCommandFlagDefault, cli_command_gpio, NULL);
+    cli_add_command(cli, "i2c", CliCommandFlagDefault, cli_command_i2c, NULL);
 }

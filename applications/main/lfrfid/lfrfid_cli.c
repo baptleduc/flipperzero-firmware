@@ -568,6 +568,6 @@ static void lfrfid_cli(PipeSide* pipe, FuriString* args, void* context) {
 
 void lfrfid_on_system_start(void) {
     Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "rfid", CliCommandFlagParallelUnsafe, lfrfid_cli, NULL);
+    cli_add_command(cli, "rfid", CliCommandFlagDefault, lfrfid_cli, NULL);
     furi_record_close(RECORD_CLI);
 }

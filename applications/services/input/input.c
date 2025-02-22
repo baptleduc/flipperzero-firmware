@@ -94,7 +94,7 @@ int32_t input_srv(void* p) {
 
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "input", CliCommandFlagDefault, input_cli, event_pubsub);
+    cli_add_command(cli, "input", CliCommandFlagParallelSafe, input_cli, event_pubsub);
 #endif
 
     InputPinState pin_states[input_pins_count];

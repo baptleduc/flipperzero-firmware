@@ -244,7 +244,7 @@ void ibutton_cli(PipeSide* pipe, FuriString* args, void* context) {
 void ibutton_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "ikey", CliCommandFlagParallelUnsafe, ibutton_cli, cli);
+    cli_add_command(cli, "ikey", CliCommandFlagDefault, ibutton_cli, cli);
     furi_record_close(RECORD_CLI);
 #else
     UNUSED(ibutton_cli);

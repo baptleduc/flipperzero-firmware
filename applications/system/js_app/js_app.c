@@ -210,7 +210,7 @@ void js_cli_execute(PipeSide* pipe, FuriString* args, void* context) {
 void js_app_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "js", CliCommandFlagParallelUnsafe, js_cli_execute, NULL);
+    cli_add_command(cli, "js", CliCommandFlagDefault, js_cli_execute, NULL);
     furi_record_close(RECORD_CLI);
 #endif
 }
