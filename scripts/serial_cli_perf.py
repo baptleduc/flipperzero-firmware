@@ -11,7 +11,9 @@ def main():
     logger = logging.getLogger()
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--port", help="CDC Port", default="auto")
-    parser.add_argument("-l", "--length", type=int, help="Number of bytes to send", default=1024**2)
+    parser.add_argument(
+        "-l", "--length", type=int, help="Number of bytes to send", default=1024**2
+    )
     args = parser.parse_args()
 
     if not (port := resolve_port(logger, args.port)):
@@ -49,8 +51,9 @@ def main():
     speed = args.length / delta
     print(f"Speed: {speed/1024:.2f} KiB/s")
 
-    port.write(b"\x03") # Ctrl+C
+    port.write(b"\x03")  # Ctrl+C
     port.close()
+
 
 if __name__ == "__main__":
     main()
