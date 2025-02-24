@@ -512,6 +512,30 @@ void cli_command_i2c(PipeSide* pipe, FuriString* args, void* context) {
     furi_hal_i2c_release(&furi_hal_i2c_handle_external);
 }
 
+/**
+ * Echoes any bytes it receives except ASCII ETX (0x03, Ctrl+C)
+ */
+void cli_command_echo(PipeSide* pipe, FuriString* args, void* context) {
+    UNUSED(args);
+    UNUSED(context);
+    const FuriWait timeout = furi_ms_to_ticks(500);
+
+    uint8_t buffer[256];
+
+    while(true) {
+        size_t read = pipe_receive(pipe, buffer, sizeof(buffer), timeout);
+        if(!read) continue;
+
+        if(pipe_state(pipe) == PipeStateBroken) break;
+        if(memchr(buffer, CliKeyETX, read)) break;
+
+        size_t written = pipe_send(pipe, buffer, read, timeout);
+        if(written != read) {
+            FURI_LOG_E("CliEcho", "read=%zu written=%zu", read, written);
+        }
+    }
+}
+
 void cli_commands_init(Cli* cli) {
     cli_add_command(cli, "!", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
     cli_add_command(cli, "info", CliCommandFlagParallelSafe, cli_command_info, NULL);
@@ -527,6 +551,7 @@ void cli_commands_init(Cli* cli) {
     cli_add_command(cli, "top", CliCommandFlagParallelSafe, cli_command_top, NULL);
     cli_add_command(cli, "free", CliCommandFlagParallelSafe, cli_command_free, NULL);
     cli_add_command(cli, "free_blocks", CliCommandFlagParallelSafe, cli_command_free_blocks, NULL);
+    cli_add_command(cli, "echo", CliCommandFlagParallelSafe, cli_command_echo, NULL);
 
     cli_add_command(cli, "vibro", CliCommandFlagDefault, cli_command_vibro, NULL);
     cli_add_command(cli, "led", CliCommandFlagDefault, cli_command_led, NULL);
