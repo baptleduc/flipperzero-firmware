@@ -244,10 +244,9 @@ void furi_event_loop_run(FuriEventLoop* instance) {
             } else if(flags & FuriEventLoopFlagPending) {
                 furi_event_loop_process_pending_callbacks(instance);
 
-            } else if(
-                instance->are_thread_flags_subscribed &&
-                (flags & FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT)) {
-                instance->thread_flags_callback(instance->thread_flags_callback_context);
+            } else if(flags & FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT) {
+                if(instance->are_thread_flags_subscribed)
+                    instance->thread_flags_callback(instance->thread_flags_callback_context);
 
             } else {
                 furi_crash();
