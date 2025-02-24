@@ -78,6 +78,7 @@ void furi_event_loop_free(FuriEventLoop* instance) {
     furi_event_loop_process_timer_queue(instance);
     furi_check(TimerList_empty_p(instance->timer_list));
     furi_check(WaitingList_empty_p(instance->waiting_list));
+    furi_check(!instance->are_thread_flags_subscribed);
 
     FuriEventLoopTree_clear(instance->tree);
     PendingQueue_clear(instance->pending_queue);
@@ -242,6 +243,11 @@ void furi_event_loop_run(FuriEventLoop* instance) {
 
             } else if(flags & FuriEventLoopFlagPending) {
                 furi_event_loop_process_pending_callbacks(instance);
+
+            } else if(
+                instance->are_thread_flags_subscribed &&
+                (flags & FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT)) {
+                instance->thread_flags_callback(instance->thread_flags_callback_context);
 
             } else {
                 furi_crash();
@@ -414,6 +420,24 @@ void furi_event_loop_subscribe_mutex(
 
     furi_event_loop_object_subscribe(
         instance, mutex, &furi_mutex_event_loop_contract, event, callback, context);
+}
+
+void furi_event_loop_subscribe_thread_flags(
+    FuriEventLoop* instance,
+    FuriEventLoopThreadFlagsCallback callback,
+    void* context) {
+    furi_check(instance);
+    furi_check(callback);
+    furi_check(!instance->are_thread_flags_subscribed);
+    instance->are_thread_flags_subscribed = true;
+    instance->thread_flags_callback = callback;
+    instance->thread_flags_callback_context = context;
+}
+
+void furi_event_loop_unsubscribe_thread_flags(FuriEventLoop* instance) {
+    furi_check(instance);
+    furi_check(instance->are_thread_flags_subscribed);
+    instance->are_thread_flags_subscribed = false;
 }
 
 /**

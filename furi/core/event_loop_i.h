@@ -10,6 +10,7 @@
 #include <m-i-list.h>
 
 #include "thread.h"
+#include "thread_i.h"
 
 struct FuriEventLoopItem {
     // Source
@@ -43,8 +44,6 @@ BPTREE_DEF2( // NOLINT
 
 #define M_OPL_FuriEventLoopTree_t() BPTREE_OPLIST(FuriEventLoopTree, M_POD_OPLIST)
 
-#define FURI_EVENT_LOOP_FLAG_NOTIFY_INDEX (2)
-
 typedef enum {
     FuriEventLoopFlagEvent = (1 << 0),
     FuriEventLoopFlagStop = (1 << 1),
@@ -54,7 +53,7 @@ typedef enum {
 
 #define FuriEventLoopFlagAll                                                   \
     (FuriEventLoopFlagEvent | FuriEventLoopFlagStop | FuriEventLoopFlagTimer | \
-     FuriEventLoopFlagPending)
+     FuriEventLoopFlagPending | FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT)
 
 typedef enum {
     FuriEventLoopProcessStatusComplete,
@@ -94,4 +93,9 @@ struct FuriEventLoop {
     PendingQueue_t pending_queue;
     // Tick event
     FuriEventLoopTick tick;
+
+    // Thread flags callback
+    bool are_thread_flags_subscribed;
+    FuriEventLoopThreadFlagsCallback thread_flags_callback;
+    void* thread_flags_callback_context;
 };
