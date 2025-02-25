@@ -91,7 +91,8 @@ static bool cli_shell_line_input_cr(CliKeyCombo combo, void* context) {
 
     if(line->history_position > 0) {
         // move selected command to the front
-        memmove(&line->history[1], &line->history[0], line->history_position * sizeof(FuriString*));
+        memmove(
+            &line->history[1], &line->history[0], line->history_position * sizeof(FuriString*));
         line->history[0] = command;
     }
 
@@ -119,8 +120,8 @@ static bool cli_shell_line_input_up_down(CliKeyCombo combo, void* context) {
     CliShellLine* line = context;
     // go up and down in history
     int increment = (combo.key == CliKeyUp) ? 1 : -1;
-    size_t new_pos = CLAMP(
-        (int)line->history_position + increment, (int)line->history_entries - 1, 0);
+    size_t new_pos =
+        CLAMP((int)line->history_position + increment, (int)line->history_entries - 1, 0);
 
     // print prompt with selected command
     if(new_pos != line->history_position) {
