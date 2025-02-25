@@ -7,6 +7,7 @@
 #include "check.h"
 #include "common_defines.h"
 #include "string.h"
+#include "event_loop_thread_flag_interface.h"
 
 #include "log.h"
 #include <furi_hal_rtc.h>
@@ -18,6 +19,8 @@
 #include <task_control_block.h>
 
 #define TAG "FuriThread"
+
+#define THREAD_NOTIFY_INDEX (1) // Index 0 is used for stream buffers
 
 #define THREAD_MAX_STACK_SIZE (UINT16_MAX * sizeof(StackType_t))
 
@@ -479,7 +482,7 @@ void furi_thread_yield(void) {
 uint32_t furi_thread_flags_set(FuriThreadId thread_id, uint32_t flags) {
     TaskHandle_t hTask = (TaskHandle_t)thread_id;
     uint32_t rflags;
-    BaseType_t yield_1, yield_2;
+    BaseType_t yield;
 
     if((hTask == NULL) || ((flags & THREAD_FLAGS_INVALID_BITS) != 0U)) {
         rflags = (uint32_t)FuriStatusErrorParameter;
@@ -487,30 +490,21 @@ uint32_t furi_thread_flags_set(FuriThreadId thread_id, uint32_t flags) {
         rflags = (uint32_t)FuriStatusError;
 
         if(FURI_IS_IRQ_MODE()) {
-            yield_1 = pdFALSE;
-            yield_2 = pdFALSE;
+            yield = pdFALSE;
 
-            (void)xTaskNotifyIndexedFromISR(hTask, THREAD_NOTIFY_INDEX, flags, eSetBits, &yield_1);
-            (void)xTaskNotifyIndexedFromISR(
-                hTask,
-                FURI_EVENT_LOOP_FLAG_NOTIFY_INDEX,
-                FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT,
-                eSetBits,
-                &yield_2);
+            (void)xTaskNotifyIndexedFromISR(hTask, THREAD_NOTIFY_INDEX, flags, eSetBits, &yield);
             (void)xTaskNotifyAndQueryIndexedFromISR(
                 hTask, THREAD_NOTIFY_INDEX, 0, eNoAction, &rflags, NULL);
 
-            portYIELD_FROM_ISR(yield_1 || yield_2);
+            portYIELD_FROM_ISR(yield);
         } else {
             (void)xTaskNotifyIndexed(hTask, THREAD_NOTIFY_INDEX, flags, eSetBits);
-            (void)xTaskNotifyIndexed(
-                hTask,
-                FURI_EVENT_LOOP_FLAG_NOTIFY_INDEX,
-                FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT,
-                eSetBits);
             (void)xTaskNotifyAndQueryIndexed(hTask, THREAD_NOTIFY_INDEX, 0, eNoAction, &rflags);
         }
     }
+
+    furi_event_loop_thread_flag_callback(thread_id);
+
     /* Return flags after setting */
     return rflags;
 }

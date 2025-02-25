@@ -4,6 +4,7 @@
 #include "event_loop_link_i.h"
 #include "event_loop_timer_i.h"
 #include "event_loop_tick_i.h"
+#include "event_loop_thread_flag_interface.h"
 
 #include <m-list.h>
 #include <m-bptree.h>
@@ -44,16 +45,19 @@ BPTREE_DEF2( // NOLINT
 
 #define M_OPL_FuriEventLoopTree_t() BPTREE_OPLIST(FuriEventLoopTree, M_POD_OPLIST)
 
+#define FURI_EVENT_LOOP_FLAG_NOTIFY_INDEX (2)
+
 typedef enum {
     FuriEventLoopFlagEvent = (1 << 0),
     FuriEventLoopFlagStop = (1 << 1),
     FuriEventLoopFlagTimer = (1 << 2),
     FuriEventLoopFlagPending = (1 << 3),
+    FuriEventLoopFlagThreadFlag = (1 << 4),
 } FuriEventLoopFlag;
 
 #define FuriEventLoopFlagAll                                                   \
     (FuriEventLoopFlagEvent | FuriEventLoopFlagStop | FuriEventLoopFlagTimer | \
-     FuriEventLoopFlagPending | FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT)
+     FuriEventLoopFlagPending | FuriEventLoopFlagThreadFlag)
 
 typedef enum {
     FuriEventLoopProcessStatusComplete,

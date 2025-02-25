@@ -244,7 +244,7 @@ void furi_event_loop_run(FuriEventLoop* instance) {
             } else if(flags & FuriEventLoopFlagPending) {
                 furi_event_loop_process_pending_callbacks(instance);
 
-            } else if(flags & FURI_EVENT_LOOP_NOTIFY_FLAGS_BIT) {
+            } else if(flags & FuriEventLoopFlagThreadFlag) {
                 if(instance->are_thread_flags_subscribed)
                     instance->thread_flags_callback(instance->thread_flags_callback_context);
 
@@ -559,6 +559,25 @@ static void furi_event_loop_item_notify(FuriEventLoopItem* instance) {
 
 static bool furi_event_loop_item_is_waiting(FuriEventLoopItem* instance) {
     return instance->WaitingList.prev || instance->WaitingList.next;
+}
+
+void furi_event_loop_thread_flag_callback(FuriThreadId thread_id) {
+    TaskHandle_t hTask = (TaskHandle_t)thread_id;
+    BaseType_t yield;
+
+    if(FURI_IS_IRQ_MODE()) {
+        yield = pdFALSE;
+        (void)xTaskNotifyIndexedFromISR(
+            hTask,
+            FURI_EVENT_LOOP_FLAG_NOTIFY_INDEX,
+            FuriEventLoopFlagThreadFlag,
+            eSetBits,
+            &yield);
+        portYIELD_FROM_ISR(yield);
+    } else {
+        (void)xTaskNotifyIndexed(
+            hTask, FURI_EVENT_LOOP_FLAG_NOTIFY_INDEX, FuriEventLoopFlagThreadFlag, eSetBits);
+    }
 }
 
 /*
