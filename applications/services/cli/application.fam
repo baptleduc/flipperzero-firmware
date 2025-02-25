@@ -27,7 +27,7 @@ App(
     name="CliVcpSrv",
     apptype=FlipperAppType.SERVICE,
     entry_point="cli_vcp_srv",
-    stack_size=768,
+    stack_size=1024,
     order=40,
     sdk_headers=["cli_vcp.h"],
     sources=["cli_vcp.c"],
