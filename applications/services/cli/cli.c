@@ -101,7 +101,7 @@ CliCommandTree_t* cli_get_commands(Cli* cli) {
     return &cli->commands;
 }
 
-bool cli_app_should_stop(PipeSide* side) {
+bool cli_is_pipe_broken_or_is_etx_next_char(PipeSide* side) {
     if(pipe_state(side) == PipeStateBroken) return true;
     if(!pipe_bytes_available(side)) return false;
     char c = getchar();

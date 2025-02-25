@@ -226,7 +226,7 @@ void cli_command_log(PipeSide* pipe, FuriString* args, void* context) {
 
     printf("Use <log ?> to list available log levels\r\n");
     printf("Press CTRL+C to stop...\r\n");
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         furi_delay_ms(100);
     }
 
@@ -402,7 +402,7 @@ static void cli_command_top(PipeSide* pipe, FuriString* args, void* context) {
     args_read_int_and_trim(args, &interval);
 
     FuriThreadList* thread_list = furi_thread_list_alloc();
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         uint32_t tick = furi_get_tick();
         furi_thread_enumerate(thread_list);
 

@@ -28,7 +28,7 @@ static void input_cli_dump(PipeSide* pipe, FuriString* args, FuriPubSub* event_p
 
     InputEvent input_event;
     printf("Press CTRL+C to stop\r\n");
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         if(furi_message_queue_get(input_queue, &input_event, 100) == FuriStatusOk) {
             printf(
                 "key: %s type: %s\r\n",

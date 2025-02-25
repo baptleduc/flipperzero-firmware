@@ -197,7 +197,7 @@ void js_cli_execute(PipeSide* pipe, FuriString* args, void* context) {
         JsThread* js_thread = js_thread_run(path, js_cli_callback, &ctx);
 
         while(furi_semaphore_acquire(ctx.exit_sem, 100) != FuriStatusOk) {
-            if(cli_app_should_stop(pipe)) break;
+            if(cli_is_pipe_broken_or_is_etx_next_char(pipe)) break;
         }
 
         js_thread_stop(js_thread);

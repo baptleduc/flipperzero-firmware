@@ -859,7 +859,7 @@ Function,+,cli_ansi_parser_alloc,CliAnsiParser*,
 Function,+,cli_ansi_parser_feed,CliAnsiParserResult,"CliAnsiParser*, char"
 Function,+,cli_ansi_parser_feed_timeout,CliAnsiParserResult,CliAnsiParser*
 Function,+,cli_ansi_parser_free,void,CliAnsiParser*
-Function,+,cli_app_should_stop,_Bool,PipeSide*
+Function,+,cli_is_pipe_broken_or_is_etx_next_char,_Bool,PipeSide*
 Function,+,cli_delete_command,void,"Cli*, const char*"
 Function,+,cli_print_usage,void,"const char*, const char*, const char*"
 Function,+,cli_vcp_disable,void,CliVcp*
