@@ -69,7 +69,7 @@ void cli_shell_line_ensure_not_overwriting_history(CliShellLine* line) {
 // Input handlers
 // ==============
 
-static bool key_combo_ctrl_c(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_ctrl_c(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
     // reset input
@@ -81,7 +81,7 @@ static bool key_combo_ctrl_c(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_cr(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_cr(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
 
@@ -115,7 +115,7 @@ static bool key_combo_cr(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_up_down(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_up_down(CliKeyCombo combo, void* context) {
     CliShellLine* line = context;
     // go up and down in history
     int increment = (combo.key == CliKeyUp) ? 1 : -1;
@@ -135,7 +135,7 @@ static bool key_combo_up_down(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_left_right(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_left_right(CliKeyCombo combo, void* context) {
     CliShellLine* line = context;
     // go left and right in the current line
     FuriString* command = cli_shell_line_get_selected(line);
@@ -152,7 +152,7 @@ static bool key_combo_left_right(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_home(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_home(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
     // go to the start
@@ -162,7 +162,7 @@ static bool key_combo_home(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_end(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_end(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
     // go to the end
@@ -173,7 +173,7 @@ static bool key_combo_end(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_bksp(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_bksp(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
     // erase one character
@@ -198,7 +198,7 @@ static bool key_combo_bksp(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool normal_input(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_fallback(CliKeyCombo combo, void* context) {
     CliShellLine* line = context;
     if(combo.modifiers != CliModKeyNo) return false;
     if(combo.key < CliKeySpace || combo.key >= CliKeyDEL) return false;
@@ -219,19 +219,19 @@ static bool normal_input(CliKeyCombo combo, void* context) {
 }
 
 CliShellKeyComboSet cli_shell_line_key_combo_set = {
-    .fallback = normal_input,
+    .fallback = cli_shell_line_input_fallback,
     .count = 10,
     .records =
         {
-            {{CliModKeyNo, CliKeyETX}, key_combo_ctrl_c},
-            {{CliModKeyNo, CliKeyCR}, key_combo_cr},
-            {{CliModKeyNo, CliKeyUp}, key_combo_up_down},
-            {{CliModKeyNo, CliKeyDown}, key_combo_up_down},
-            {{CliModKeyNo, CliKeyLeft}, key_combo_left_right},
-            {{CliModKeyNo, CliKeyRight}, key_combo_left_right},
-            {{CliModKeyNo, CliKeyHome}, key_combo_home},
-            {{CliModKeyNo, CliKeyEnd}, key_combo_end},
-            {{CliModKeyNo, CliKeyBackspace}, key_combo_bksp},
-            {{CliModKeyNo, CliKeyDEL}, key_combo_bksp},
+            {{CliModKeyNo, CliKeyETX}, cli_shell_line_input_ctrl_c},
+            {{CliModKeyNo, CliKeyCR}, cli_shell_line_input_cr},
+            {{CliModKeyNo, CliKeyUp}, cli_shell_line_input_up_down},
+            {{CliModKeyNo, CliKeyDown}, cli_shell_line_input_up_down},
+            {{CliModKeyNo, CliKeyLeft}, cli_shell_line_input_left_right},
+            {{CliModKeyNo, CliKeyRight}, cli_shell_line_input_left_right},
+            {{CliModKeyNo, CliKeyHome}, cli_shell_line_input_home},
+            {{CliModKeyNo, CliKeyEnd}, cli_shell_line_input_end},
+            {{CliModKeyNo, CliKeyBackspace}, cli_shell_line_input_bksp},
+            {{CliModKeyNo, CliKeyDEL}, cli_shell_line_input_bksp},
         },
 };
