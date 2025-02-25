@@ -15,6 +15,10 @@ App(
         "cli.h",
         "cli_ansi.h",
     ],
+    # This STARTUP has to be processed before those that depend on the "cli" record.
+    # "cli" used to be a SERVICE, but it's been converted into a STARTUP in order to
+    # reduce RAM usage. The "block until record has been created" mechanism
+    # unfortunately leads to a deadlock if the STARTUPs are processed sequentially.
     order=0,
 )
 
