@@ -1,7 +1,6 @@
 #pragma once
 
 #include <furi.h>
-#include <m-array.h>
 
 #include "cli_shell_i.h"
 
