@@ -317,11 +317,12 @@ static void storage_cli_write_chunk(PipeSide* pipe, FuriString* path, FuriString
     } else {
         if(storage_file_open(file, furi_string_get_cstr(path), FSAM_WRITE, FSOM_OPEN_APPEND)) {
             printf("Ready\r\n");
-            char buffer[256];
+            const size_t buffer_size = 1024;
+            uint8_t* buffer = malloc(buffer_size);
 
             while(need_to_read) {
                 size_t read_this_time =
-                    pipe_receive(pipe, buffer, MIN(sizeof(buffer), need_to_read), FuriWaitForever);
+                    pipe_receive(pipe, buffer, MIN(buffer_size, need_to_read), FuriWaitForever);
                 size_t wrote_this_time = storage_file_write(file, buffer, read_this_time);
 
                 if(wrote_this_time != read_this_time) {
@@ -330,6 +331,8 @@ static void storage_cli_write_chunk(PipeSide* pipe, FuriString* path, FuriString
                 }
                 need_to_read -= read_this_time;
             }
+
+            free(buffer);
         } else {
             storage_cli_print_error(storage_file_get_error(file));
         }
