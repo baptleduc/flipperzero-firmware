@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-#define CLI_SHELL_STACK_SIZE (3 * 1024U)
+#define CLI_SHELL_STACK_SIZE (4 * 1024U)
 
 FuriThread* cli_shell_start(PipeSide* pipe);
 
