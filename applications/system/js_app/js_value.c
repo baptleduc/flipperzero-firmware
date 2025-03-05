@@ -92,6 +92,14 @@ static bool js_value_maybe_assign_default(
     return false;
 }
 
+typedef bool (*MjsTypecheckFn)(mjs_val_t value);
+
+static JsValueParseStatus js_value_parse_literal(struct mjs* mjs, JsValueParseFlag flags, mjs_val_t* destination, mjs_val_t* source, MjsTypecheckFn typecheck, const char* type_name) {
+    if(!typecheck(*source)) PREPEND_JS_EXPECTED_ERROR_AND_RETURN(mjs, flags, type_name);
+    *destination = *source;
+    return JsValueParseStatusOk;
+}
+
 static JsValueParseStatus js_value_parse_va(
     struct mjs* mjs,
     const JsValueParseDeclaration declaration,
@@ -130,25 +138,15 @@ static JsValueParseStatus js_value_parse_va(
 
     switch(type_noflags) {
     // Literal terms
-    case JsValueTypeAny: {
+    case JsValueTypeAny:
         *(mjs_val_t*)destination = *source;
         break;
-    }
-    case JsValueTypeAnyArray: {
-        if(!mjs_is_array(*source)) PREPEND_JS_EXPECTED_ERROR_AND_RETURN(mjs, flags, "array");
-        *(mjs_val_t*)destination = *source;
-        break;
-    }
-    case JsValueTypeAnyObject: {
-        if(!mjs_is_object(*source)) PREPEND_JS_EXPECTED_ERROR_AND_RETURN(mjs, flags, "object");
-        *(mjs_val_t*)destination = *source;
-        break;
-    }
-    case JsValueTypeFunction: {
-        if(!mjs_is_function(*source)) PREPEND_JS_EXPECTED_ERROR_AND_RETURN(mjs, flags, "function");
-        *(mjs_val_t*)destination = *source;
-        break;
-    }
+    case JsValueTypeAnyArray:
+        return js_value_parse_literal(mjs, flags, destination, source, mjs_is_array, "array");
+    case JsValueTypeAnyObject:
+        return js_value_parse_literal(mjs, flags, destination, source, mjs_is_object, "array");
+    case JsValueTypeFunction:
+        return js_value_parse_literal(mjs, flags, destination, source, mjs_is_function, "function");
 
     // Primitive types
     case JsValueTypeRawPointer: {
