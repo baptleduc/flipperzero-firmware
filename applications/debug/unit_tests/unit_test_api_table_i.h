@@ -44,7 +44,7 @@ static constexpr auto unit_tests_api_table = sort(create_array_t<sym_entry>(
         js_value_parse,
         JsValueParseStatus,
         (struct mjs * mjs,
-            const JsValueParseDeclaration declaration,
+         const JsValueParseDeclaration declaration,
          JsValueParseFlag flags,
          mjs_val_t* buffer,
          size_t buf_size,
