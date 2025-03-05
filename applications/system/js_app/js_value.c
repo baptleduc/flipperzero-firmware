@@ -1,83 +1,56 @@
 #include "js_value.h"
 #include <stdarg.h>
 
-size_t js_value_buffer_size(const JsValueDeclaration* declaration) {
-    JsValueType type = declaration->type;
+#ifdef APP_UNIT_TESTS
+#define JS_VAL_DEBUG
+#endif
 
-    if(type == JsValueTypeString) return 1;
+size_t js_value_buffer_size(const JsValueParseDeclaration declaration) {
+    if(declaration.source == JsValueParseSourceValue) {
+        const JsValueDeclaration* value_decl = declaration.value_decl;
+        JsValueType type = value_decl->type & JsValueTypeMask;
 
-    if(type == JsValueTypeObject) {
-        size_t total = 0;
-        for(size_t i = 0; i < declaration->n_children; i++) {
-            total += js_value_buffer_size(&declaration->children[i]);
+        if(type == JsValueTypeString) return 1;
+
+        if(type == JsValueTypeObject) {
+            size_t total = 0;
+            for(size_t i = 0; i < value_decl->n_children; i++)
+                total += js_value_buffer_size(JS_VALUE_PARSE_SOURCE_VALUE(value_decl->object_fields[i].value));
+            return total;
         }
+
+        return 0;
+
+    } else {
+        const JsValueArguments* arg_decl = declaration.argument_decl;
+        size_t total = 0;
+        for(size_t i = 0; i < arg_decl->n_children; i++)
+            total += js_value_buffer_size(JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]));
         return total;
     }
-
-    return 0;
 }
 
-static size_t js_value_resulting_c_values_count(const JsValueDeclaration* declaration) {
-    JsValueType type = declaration->type;
+static size_t js_value_resulting_c_values_count(const JsValueParseDeclaration declaration) {
+    if(declaration.source == JsValueParseSourceValue) {
+        const JsValueDeclaration* value_decl = declaration.value_decl;
+        JsValueType type = value_decl->type & JsValueTypeMask;
 
-    if(type == JsValueTypeObject) {
-        size_t total = 0;
-        for(size_t i = 0; i < declaration->n_children; i++) {
-            total += js_value_resulting_c_values_count(&declaration->children[i]);
+        if(type == JsValueTypeObject) {
+            size_t total = 0;
+            for(size_t i = 0; i < value_decl->n_children; i++)
+                total += js_value_resulting_c_values_count(JS_VALUE_PARSE_SOURCE_VALUE(value_decl->object_fields[i].value));
+            return total;
         }
+
+        return 1;
+
+    } else {
+        const JsValueArguments* arg_decl = declaration.argument_decl;
+        size_t total = 0;
+        for(size_t i = 0; i < arg_decl->n_children; i++)
+            total += js_value_resulting_c_values_count(JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]));
         return total;
     }
-
-    return 1;
-}
-
-static bool js_value_declaration_valid(const JsValueDeclaration* declaration) {
-    JsValueType type = declaration->type;
-
-    // Args can have an arbitrary number of children of arbitrary types
-    if(type == JsValueTypeArgs) {
-        for(size_t i = 0; i < declaration->n_children; i++)
-            if(!js_value_declaration_valid(&declaration->children[i])) return false;
-        if(declaration->permit_null) return false;
-        return true;
-    }
-
-    // Enums can only have EnumValue children
-    if(type == JsValueTypeEnum) {
-        if(declaration->enum_size != 1 && declaration->enum_size != 2 &&
-           declaration->enum_size != 4)
-            return false;
-        for(size_t i = 0; i < declaration->n_children; i++) {
-            const JsValueDeclaration* child = &declaration->children[i];
-            if(!js_value_declaration_valid(child) || child->type != JsValueTypeEnumValue)
-                return false;
-        }
-        return true;
-    }
-
-    // Objects must have valid children
-    if(type == JsValueTypeObject) {
-        for(size_t i = 0; i < declaration->n_children; i++) {
-            const JsValueDeclaration* child = &declaration->children[i];
-            if(!js_value_declaration_valid(child) || !child->object_field_name) return false;
-        }
-        if(declaration->permit_null) return false;
-        return true;
-    }
-
-    // EnumValues must have their string field set
-    if(type == JsValueTypeEnumValue) {
-        return declaration->n_children == 0 && declaration->enum_string_value != NULL;
-    }
-
-    // Literal types can't have default values
-    if(type == JsValueTypeAny || type == JsValueTypeAnyArray || type == JsValueTypeAnyObject ||
-       type == JsValueTypeFunction) {
-        if(declaration->permit_null) return false;
-    }
-
-    // All other types can't have children
-    return declaration->n_children == 0;
 }
 
 #define PREPEND_JS_ERROR_AND_RETURN(mjs, flags, ...)                    \
@@ -87,13 +60,14 @@ static bool js_value_declaration_valid(const JsValueDeclaration* declaration) {
         return JsValueParseStatusJsError;                               \
     } while(0)
 
-static void js_value_assign_enum_val(va_list* out_pointers, size_t enum_size, uint32_t value) {
-    if(enum_size == 1)
-        *va_arg(*out_pointers, uint8_t*) = value;
-    else if(enum_size == 2)
-        *va_arg(*out_pointers, uint16_t*) = value;
-    else if(enum_size == 4)
-        *va_arg(*out_pointers, uint32_t*) = value;
+static void js_value_assign_enum_val(void* destination, JsValueType type_w_flags, uint32_t value) {
+    if(type_w_flags & JsValueTypeEnumSize1) {
+        *(uint8_t*)destination = value;
+    } else if(type_w_flags & JsValueTypeEnumSize2) {
+        *(uint16_t*)destination = value;
+    } else if(type_w_flags & JsValueTypeEnumSize4) {
+        *(uint32_t*)destination = value;
+    }
 }
 
 static bool js_value_is_null_or_undefined(mjs_val_t* val_ptr) {
@@ -105,7 +79,7 @@ static bool js_value_maybe_assign_default(
     mjs_val_t* val_ptr,
     void* destination,
     size_t size) {
-    if(declaration->permit_null && js_value_is_null_or_undefined(val_ptr)) {
+    if((declaration->type & JsValueTypePermitNull) && js_value_is_null_or_undefined(val_ptr)) {
         memcpy(destination, &declaration->default_value, size);
         return true;
     }
@@ -114,18 +88,34 @@ static bool js_value_maybe_assign_default(
 
 static JsValueParseStatus js_value_parse_va(
     struct mjs* mjs,
-    const JsValueDeclaration* declaration,
+    const JsValueParseDeclaration declaration,
     JsValueParseFlag flags,
     mjs_val_t* source,
     mjs_val_t* buffer,
     size_t* buffer_index,
     va_list* out_pointers) {
-    // fetch out pointer
+    if(declaration.source == JsValueParseSourceArguments) {
+        const JsValueArguments* arg_decl = declaration.argument_decl;
+
+        for(size_t i = 0; i < arg_decl->n_children; i++) {
+            mjs_val_t arg_val = mjs_arg(mjs, i);
+            JsValueParseStatus status = js_value_parse_va(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]), flags, &arg_val, buffer, buffer_index, out_pointers);
+            if(status != JsValueParseStatusOk) return status;
+        }
+
+        return JsValueParseStatusOk;
+    }
+
+    const JsValueDeclaration* value_decl = declaration.value_decl;
+    JsValueType type_w_flags = value_decl->type;
+    JsValueType type_noflags = type_w_flags & JsValueTypeMask;
+    bool is_null_but_allowed = (type_w_flags & JsValueTypePermitNull) && js_value_is_null_or_undefined(source);
+
     void* destination = NULL;
-    if(declaration->type != JsValueTypeEnum && declaration->type != JsValueTypeObject)
+    if(type_noflags != JsValueTypeObject)
         destination = va_arg(*out_pointers, void*);
 
-    switch(declaration->type) {
+    switch(type_noflags) {
     // Literal terms
     case JsValueTypeAny: {
         *(mjs_val_t*)destination = *source;
@@ -149,31 +139,31 @@ static JsValueParseStatus js_value_parse_va(
 
     // Primitive types
     case JsValueTypeRawPointer: {
-        if(js_value_maybe_assign_default(declaration, source, destination, sizeof(void*))) break;
+        if(js_value_maybe_assign_default(value_decl, source, destination, sizeof(void*))) break;
         if(!mjs_is_foreign(*source)) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected pointer");
         *(void**)destination = mjs_get_ptr(mjs, *source);
         break;
     }
     case JsValueTypeInt32: {
-        if(js_value_maybe_assign_default(declaration, source, destination, sizeof(int32_t))) break;
+        if(js_value_maybe_assign_default(value_decl, source, destination, sizeof(int32_t))) break;
         if(!mjs_is_number(*source)) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected number");
         *(int32_t*)destination = mjs_get_int32(mjs, *source);
         break;
     }
     case JsValueTypeDouble: {
-        if(js_value_maybe_assign_default(declaration, source, destination, sizeof(double))) break;
+        if(js_value_maybe_assign_default(value_decl, source, destination, sizeof(double))) break;
         if(!mjs_is_number(*source)) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected number");
         *(double*)destination = mjs_get_double(mjs, *source);
         break;
     }
     case JsValueTypeBool: {
-        if(js_value_maybe_assign_default(declaration, source, destination, sizeof(bool))) break;
+        if(js_value_maybe_assign_default(value_decl, source, destination, sizeof(bool))) break;
         if(!mjs_is_boolean(*source)) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected bool");
         *(bool*)destination = mjs_get_bool(mjs, *source);
         break;
     }
     case JsValueTypeString: {
-        if(js_value_maybe_assign_default(declaration, source, destination, sizeof(const char*)))
+        if(js_value_maybe_assign_default(value_decl, source, destination, sizeof(const char*)))
             break;
         if(!mjs_is_string(*source)) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected string");
         buffer[*buffer_index] = *source;
@@ -183,39 +173,27 @@ static JsValueParseStatus js_value_parse_va(
     }
 
     // Types with children
-    case JsValueTypeArgs: {
-        furi_check(source == JS_VAL_PARSE_SOURCE_ARGS);
-        size_t args_provided = mjs_nargs(mjs);
-        for(size_t i = 0; i < declaration->n_children; i++) {
-            mjs_val_t arg = (i < args_provided) ? mjs_arg(mjs, i) : MJS_UNDEFINED;
-            const JsValueDeclaration* child = &declaration->children[i];
-            JsValueParseStatus status =
-                js_value_parse_va(mjs, child, flags, &arg, buffer, buffer_index, out_pointers);
-            if(status != JsValueParseStatusOk)
-                PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "argument %zu: ", i);
-        }
-        break;
-    }
     case JsValueTypeEnum: {
-        if(declaration->permit_null && js_value_is_null_or_undefined(source)) {
-            js_value_assign_enum_val(
-                out_pointers, declaration->enum_size, declaration->default_value.enum_val);
+        if(is_null_but_allowed) {
+            js_value_assign_enum_val(destination, type_w_flags, value_decl->default_value.enum_val);
+
         } else if(mjs_is_string(*source)) {
             const char* str = mjs_get_string(mjs, source, NULL);
             furi_check(str);
+
             bool match_found = false;
-            for(size_t i = 0; i < declaration->n_children; i++) {
-                const JsValueDeclaration* child = &declaration->children[i];
-                furi_check(child->type == JsValueTypeEnumValue);
-                if(strcmp(str, child->enum_string_value) == 0) {
-                    js_value_assign_enum_val(
-                        out_pointers, declaration->enum_size, child->enum_value);
+            for(size_t i = 0; i < value_decl->n_children; i++) {
+                const JsValueEnumVariant* variant = &value_decl->enum_variants[i];
+                if(strcmp(str, variant->string_value) == 0) {
+                    js_value_assign_enum_val(destination, type_w_flags, variant->num_value);
                     match_found = true;
                     break;
                 }
             }
+
             if(!match_found)
                 PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected one of permitted strings");
+
         } else {
             PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected string");
         }
@@ -223,19 +201,23 @@ static JsValueParseStatus js_value_parse_va(
     }
 
     case JsValueTypeObject: {
-        if(!mjs_is_object(*source)) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected object");
-        for(size_t i = 0; i < declaration->n_children; i++) {
-            const JsValueDeclaration* child = &declaration->children[i];
-            mjs_val_t field = mjs_get(mjs, *source, child->object_field_name, ~0);
+        if(!(is_null_but_allowed || mjs_is_object(*source))) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected object");
+        for(size_t i = 0; i < value_decl->n_children; i++) {
+            const JsValueObjectField* field = &value_decl->object_fields[i];
+            mjs_val_t field_val = mjs_get(mjs, *source, field->field_name, ~0);
             JsValueParseStatus status =
-                js_value_parse_va(mjs, child, flags, &field, buffer, buffer_index, out_pointers);
+                js_value_parse_va(mjs, JS_VALUE_PARSE_SOURCE_VALUE(field->value), flags, &field_val, buffer, buffer_index, out_pointers);
             if(status != JsValueParseStatusOk)
-                PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "field %s: ", child->object_field_name);
+                PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "field %s: ", field->field_name);
         }
         break;
     }
 
-    case JsValueTypeEnumValue:
+    case JsValueTypeMask:
+    case JsValueTypeEnumSize1:
+    case JsValueTypeEnumSize2:
+    case JsValueTypeEnumSize4:
+    case JsValueTypePermitNull:
         furi_crash();
     }
 
@@ -244,7 +226,7 @@ static JsValueParseStatus js_value_parse_va(
 
 JsValueParseStatus js_value_parse(
     struct mjs* mjs,
-    const JsValueDeclaration* declaration,
+    const JsValueParseDeclaration declaration,
     JsValueParseFlag flags,
     mjs_val_t* buffer,
     size_t buf_size,
@@ -252,15 +234,20 @@ JsValueParseStatus js_value_parse(
     size_t n_c_vals,
     ...) {
     furi_check(mjs);
-    furi_check(declaration);
     furi_check(buffer);
 
+    if(declaration.source == JsValueParseSourceValue) {
+        furi_check(source);
+        furi_check(declaration.value_decl);
+    } else {
+        furi_check(source == NULL);
+        furi_check(declaration.argument_decl);
+    }
+
 #ifdef JS_VAL_DEBUG
-    furi_check(js_value_declaration_valid(declaration));
     furi_check(buf_size == js_value_buffer_size(declaration));
     furi_check(n_c_vals == js_value_resulting_c_values_count(declaration));
 #else
-    UNUSED(js_value_declaration_valid);
     UNUSED(js_value_resulting_c_values_count);
 #endif
 

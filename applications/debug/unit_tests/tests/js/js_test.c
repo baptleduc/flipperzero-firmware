@@ -102,8 +102,8 @@ static void js_value_test_compatibility_matrix(struct mjs* mjs) {
 // for proper matrix formatting and better readability
 #define YES true
 #define NO_ false
-    static const int success_matrix[COUNT_OF(types)][COUNT_OF(values)] = {
-        // types:
+    static const bool success_matrix[COUNT_OF(types)][COUNT_OF(values)] = {
+        //                                      types:
         {YES, YES, YES, YES, YES, YES, YES}, // any
         {NO_, NO_, YES, NO_, NO_, NO_, NO_}, // array
         {NO_, NO_, YES, YES, NO_, NO_, NO_}, // obj
@@ -113,6 +113,7 @@ static void js_value_test_compatibility_matrix(struct mjs* mjs) {
         {NO_, NO_, NO_, NO_, YES, NO_, NO_}, // double
         {NO_, NO_, NO_, NO_, NO_, YES, NO_}, // str
         {NO_, NO_, NO_, NO_, NO_, NO_, YES}, // bool
+        //
         //und ptr  arr  obj  num  str  bool <- values
     };
 #undef NO_
@@ -122,14 +123,13 @@ static void js_value_test_compatibility_matrix(struct mjs* mjs) {
         for(size_t j = 0; j < COUNT_OF(values); j++) {
             const JsValueDeclaration declaration = {
                 .type = types[i],
-                .permit_null = false,
                 .n_children = 0,
             };
             // we only care about the status, not the result. double has the largest size out of
             // all the results
             uint8_t result[sizeof(double)];
             JsValueParseStatus status;
-            JS_VALUE_PARSE(mjs, &declaration, JsValueParseFlagNone, &status, &values[j], result);
+            JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&declaration), JsValueParseFlagNone, &status, &values[j], result);
             if((status == JsValueParseStatusOk) != success_matrix[i][j]) {
                 FURI_LOG_E(TAG, "type %zu, value %zu", i, j);
                 mu_fail("see serial logs");
@@ -155,12 +155,11 @@ static void js_value_test_literal(struct mjs* mjs) {
     for(size_t i = 0; i < COUNT_OF(types); i++) {
         const JsValueDeclaration declaration = {
             .type = types[i],
-            .permit_null = false,
             .n_children = 0,
         };
         mjs_val_t result;
         JsValueParseStatus status;
-        JS_VALUE_PARSE(mjs, &declaration, JsValueParseFlagNone, &status, &values[i], &result);
+        JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&declaration), JsValueParseFlagNone, &status, &values[i], &result);
         mu_assert_int_eq(JsValueParseStatusOk, status);
         mu_assert(result == values[i], "wrong result");
     }
@@ -174,12 +173,11 @@ static void js_value_test_primitive(
     mjs_val_t js_val) {
     const JsValueDeclaration declaration = {
         .type = type,
-        .permit_null = false,
         .n_children = 0,
     };
     uint8_t result[c_value_size];
     JsValueParseStatus status;
-    JS_VALUE_PARSE(mjs, &declaration, JsValueParseFlagNone, &status, &js_val, result);
+    JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&declaration), JsValueParseFlagNone, &status, &js_val, result);
     mu_assert_int_eq(JsValueParseStatusOk, status);
     if(type == JsValueTypeString) {
         const char* result_str = *(const char**)&result;
@@ -209,34 +207,25 @@ static uint32_t
     js_value_test_enum(struct mjs* mjs, const JsValueDeclaration* decl, const char* value) {
     mjs_val_t str = mjs_mk_string(mjs, value, ~0, false);
     uint32_t result;
-    furi_check(decl->enum_size == sizeof(result));
     JsValueParseStatus status;
-    JS_VALUE_PARSE(mjs, decl, JsValueParseFlagNone, &status, &str, &result);
+    JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(decl), JsValueParseFlagNone, &status, &str, &result);
     if(status != JsValueParseStatusOk) return 0;
     return result;
 }
 
 static void js_value_test_enums(struct mjs* mjs) {
-    static const JsValueDeclaration enum_1_variants[] = {
-        JS_VALUE_ENUM_VARIANT("variant 1", 1),
-        JS_VALUE_ENUM_VARIANT("variant 2", 2),
-        JS_VALUE_ENUM_VARIANT("variant 3", 3),
+    static const JsValueEnumVariant enum_1_variants[] = {
+        {"variant 1", 1},
+        {"variant 2", 2},
+        {"variant 3", 3},
     };
-    static const JsValueDeclaration enum_1 = {
-        .type = JsValueTypeEnum,
-        .enum_size = sizeof(uint32_t),
-        JS_VALUE_CHILDREN(enum_1_variants),
-    };
+    static const JsValueDeclaration enum_1 = JS_VALUE_ENUM(uint32_t, enum_1_variants);
 
-    static const JsValueDeclaration enum_2_variants[] = {
-        JS_VALUE_ENUM_VARIANT("read", 4),
-        JS_VALUE_ENUM_VARIANT("write", 8),
+    static const JsValueEnumVariant enum_2_variants[] = {
+        {"read", 4},
+        {"write", 8},
     };
-    static const JsValueDeclaration enum_2 = {
-        .type = JsValueTypeEnum,
-        .enum_size = sizeof(uint32_t),
-        JS_VALUE_CHILDREN(enum_2_variants),
-    };
+    static const JsValueDeclaration enum_2 = JS_VALUE_ENUM(uint32_t, enum_2_variants);
 
     mu_assert_int_eq(1, js_value_test_enum(mjs, &enum_1, "variant 1"));
     mu_assert_int_eq(2, js_value_test_enum(mjs, &enum_1, "variant 2"));
@@ -252,22 +241,23 @@ static void js_value_test_enums(struct mjs* mjs) {
 }
 
 static void js_value_test_object(struct mjs* mjs) {
-    static const JsValueDeclaration enum_variants[] = {
-        JS_VALUE_ENUM_VARIANT("variant 1", 1),
-        JS_VALUE_ENUM_VARIANT("variant 2", 2),
-        JS_VALUE_ENUM_VARIANT("variant 3", 3),
+    static const JsValueDeclaration int_decl = JS_VALUE_SIMPLE(JsValueTypeInt32);
+
+    static const JsValueDeclaration str_decl = JS_VALUE_SIMPLE(JsValueTypeString);
+
+    static const JsValueEnumVariant enum_variants[] = {
+        {"variant 1", 1},
+        {"variant 2", 2},
+        {"variant 3", 3},
     };
-    static const JsValueDeclaration fields[] = {
-        {.type = JsValueTypeInt32, .object_field_name = "int"},
-        {.type = JsValueTypeString, .object_field_name = "str"},
-        {.type = JsValueTypeEnum,
-         .object_field_name = "enum",
-         .enum_size = sizeof(uint32_t),
-         JS_VALUE_CHILDREN(enum_variants)}};
-    static const JsValueDeclaration object_decl = {
-        .type = JsValueTypeObject,
-        JS_VALUE_CHILDREN(fields),
+    static const JsValueDeclaration enum_decl = JS_VALUE_ENUM(uint32_t, enum_variants);
+
+    static const JsValueObjectField fields[] = {
+        {"int", &int_decl},
+        {"str", &str_decl},
+        {"enum", &enum_decl},
     };
+    static const JsValueDeclaration object_decl = JS_VALUE_OBJECT(fields);
 
     mjs_val_t object = mjs_mk_object(mjs);
     JS_ASSIGN_MULTI(mjs, object) {
@@ -282,7 +272,7 @@ static void js_value_test_object(struct mjs* mjs) {
     JsValueParseStatus status;
     JS_VALUE_PARSE(
         mjs,
-        &object_decl,
+        JS_VALUE_PARSE_SOURCE_VALUE(&object_decl),
         JsValueParseFlagNone,
         &status,
         &object,
@@ -296,17 +286,14 @@ static void js_value_test_object(struct mjs* mjs) {
 }
 
 static void js_value_test_default(struct mjs* mjs) {
-    static const JsValueDeclaration fields[] = {
-        {.type = JsValueTypeInt32,
-         .permit_null = true,
-         .default_value = {.int32_val = 123},
-         .object_field_name = "int"},
-        {.type = JsValueTypeString, .object_field_name = "str"},
+    static const JsValueDeclaration int_decl = JS_VALUE_SIMPLE_W_DEFAULT(JsValueTypeInt32, int32_val, 123);
+    static const JsValueDeclaration str_decl = JS_VALUE_SIMPLE(JsValueTypeString);
+
+    static const JsValueObjectField fields[] = {
+        {"int", &int_decl},
+        {"str", &str_decl},
     };
-    static const JsValueDeclaration object_decl = {
-        .type = JsValueTypeObject,
-        JS_VALUE_CHILDREN(fields),
-    };
+    static const JsValueDeclaration object_decl = JS_VALUE_OBJECT(fields);
 
     mjs_val_t object = mjs_mk_object(mjs);
     JS_ASSIGN_MULTI(mjs, object) {
@@ -318,29 +305,25 @@ static void js_value_test_default(struct mjs* mjs) {
     int32_t result_int;
     JsValueParseStatus status;
     JS_VALUE_PARSE(
-        mjs, &object_decl, JsValueParseFlagNone, &status, &object, &result_int, &result_str);
+        mjs, JS_VALUE_PARSE_SOURCE_VALUE(&object_decl), JsValueParseFlagNone, &status, &object, &result_int, &result_str);
     mu_assert_string_eq("Helloooo!", result_str);
     mu_assert_int_eq(123, result_int);
 }
 
 static void js_value_test_args_fn(struct mjs* mjs) {
-    static const JsValueDeclaration args[] = {
-        {.type = JsValueTypeInt32},
-        {.type = JsValueTypeInt32},
-        {.type = JsValueTypeInt32},
+    static const JsValueDeclaration arg_list[] = {
+        JS_VALUE_SIMPLE(JsValueTypeInt32),
+        JS_VALUE_SIMPLE(JsValueTypeInt32),
+        JS_VALUE_SIMPLE(JsValueTypeInt32),
     };
-    static const JsValueDeclaration declaration = {
-        .type = JsValueTypeArgs,
-        JS_VALUE_CHILDREN(args),
-    };
+    static const JsValueArguments args = JS_VALUE_ARGS(arg_list);
 
     int32_t a, b, c;
-    JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &declaration, &a, &b, &c);
+    JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &args, &a, &b, &c);
 
-    // mjs_apply reverses argument order
-    mu_assert_int_eq(-420, a);
-    mu_assert_int_eq(123, b);
-    mu_assert_int_eq(456, c);
+    mu_assert_int_eq(123, a);
+    mu_assert_int_eq(456, b);
+    mu_assert_int_eq(-420, c);
 }
 
 static void js_value_test_args(struct mjs* mjs) {
