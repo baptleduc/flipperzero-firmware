@@ -68,7 +68,8 @@ static void js_storage_file_write(struct mjs* mjs) {
     static const JsValueDeclaration js_storage_file_write_arg_list[] = {
         JS_VALUE_SIMPLE(JsValueTypeAny),
     };
-    static const JsValueArguments js_storage_file_write_args = JS_VALUE_ARGS(js_storage_file_write_arg_list);
+    static const JsValueArguments js_storage_file_write_args =
+        JS_VALUE_ARGS(js_storage_file_write_arg_list);
 
     mjs_val_t data;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_storage_file_write_args, &data);
@@ -125,7 +126,8 @@ static void js_storage_file_copy_to(struct mjs* mjs) {
         JS_VALUE_SIMPLE(JsValueTypeAny),
         JS_VALUE_SIMPLE(JsValueTypeInt32),
     };
-    static const JsValueArguments js_storage_file_write_args = JS_VALUE_ARGS(js_storage_file_write_arg_list);
+    static const JsValueArguments js_storage_file_write_args =
+        JS_VALUE_ARGS(js_storage_file_write_arg_list);
 
     mjs_val_t dest_obj;
     int32_t bytes;
@@ -166,12 +168,14 @@ static void js_storage_open_file(struct mjs* mjs) {
         JS_VALUE_ENUM(FS_AccessMode, js_storage_fsam_variants),
         JS_VALUE_ENUM(FS_OpenMode, js_storage_fsom_variants),
     };
-    static const JsValueArguments js_storage_open_file_args = JS_VALUE_ARGS(js_storage_open_file_arg_list);
+    static const JsValueArguments js_storage_open_file_args =
+        JS_VALUE_ARGS(js_storage_open_file_arg_list);
 
     const char* path;
     FS_AccessMode access_mode;
     FS_OpenMode open_mode;
-    JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_storage_open_file_args, &path, &access_mode, &open_mode);
+    JS_VALUE_PARSE_ARGS_OR_RETURN(
+        mjs, &js_storage_open_file_args, &path, &access_mode, &open_mode);
 
     Storage* storage = JS_GET_CONTEXT(mjs);
     File* file = storage_file_alloc(storage);
@@ -353,7 +357,8 @@ static void js_storage_next_available_filename(struct mjs* mjs) {
 
     const char *dir_path, *file_name, *file_ext;
     int32_t max_len;
-    JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_storage_naf_args, &dir_path, &file_name, &file_ext, &max_len);
+    JS_VALUE_PARSE_ARGS_OR_RETURN(
+        mjs, &js_storage_naf_args, &dir_path, &file_name, &file_ext, &max_len);
 
     Storage* storage = JS_GET_CONTEXT(mjs);
     FuriString* next_name = furi_string_alloc();

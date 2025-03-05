@@ -71,7 +71,8 @@ static void js_gui_vd_send_custom(struct mjs* mjs) {
     static const JsValueDeclaration js_gui_vd_send_custom_arg_list[] = {
         JS_VALUE_SIMPLE(JsValueTypeInt32),
     };
-    static const JsValueArguments js_gui_vd_send_custom_args = JS_VALUE_ARGS(js_gui_vd_send_custom_arg_list);
+    static const JsValueArguments js_gui_vd_send_custom_args =
+        JS_VALUE_ARGS(js_gui_vd_send_custom_arg_list);
 
     int32_t event;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gui_vd_send_custom_args, &event);
@@ -95,7 +96,8 @@ static void js_gui_vd_send_to(struct mjs* mjs) {
     static const JsValueDeclaration js_gui_vd_send_to_arg_list[] = {
         JS_VALUE_ENUM(JsSendDir, js_send_dir_variants),
     };
-    static const JsValueArguments js_gui_vd_send_to_args = JS_VALUE_ARGS(js_gui_vd_send_to_arg_list);
+    static const JsValueArguments js_gui_vd_send_to_args =
+        JS_VALUE_ARGS(js_gui_vd_send_to_arg_list);
 
     JsSendDir send_direction;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gui_vd_send_to_args, &send_direction);
@@ -115,7 +117,8 @@ static void js_gui_vd_switch_to(struct mjs* mjs) {
     static const JsValueDeclaration js_gui_vd_switch_to_arg_list[] = {
         JS_VALUE_SIMPLE(JsValueTypeAny),
     };
-    static const JsValueArguments js_gui_vd_switch_to_args = JS_VALUE_ARGS(js_gui_vd_switch_to_arg_list);
+    static const JsValueArguments js_gui_vd_switch_to_args =
+        JS_VALUE_ARGS(js_gui_vd_switch_to_arg_list);
 
     mjs_val_t view;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gui_vd_switch_to_args, &view);
@@ -310,7 +313,8 @@ static void js_gui_view_add_child(struct mjs* mjs) {
     static const JsValueDeclaration js_gui_view_add_child_arg_list[] = {
         JS_VALUE_SIMPLE(JsValueTypeAny),
     };
-    static const JsValueArguments js_gui_view_add_child_args = JS_VALUE_ARGS(js_gui_view_add_child_arg_list);
+    static const JsValueArguments js_gui_view_add_child_args =
+        JS_VALUE_ARGS(js_gui_view_add_child_arg_list);
 
     mjs_val_t child;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gui_view_add_child_args, &child);
@@ -343,7 +347,8 @@ static void js_gui_view_set_children(struct mjs* mjs) {
     static const JsValueDeclaration js_gui_view_set_children_arg_list[] = {
         JS_VALUE_SIMPLE(JsValueTypeAnyArray),
     };
-    static const JsValueArguments js_gui_view_set_children_args = JS_VALUE_ARGS(js_gui_view_set_children_arg_list);
+    static const JsValueArguments js_gui_view_set_children_args =
+        JS_VALUE_ARGS(js_gui_view_set_children_arg_list);
 
     mjs_val_t children;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gui_view_set_children_args, &children);
@@ -416,7 +421,8 @@ static void js_gui_vf_make_with(struct mjs* mjs) {
         JS_VALUE_SIMPLE(JsValueTypeAnyObject),
         JS_VALUE_SIMPLE(JsValueTypeAny),
     };
-    static const JsValueArguments js_gui_vf_make_with_args = JS_VALUE_ARGS(js_gui_vf_make_with_arg_list);
+    static const JsValueArguments js_gui_vf_make_with_args =
+        JS_VALUE_ARGS(js_gui_vf_make_with_arg_list);
 
     mjs_val_t props, children;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gui_vf_make_with_args, &props, &children);

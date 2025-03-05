@@ -148,7 +148,8 @@ static void js_event_loop_subscribe(struct mjs* mjs) {
         JS_VALUE_SIMPLE(JsValueTypeRawPointer),
         JS_VALUE_SIMPLE(JsValueTypeFunction),
     };
-    static const JsValueArguments js_loop_subscribe_args = JS_VALUE_ARGS(js_loop_subscribe_arg_list);
+    static const JsValueArguments js_loop_subscribe_args =
+        JS_VALUE_ARGS(js_loop_subscribe_arg_list);
 
     JsEventLoopContract* contract;
     mjs_val_t callback;
@@ -261,7 +262,7 @@ static void js_event_loop_timer(struct mjs* mjs) {
     FuriEventLoopTimerType mode;
     int32_t interval;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_loop_timer_args, &mode, &interval);
-    
+
     JsEventLoop* module = JS_GET_CONTEXT(mjs);
 
     // make timer contract

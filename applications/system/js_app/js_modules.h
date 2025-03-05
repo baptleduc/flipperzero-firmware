@@ -105,8 +105,6 @@ typedef struct {
     const ElfApiInterface* api_interface;
 } JsModuleDescriptor;
 
-
-
 JsModules* js_modules_create(struct mjs* mjs, CompositeApiResolver* resolver);
 
 void js_modules_destroy(JsModules* modules);

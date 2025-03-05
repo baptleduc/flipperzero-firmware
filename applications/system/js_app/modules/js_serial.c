@@ -39,21 +39,23 @@ static void js_serial_setup(struct mjs* mjs) {
         {"lpuart", FuriHalSerialIdLpuart},
         {"usart", FuriHalSerialIdUsart},
     };
-    
+
     static const JsValueEnumVariant js_serial_data_bit_variants[] = {
         {"6", FuriHalSerialDataBits6},
         {"7", FuriHalSerialDataBits7},
         {"8", FuriHalSerialDataBits8},
         {"9", FuriHalSerialDataBits9},
     };
-    static const JsValueDeclaration js_serial_data_bits = JS_VALUE_ENUM_W_DEFAULT(FuriHalSerialDataBits, js_serial_data_bit_variants, FuriHalSerialDataBits8);
+    static const JsValueDeclaration js_serial_data_bits = JS_VALUE_ENUM_W_DEFAULT(
+        FuriHalSerialDataBits, js_serial_data_bit_variants, FuriHalSerialDataBits8);
 
     static const JsValueEnumVariant js_serial_parity_variants[] = {
         {"none", FuriHalSerialParityNone},
         {"even", FuriHalSerialParityEven},
         {"odd", FuriHalSerialParityOdd},
     };
-    static const JsValueDeclaration js_serial_parity = JS_VALUE_ENUM_W_DEFAULT(FuriHalSerialParity, js_serial_parity_variants, FuriHalSerialParityNone);
+    static const JsValueDeclaration js_serial_parity = JS_VALUE_ENUM_W_DEFAULT(
+        FuriHalSerialParity, js_serial_parity_variants, FuriHalSerialParityNone);
 
     static const JsValueEnumVariant js_serial_stop_bit_variants[] = {
         {"0.5", FuriHalSerialStopBits0_5},
@@ -61,7 +63,8 @@ static void js_serial_setup(struct mjs* mjs) {
         {"1.5", FuriHalSerialStopBits1_5},
         {"2", FuriHalSerialStopBits2},
     };
-    static const JsValueDeclaration js_serial_stop_bits = JS_VALUE_ENUM_W_DEFAULT(FuriHalSerialStopBits, js_serial_stop_bit_variants, FuriHalSerialStopBits1);
+    static const JsValueDeclaration js_serial_stop_bits = JS_VALUE_ENUM_W_DEFAULT(
+        FuriHalSerialStopBits, js_serial_stop_bit_variants, FuriHalSerialStopBits1);
 
     static const JsValueObjectField js_serial_framing_fields[] = {
         {"dataBits", &js_serial_data_bits},
@@ -81,11 +84,13 @@ static void js_serial_setup(struct mjs* mjs) {
     FuriHalSerialDataBits data_bits = FuriHalSerialDataBits8;
     FuriHalSerialParity parity = FuriHalSerialParityNone;
     FuriHalSerialStopBits stop_bits = FuriHalSerialStopBits1;
-    JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_serial_setup_args, &serial_id, &baudrate, &data_bits, &parity, &stop_bits);
+    JS_VALUE_PARSE_ARGS_OR_RETURN(
+        mjs, &js_serial_setup_args, &serial_id, &baudrate, &data_bits, &parity, &stop_bits);
 
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
 
-    if(serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is already configured");
+    if(serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is already configured");
 
     expansion_disable(furi_record_open(RECORD_EXPANSION));
     furi_record_close(RECORD_EXPANSION);
@@ -123,7 +128,8 @@ static void js_serial_end(struct mjs* mjs) {
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
     furi_assert(serial);
 
-    if(!serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
+    if(!serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
 
     js_serial_deinit(serial);
 }
@@ -131,7 +137,8 @@ static void js_serial_end(struct mjs* mjs) {
 static void js_serial_write(struct mjs* mjs) {
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
     furi_assert(serial);
-    if(!serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
+    if(!serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
 
     bool args_correct = true;
 
@@ -224,7 +231,8 @@ static const JsValueArguments js_serial_read_args = JS_VALUE_ARGS(js_serial_read
 static void js_serial_read(struct mjs* mjs) {
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
     furi_assert(serial);
-    if(!serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
+    if(!serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
 
     int32_t read_len, timeout;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_serial_read_args, &read_len, &timeout);
@@ -243,7 +251,8 @@ static void js_serial_read(struct mjs* mjs) {
 static void js_serial_readln(struct mjs* mjs) {
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
     furi_assert(serial);
-    if(!serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
+    if(!serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
 
     static const JsValueDeclaration js_serial_readln_arg_list[] = {
         JS_VALUE_SIMPLE(JsValueTypeInt32),
@@ -281,7 +290,8 @@ static void js_serial_readln(struct mjs* mjs) {
 static void js_serial_read_bytes(struct mjs* mjs) {
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
     furi_assert(serial);
-    if(!serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
+    if(!serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
 
     int32_t read_len, timeout;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_serial_read_args, &read_len, &timeout);
@@ -315,12 +325,14 @@ static char* js_serial_receive_any(JsSerialInst* serial, size_t* len, uint32_t t
 static void js_serial_read_any(struct mjs* mjs) {
     JsSerialInst* serial = JS_GET_CONTEXT(mjs);
     furi_assert(serial);
-    if(!serial->setup_done) JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
+    if(!serial->setup_done)
+        JS_ERROR_AND_RETURN(mjs, MJS_INTERNAL_ERROR, "Serial is not configured");
 
     static const JsValueDeclaration js_serial_read_any_arg_list[] = {
         JS_VALUE_SIMPLE_W_DEFAULT(JsValueTypeInt32, int32_val, INT32_MAX),
     };
-    static const JsValueArguments js_serial_read_any_args = JS_VALUE_ARGS(js_serial_read_any_arg_list);
+    static const JsValueArguments js_serial_read_any_args =
+        JS_VALUE_ARGS(js_serial_read_any_arg_list);
 
     int32_t timeout;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_serial_read_any_args, &timeout);
@@ -567,7 +579,7 @@ static void* js_serial_create(struct mjs* mjs, mjs_val_t* object, JsModules* mod
     UNUSED(modules);
     JsSerialInst* js_serial = malloc(sizeof(JsSerialInst));
     js_serial->mjs = mjs;
-    
+
     mjs_val_t serial_obj = mjs_mk_object(mjs);
     JS_ASSIGN_MULTI(mjs, serial_obj) {
         JS_FIELD(INST_PROP_NAME, mjs_mk_foreign(mjs, js_serial));

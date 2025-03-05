@@ -63,8 +63,9 @@ static void js_gpio_init(struct mjs* mjs) {
         {"in", JsGpioDirectionIn},
         {"out", JsGpioDirectionOut},
     };
-    static const JsValueDeclaration js_gpio_direction = JS_VALUE_ENUM(JsGpioDirection, js_gpio_direction_variants);
-    
+    static const JsValueDeclaration js_gpio_direction =
+        JS_VALUE_ENUM(JsGpioDirection, js_gpio_direction_variants);
+
     // inMode variants
     typedef enum {
         JsGpioInModeAnalog = (0 << 0),
@@ -78,8 +79,9 @@ static void js_gpio_init(struct mjs* mjs) {
         {"interrupt", JsGpioInModeInterrupt},
         {"event", JsGpioInModeEvent},
     };
-    static const JsValueDeclaration js_gpio_in_mode = JS_VALUE_ENUM_W_DEFAULT(JsGpioInMode, js_gpio_in_mode_variants, JsGpioInModePlainDigital);
-    
+    static const JsValueDeclaration js_gpio_in_mode =
+        JS_VALUE_ENUM_W_DEFAULT(JsGpioInMode, js_gpio_in_mode_variants, JsGpioInModePlainDigital);
+
     // outMode variants
     typedef enum {
         JsGpioOutModePushPull,
@@ -89,8 +91,9 @@ static void js_gpio_init(struct mjs* mjs) {
         {"push_pull", JsGpioOutModePushPull},
         {"open_drain", JsGpioOutModeOpenDrain},
     };
-    static const JsValueDeclaration js_gpio_out_mode = JS_VALUE_ENUM_W_DEFAULT(JsGpioOutMode, js_gpio_out_mode_variants, JsGpioOutModeOpenDrain);
-    
+    static const JsValueDeclaration js_gpio_out_mode =
+        JS_VALUE_ENUM_W_DEFAULT(JsGpioOutMode, js_gpio_out_mode_variants, JsGpioOutModeOpenDrain);
+
     // edge variants
     typedef enum {
         JsGpioEdgeRising = (0 << 2),
@@ -102,14 +105,16 @@ static void js_gpio_init(struct mjs* mjs) {
         {"falling", JsGpioEdgeFalling},
         {"both", JsGpioEdgeBoth},
     };
-    static const JsValueDeclaration js_gpio_edge = JS_VALUE_ENUM_W_DEFAULT(JsGpioEdge, js_gpio_edge_variants, JsGpioEdgeRising);
+    static const JsValueDeclaration js_gpio_edge =
+        JS_VALUE_ENUM_W_DEFAULT(JsGpioEdge, js_gpio_edge_variants, JsGpioEdgeRising);
 
     // pull variants
     static const JsValueEnumVariant js_gpio_pull_variants[] = {
         {"up", GpioPullUp},
         {"down", GpioPullDown},
     };
-    static const JsValueDeclaration js_gpio_pull = JS_VALUE_ENUM_W_DEFAULT(GpioPull, js_gpio_pull_variants, GpioPullNo);
+    static const JsValueDeclaration js_gpio_pull =
+        JS_VALUE_ENUM_W_DEFAULT(GpioPull, js_gpio_pull_variants, GpioPullNo);
 
     // complete mode object
     static const JsValueObjectField js_gpio_mode_object_fields[] = {
@@ -131,7 +136,8 @@ static void js_gpio_init(struct mjs* mjs) {
     JsGpioOutMode out_mode;
     JsGpioEdge edge;
     GpioPull pull;
-    JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gpio_init_args, &direction, &in_mode, &out_mode, &edge, &pull);
+    JS_VALUE_PARSE_ARGS_OR_RETURN(
+        mjs, &js_gpio_init_args, &direction, &in_mode, &out_mode, &edge, &pull);
 
     GpioMode mode;
     if(direction == JsGpioDirectionOut) {
@@ -295,7 +301,8 @@ static void js_gpio_pwm_write(struct mjs* mjs) {
         JS_VALUE_SIMPLE(JsValueTypeInt32),
         JS_VALUE_SIMPLE(JsValueTypeInt32),
     };
-    static const JsValueArguments js_gpio_pwm_write_args = JS_VALUE_ARGS(js_gpio_pwm_write_arg_list);
+    static const JsValueArguments js_gpio_pwm_write_args =
+        JS_VALUE_ARGS(js_gpio_pwm_write_arg_list);
     int32_t frequency, duty;
     JS_VALUE_PARSE_ARGS_OR_RETURN(mjs, &js_gpio_pwm_write_args, &frequency, &duty);
 
