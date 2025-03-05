@@ -129,7 +129,13 @@ static void js_value_test_compatibility_matrix(struct mjs* mjs) {
             // all the results
             uint8_t result[sizeof(double)];
             JsValueParseStatus status;
-            JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&declaration), JsValueParseFlagNone, &status, &values[j], result);
+            JS_VALUE_PARSE(
+                mjs,
+                JS_VALUE_PARSE_SOURCE_VALUE(&declaration),
+                JsValueParseFlagNone,
+                &status,
+                &values[j],
+                result);
             if((status == JsValueParseStatusOk) != success_matrix[i][j]) {
                 FURI_LOG_E(TAG, "type %zu, value %zu", i, j);
                 mu_fail("see serial logs");
@@ -159,7 +165,13 @@ static void js_value_test_literal(struct mjs* mjs) {
         };
         mjs_val_t result;
         JsValueParseStatus status;
-        JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&declaration), JsValueParseFlagNone, &status, &values[i], &result);
+        JS_VALUE_PARSE(
+            mjs,
+            JS_VALUE_PARSE_SOURCE_VALUE(&declaration),
+            JsValueParseFlagNone,
+            &status,
+            &values[i],
+            &result);
         mu_assert_int_eq(JsValueParseStatusOk, status);
         mu_assert(result == values[i], "wrong result");
     }
@@ -177,7 +189,13 @@ static void js_value_test_primitive(
     };
     uint8_t result[c_value_size];
     JsValueParseStatus status;
-    JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&declaration), JsValueParseFlagNone, &status, &js_val, result);
+    JS_VALUE_PARSE(
+        mjs,
+        JS_VALUE_PARSE_SOURCE_VALUE(&declaration),
+        JsValueParseFlagNone,
+        &status,
+        &js_val,
+        result);
     mu_assert_int_eq(JsValueParseStatusOk, status);
     if(type == JsValueTypeString) {
         const char* result_str = *(const char**)&result;
@@ -208,7 +226,8 @@ static uint32_t
     mjs_val_t str = mjs_mk_string(mjs, value, ~0, false);
     uint32_t result;
     JsValueParseStatus status;
-    JS_VALUE_PARSE(mjs, JS_VALUE_PARSE_SOURCE_VALUE(decl), JsValueParseFlagNone, &status, &str, &result);
+    JS_VALUE_PARSE(
+        mjs, JS_VALUE_PARSE_SOURCE_VALUE(decl), JsValueParseFlagNone, &status, &str, &result);
     if(status != JsValueParseStatusOk) return 0;
     return result;
 }
@@ -286,7 +305,8 @@ static void js_value_test_object(struct mjs* mjs) {
 }
 
 static void js_value_test_default(struct mjs* mjs) {
-    static const JsValueDeclaration int_decl = JS_VALUE_SIMPLE_W_DEFAULT(JsValueTypeInt32, int32_val, 123);
+    static const JsValueDeclaration int_decl =
+        JS_VALUE_SIMPLE_W_DEFAULT(JsValueTypeInt32, int32_val, 123);
     static const JsValueDeclaration str_decl = JS_VALUE_SIMPLE(JsValueTypeString);
 
     static const JsValueObjectField fields[] = {
@@ -305,7 +325,13 @@ static void js_value_test_default(struct mjs* mjs) {
     int32_t result_int;
     JsValueParseStatus status;
     JS_VALUE_PARSE(
-        mjs, JS_VALUE_PARSE_SOURCE_VALUE(&object_decl), JsValueParseFlagNone, &status, &object, &result_int, &result_str);
+        mjs,
+        JS_VALUE_PARSE_SOURCE_VALUE(&object_decl),
+        JsValueParseFlagNone,
+        &status,
+        &object,
+        &result_int,
+        &result_str);
     mu_assert_string_eq("Helloooo!", result_str);
     mu_assert_int_eq(123, result_int);
 }

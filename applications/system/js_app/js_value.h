@@ -75,38 +75,45 @@ typedef struct {
     const JsValueDeclaration* arguments;
 } JsValueArguments;
 
-#define JS_VALUE_ENUM(c_type, variants) { \
+#define JS_VALUE_ENUM(c_type, variants)                                    \
+    {                                                                      \
         .type = JsValueTypeEnum | JS_VALUE_TYPE_ENUM_SIZE(sizeof(c_type)), \
-        .n_children = COUNT_OF(variants), \
-        .enum_variants = variants, \
+        .n_children = COUNT_OF(variants),                                  \
+        .enum_variants = variants,                                         \
     }
 
-#define JS_VALUE_ENUM_W_DEFAULT(c_type, variants, default) { \
-        .type = JsValueTypeEnum | JsValueTypePermitNull | JS_VALUE_TYPE_ENUM_SIZE(sizeof(c_type)), \
-        .default_value.enum_val = default, \
-        .n_children = COUNT_OF(variants), \
-        .enum_variants = variants, \
+#define JS_VALUE_ENUM_W_DEFAULT(c_type, variants, default) \
+    {                                                      \
+        .type = JsValueTypeEnum | JsValueTypePermitNull |  \
+                JS_VALUE_TYPE_ENUM_SIZE(sizeof(c_type)),   \
+        .default_value.enum_val = default,                 \
+        .n_children = COUNT_OF(variants),                  \
+        .enum_variants = variants,                         \
     }
 
-#define JS_VALUE_OBJECT(fields) { \
-        .type = JsValueTypeObject, \
+#define JS_VALUE_OBJECT(fields)         \
+    {                                   \
+        .type = JsValueTypeObject,      \
         .n_children = COUNT_OF(fields), \
-        .object_fields = fields, \
+        .object_fields = fields,        \
     }
 
-#define JS_VALUE_OBJECT_W_DEFAULTS(fields) { \
+#define JS_VALUE_OBJECT_W_DEFAULTS(fields)                 \
+    {                                                      \
         .type = JsValueTypeObject | JsValueTypePermitNull, \
-        .n_children = COUNT_OF(fields), \
-        .object_fields = fields, \
+        .n_children = COUNT_OF(fields),                    \
+        .object_fields = fields,                           \
     }
 
 #define JS_VALUE_SIMPLE(t) {.type = t}
 
-#define JS_VALUE_SIMPLE_W_DEFAULT(t, name, val) {.type = t | JsValueTypePermitNull, .default_value.name = val}
+#define JS_VALUE_SIMPLE_W_DEFAULT(t, name, val) \
+    {.type = t | JsValueTypePermitNull, .default_value.name = val}
 
-#define JS_VALUE_ARGS(args) { \
+#define JS_VALUE_ARGS(args)           \
+    {                                 \
         .n_children = COUNT_OF(args), \
-        .arguments = args, \
+        .arguments = args,            \
     }
 
 typedef enum {
@@ -134,8 +141,11 @@ typedef struct {
     };
 } JsValueParseDeclaration;
 
-#define JS_VALUE_PARSE_SOURCE_VALUE(declaration) ((JsValueParseDeclaration){.source = JsValueParseSourceValue, .value_decl = declaration})
-#define JS_VALUE_PARSE_SOURCE_ARGS(declaration) ((JsValueParseDeclaration){.source = JsValueParseSourceArguments, .argument_decl = declaration})
+#define JS_VALUE_PARSE_SOURCE_VALUE(declaration) \
+    ((JsValueParseDeclaration){.source = JsValueParseSourceValue, .value_decl = declaration})
+#define JS_VALUE_PARSE_SOURCE_ARGS(declaration) \
+    ((JsValueParseDeclaration){                 \
+        .source = JsValueParseSourceArguments, .argument_decl = declaration})
 
 /**
  * @brief Determines the size of the buffer array of `mjs_val_t`s that needs to

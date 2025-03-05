@@ -15,7 +15,8 @@ size_t js_value_buffer_size(const JsValueParseDeclaration declaration) {
         if(type == JsValueTypeObject) {
             size_t total = 0;
             for(size_t i = 0; i < value_decl->n_children; i++)
-                total += js_value_buffer_size(JS_VALUE_PARSE_SOURCE_VALUE(value_decl->object_fields[i].value));
+                total += js_value_buffer_size(
+                    JS_VALUE_PARSE_SOURCE_VALUE(value_decl->object_fields[i].value));
             return total;
         }
 
@@ -38,7 +39,8 @@ static size_t js_value_resulting_c_values_count(const JsValueParseDeclaration de
         if(type == JsValueTypeObject) {
             size_t total = 0;
             for(size_t i = 0; i < value_decl->n_children; i++)
-                total += js_value_resulting_c_values_count(JS_VALUE_PARSE_SOURCE_VALUE(value_decl->object_fields[i].value));
+                total += js_value_resulting_c_values_count(
+                    JS_VALUE_PARSE_SOURCE_VALUE(value_decl->object_fields[i].value));
             return total;
         }
 
@@ -48,7 +50,8 @@ static size_t js_value_resulting_c_values_count(const JsValueParseDeclaration de
         const JsValueArguments* arg_decl = declaration.argument_decl;
         size_t total = 0;
         for(size_t i = 0; i < arg_decl->n_children; i++)
-            total += js_value_resulting_c_values_count(JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]));
+            total += js_value_resulting_c_values_count(
+                JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]));
         return total;
     }
 }
@@ -99,7 +102,14 @@ static JsValueParseStatus js_value_parse_va(
 
         for(size_t i = 0; i < arg_decl->n_children; i++) {
             mjs_val_t arg_val = mjs_arg(mjs, i);
-            JsValueParseStatus status = js_value_parse_va(mjs, JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]), flags, &arg_val, buffer, buffer_index, out_pointers);
+            JsValueParseStatus status = js_value_parse_va(
+                mjs,
+                JS_VALUE_PARSE_SOURCE_VALUE(&arg_decl->arguments[i]),
+                flags,
+                &arg_val,
+                buffer,
+                buffer_index,
+                out_pointers);
             if(status != JsValueParseStatusOk) return status;
         }
 
@@ -109,11 +119,11 @@ static JsValueParseStatus js_value_parse_va(
     const JsValueDeclaration* value_decl = declaration.value_decl;
     JsValueType type_w_flags = value_decl->type;
     JsValueType type_noflags = type_w_flags & JsValueTypeMask;
-    bool is_null_but_allowed = (type_w_flags & JsValueTypePermitNull) && js_value_is_null_or_undefined(source);
+    bool is_null_but_allowed = (type_w_flags & JsValueTypePermitNull) &&
+                               js_value_is_null_or_undefined(source);
 
     void* destination = NULL;
-    if(type_noflags != JsValueTypeObject)
-        destination = va_arg(*out_pointers, void*);
+    if(type_noflags != JsValueTypeObject) destination = va_arg(*out_pointers, void*);
 
     switch(type_noflags) {
     // Literal terms
@@ -175,7 +185,8 @@ static JsValueParseStatus js_value_parse_va(
     // Types with children
     case JsValueTypeEnum: {
         if(is_null_but_allowed) {
-            js_value_assign_enum_val(destination, type_w_flags, value_decl->default_value.enum_val);
+            js_value_assign_enum_val(
+                destination, type_w_flags, value_decl->default_value.enum_val);
 
         } else if(mjs_is_string(*source)) {
             const char* str = mjs_get_string(mjs, source, NULL);
@@ -201,12 +212,19 @@ static JsValueParseStatus js_value_parse_va(
     }
 
     case JsValueTypeObject: {
-        if(!(is_null_but_allowed || mjs_is_object(*source))) PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected object");
+        if(!(is_null_but_allowed || mjs_is_object(*source)))
+            PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "expected object");
         for(size_t i = 0; i < value_decl->n_children; i++) {
             const JsValueObjectField* field = &value_decl->object_fields[i];
             mjs_val_t field_val = mjs_get(mjs, *source, field->field_name, ~0);
-            JsValueParseStatus status =
-                js_value_parse_va(mjs, JS_VALUE_PARSE_SOURCE_VALUE(field->value), flags, &field_val, buffer, buffer_index, out_pointers);
+            JsValueParseStatus status = js_value_parse_va(
+                mjs,
+                JS_VALUE_PARSE_SOURCE_VALUE(field->value),
+                flags,
+                &field_val,
+                buffer,
+                buffer_index,
+                out_pointers);
             if(status != JsValueParseStatusOk)
                 PREPEND_JS_ERROR_AND_RETURN(mjs, flags, "field %s: ", field->field_name);
         }
