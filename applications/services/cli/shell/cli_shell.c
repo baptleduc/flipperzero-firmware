@@ -179,7 +179,8 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
 // Event handlers
 // ==============
 
-static void cli_shell_process_parser_result(CliShell* cli_shell, CliAnsiParserResult parse_result) {
+static void
+    cli_shell_process_parser_result(CliShell* cli_shell, CliAnsiParserResult parse_result) {
     if(!parse_result.is_done) return;
     CliKeyCombo key_combo = parse_result.result;
     if(key_combo.key == CliKeyUnrecognized) return;
@@ -221,7 +222,8 @@ static void cli_shell_data_available(PipeSide* pipe, void* context) {
 
 static void cli_shell_timer_expired(void* context) {
     CliShell* cli_shell = context;
-    cli_shell_process_parser_result(cli_shell, cli_ansi_parser_feed_timeout(cli_shell->ansi_parser));
+    cli_shell_process_parser_result(
+        cli_shell, cli_ansi_parser_feed_timeout(cli_shell->ansi_parser));
 }
 
 // =======
@@ -242,7 +244,7 @@ static CliShell* cli_shell_alloc(PipeSide* pipe) {
     cli_shell->event_loop = furi_event_loop_alloc();
     cli_shell->ansi_parsing_timer = furi_event_loop_timer_alloc(
         cli_shell->event_loop, cli_shell_timer_expired, FuriEventLoopTimerTypeOnce, cli_shell);
-    
+
     cli_shell_install_pipe(cli_shell);
 
     return cli_shell;
