@@ -10,6 +10,7 @@ struct CliShellLine {
     size_t line_position;
     ShellHistory_t history;
     CliShell* shell;
+    bool about_to_exit;
 };
 
 // ==========
@@ -41,14 +42,16 @@ FuriString* cli_shell_line_get_editing(CliShellLine* line) {
     return *ShellHistory_front(line->history);
 }
 
-size_t cli_shell_line_prompt_length(CliShellLine* line) {
-    UNUSED(line);
-    return strlen(">: ");
-}
-
 void cli_shell_line_format_prompt(CliShellLine* line, char* buf, size_t length) {
     UNUSED(line);
-    snprintf(buf, length - 1, ">: ");
+    const char* prompt = cli_shell_get_prompt(line->shell);
+    snprintf(buf, length - 1, "%s>: ", prompt ? prompt : "");
+}
+
+size_t cli_shell_line_prompt_length(CliShellLine* line) {
+    char buffer[128];
+    cli_shell_line_format_prompt(line, buffer, sizeof(buffer));
+    return strlen(buffer);
 }
 
 void cli_shell_line_prompt(CliShellLine* line) {
@@ -65,6 +68,10 @@ void cli_shell_line_ensure_not_overwriting_history(CliShellLine* line) {
         furi_string_set(destination, source);
         line->history_position = 0;
     }
+}
+
+void cli_shell_line_set_about_to_exit(CliShellLine* line) {
+    line->about_to_exit = true;
 }
 
 size_t cli_shell_line_get_line_position(CliShellLine* line) {
@@ -163,7 +170,7 @@ static bool key_combo_cr(CliKeyCombo combo, void* context) {
     printf("\r\n");
     if(!furi_string_empty(command)) cli_shell_execute_command(line->shell, command);
     furi_string_free(command);
-    cli_shell_line_prompt(line);
+    if(!line->about_to_exit) cli_shell_line_prompt(line);
     return true;
 }
 
@@ -176,10 +183,13 @@ static bool key_combo_up_down(CliKeyCombo combo, void* context) {
 
     // print prompt with selected command
     if(new_pos != line->history_position) {
+        char prompt[64];
+        cli_shell_line_format_prompt(line, prompt, sizeof(prompt));
         line->history_position = new_pos;
         FuriString* command = cli_shell_line_get_selected(line);
         printf(
-            ANSI_CURSOR_HOR_POS("1") ">: %s" ANSI_ERASE_LINE(ANSI_ERASE_FROM_CURSOR_TO_END),
+            ANSI_CURSOR_HOR_POS("1") "%s%s" ANSI_ERASE_LINE(ANSI_ERASE_FROM_CURSOR_TO_END),
+            prompt,
             furi_string_get_cstr(command));
         fflush(stdout);
         line->line_position = furi_string_size(command);

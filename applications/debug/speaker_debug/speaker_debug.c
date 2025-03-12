@@ -1,7 +1,6 @@
 #include <furi.h>
 #include <notification/notification.h>
 #include <music_worker/music_worker.h>
-#include <cli/cli.h>
 #include <toolbox/args.h>
 #include <toolbox/pipe.h>
 
@@ -34,7 +33,7 @@ static SpeakerDebugApp* speaker_app_alloc(void) {
 static void speaker_app_free(SpeakerDebugApp* app) {
     music_worker_free(app->music_worker);
     furi_message_queue_free(app->message_queue);
-    furi_record_close(RECORD_CLI);
+    furi_record_close(RECORD_CLI_MASTER);
     free(app);
 }
 
