@@ -257,7 +257,7 @@ static bool cli_shell_line_input_bksp(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_ctrl_l(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_ctrl_l(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
     // clear screen
@@ -274,7 +274,7 @@ static bool key_combo_ctrl_l(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_ctrl_left_right(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_ctrl_left_right(CliKeyCombo combo, void* context) {
     CliShellLine* line = context;
     // skip run of similar chars to the left or right
     FuriString* selected_line = cli_shell_line_get_selected(line);
@@ -287,7 +287,7 @@ static bool key_combo_ctrl_left_right(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool key_combo_ctrl_bksp(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_ctrl_bksp(CliKeyCombo combo, void* context) {
     UNUSED(combo);
     CliShellLine* line = context;
     // delete run of similar chars to the left
@@ -307,7 +307,7 @@ static bool key_combo_ctrl_bksp(CliKeyCombo combo, void* context) {
     return true;
 }
 
-static bool normal_input(CliKeyCombo combo, void* context) {
+static bool cli_shell_line_input_normal_input(CliKeyCombo combo, void* context) {
     CliShellLine* line = context;
     if(combo.modifiers != CliModKeyNo) return false;
     if(combo.key < CliKeySpace || combo.key >= CliKeyDEL) return false;
@@ -328,23 +328,23 @@ static bool normal_input(CliKeyCombo combo, void* context) {
 }
 
 CliShellKeyComboSet cli_shell_line_key_combo_set = {
-    .fallback = normal_input,
+    .fallback = cli_shell_line_input_normal_input,
     .count = 14,
     .records =
         {
-            {{CliModKeyNo, CliKeyETX}, key_combo_ctrl_c},
-            {{CliModKeyNo, CliKeyCR}, key_combo_cr},
-            {{CliModKeyNo, CliKeyUp}, key_combo_up_down},
-            {{CliModKeyNo, CliKeyDown}, key_combo_up_down},
-            {{CliModKeyNo, CliKeyLeft}, key_combo_left_right},
-            {{CliModKeyNo, CliKeyRight}, key_combo_left_right},
-            {{CliModKeyNo, CliKeyHome}, key_combo_home},
-            {{CliModKeyNo, CliKeyEnd}, key_combo_end},
-            {{CliModKeyNo, CliKeyBackspace}, key_combo_bksp},
-            {{CliModKeyNo, CliKeyDEL}, key_combo_bksp},
-            {{CliModKeyNo, CliKeyFF}, key_combo_ctrl_l},
-            {{CliModKeyCtrl, CliKeyLeft}, key_combo_ctrl_left_right},
-            {{CliModKeyCtrl, CliKeyRight}, key_combo_ctrl_left_right},
-            {{CliModKeyNo, CliKeyETB}, key_combo_ctrl_bksp},
+            {{CliModKeyNo, CliKeyETX}, cli_shell_line_input_ctrl_c},
+            {{CliModKeyNo, CliKeyCR}, cli_shell_line_input_cr},
+            {{CliModKeyNo, CliKeyUp}, cli_shell_line_input_up_down},
+            {{CliModKeyNo, CliKeyDown}, cli_shell_line_input_up_down},
+            {{CliModKeyNo, CliKeyLeft}, cli_shell_line_input_left_right},
+            {{CliModKeyNo, CliKeyRight}, cli_shell_line_input_left_right},
+            {{CliModKeyNo, CliKeyHome}, cli_shell_line_input_home},
+            {{CliModKeyNo, CliKeyEnd}, cli_shell_line_input_end},
+            {{CliModKeyNo, CliKeyBackspace}, cli_shell_line_input_bksp},
+            {{CliModKeyNo, CliKeyDEL}, cli_shell_line_input_bksp},
+            {{CliModKeyNo, CliKeyFF}, cli_shell_line_input_ctrl_l},
+            {{CliModKeyCtrl, CliKeyLeft}, cli_shell_line_input_ctrl_left_right},
+            {{CliModKeyCtrl, CliKeyRight}, cli_shell_line_input_ctrl_left_right},
+            {{CliModKeyNo, CliKeyETB}, cli_shell_line_input_ctrl_bksp},
         },
 };
