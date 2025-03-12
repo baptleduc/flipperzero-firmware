@@ -254,9 +254,9 @@ static void cli_shell_free(CliShell* cli_shell) {
     cli_shell_completions_free(cli_shell->components[CliShellComponentCompletions]);
     cli_shell_line_free(cli_shell->components[CliShellComponentLine]);
 
+    cli_shell_detach_pipe(cli_shell);
     furi_event_loop_timer_free(cli_shell->ansi_parsing_timer);
     furi_event_loop_free(cli_shell->event_loop);
-    cli_shell_detach_pipe(cli_shell);
     pipe_free(cli_shell->pipe);
     cli_ansi_parser_free(cli_shell->ansi_parser);
     furi_record_close(RECORD_CLI);
