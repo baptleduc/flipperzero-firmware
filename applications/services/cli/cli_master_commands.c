@@ -184,7 +184,7 @@ void cli_command_log(PipeSide* pipe, FuriString* args, void* context) {
 
     printf("Use <log ?> to list available log levels\r\n");
     printf("Press CTRL+C to stop...\r\n");
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         furi_delay_ms(100);
     }
 
@@ -360,7 +360,7 @@ static void cli_command_top(PipeSide* pipe, FuriString* args, void* context) {
     args_read_int_and_trim(args, &interval);
 
     FuriThreadList* thread_list = furi_thread_list_alloc();
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         uint32_t tick = furi_get_tick();
         furi_thread_enumerate(thread_list);
 
@@ -470,29 +470,54 @@ void cli_command_i2c(PipeSide* pipe, FuriString* args, void* context) {
     furi_hal_i2c_release(&furi_hal_i2c_handle_external);
 }
 
+/**
+ * Echoes any bytes it receives except ASCII ETX (0x03, Ctrl+C)
+ */
+void cli_command_echo(PipeSide* pipe, FuriString* args, void* context) {
+    UNUSED(args);
+    UNUSED(context);
+    const FuriWait timeout = furi_ms_to_ticks(500);
+
+    uint8_t buffer[256];
+
+    while(true) {
+        size_t read = pipe_receive(pipe, buffer, sizeof(buffer), timeout);
+        if(!read) continue;
+
+        if(pipe_state(pipe) == PipeStateBroken) break;
+        if(memchr(buffer, CliKeyETX, read)) break;
+
+        size_t written = pipe_send(pipe, buffer, read, timeout);
+        if(written != read) {
+            FURI_LOG_E("CliEcho", "read=%zu written=%zu", read, written);
+        }
+    }
+}
+
 void cli_commands_init(CliRegistry* registry) {
-    cli_registry_add_command(registry, "!", CliCommandFlagDefault, cli_command_info, (void*)true);
-    cli_registry_add_command(registry, "info", CliCommandFlagDefault, cli_command_info, NULL);
+    cli_registry_add_command(registry, "!", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
+    cli_registry_add_command(registry, "info", CliCommandFlagParallelSafe, cli_command_info, NULL);
     cli_registry_add_command(
-        registry, "device_info", CliCommandFlagDefault, cli_command_info, (void*)true);
+        registry, "device_info", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
 
     cli_registry_add_command(
-        registry, "uptime", CliCommandFlagParallelUnsafe, cli_command_uptime, NULL);
-    cli_registry_add_command(registry, "date", CliCommandFlagDefault, cli_command_date, NULL);
-    cli_registry_add_command(registry, "log", CliCommandFlagDefault, cli_command_log, NULL);
+        registry, "uptime", CliCommandFlagDefault, cli_command_uptime, NULL);
+    cli_registry_add_command(registry, "date", CliCommandFlagParallelSafe, cli_command_date, NULL);
+    cli_registry_add_command(registry, "log", CliCommandFlagParallelSafe, cli_command_log, NULL);
     cli_registry_add_command(
-        registry, "sysctl", CliCommandFlagParallelUnsafe, cli_command_sysctl, NULL);
-    cli_registry_add_command(registry, "top", CliCommandFlagDefault, cli_command_top, NULL);
-    cli_registry_add_command(registry, "free", CliCommandFlagDefault, cli_command_free, NULL);
+        registry, "sysctl", CliCommandFlagDefault, cli_command_sysctl, NULL);
+    cli_registry_add_command(registry, "top", CliCommandFlagParallelSafe, cli_command_top, NULL);
+    cli_registry_add_command(registry, "free", CliCommandFlagParallelSafe, cli_command_free, NULL);
     cli_registry_add_command(
-        registry, "free_blocks", CliCommandFlagDefault, cli_command_free_blocks, NULL);
+        registry, "free_blocks", CliCommandFlagParallelSafe, cli_command_free_blocks, NULL);
+    cli_registry_add_command(registry, "echo", CliCommandFlagParallelSafe, cli_command_echo, NULL);
 
     cli_registry_add_command(
-        registry, "vibro", CliCommandFlagParallelUnsafe, cli_command_vibro, NULL);
-    cli_registry_add_command(registry, "led", CliCommandFlagParallelUnsafe, cli_command_led, NULL);
+        registry, "vibro", CliCommandFlagDefault, cli_command_vibro, NULL);
+    cli_registry_add_command(registry, "led", CliCommandFlagDefault, cli_command_led, NULL);
     cli_registry_add_command(
-        registry, "gpio", CliCommandFlagParallelUnsafe, cli_command_gpio, NULL);
-    cli_registry_add_command(registry, "i2c", CliCommandFlagParallelUnsafe, cli_command_i2c, NULL);
+        registry, "gpio", CliCommandFlagDefault, cli_command_gpio, NULL);
+    cli_registry_add_command(registry, "i2c", CliCommandFlagDefault, cli_command_i2c, NULL);
 }
 
 void cli_on_system_start(void) {

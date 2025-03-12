@@ -43,7 +43,7 @@ static void bt_cli_command_carrier_tx(PipeSide* pipe, FuriString* args, void* co
         printf("Press CTRL+C to stop\r\n");
         furi_hal_bt_start_tone_tx(channel, 0x19 + power);
 
-        while(!cli_app_should_stop(pipe)) {
+        while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             furi_delay_ms(250);
         }
         furi_hal_bt_stop_tone_tx();
@@ -71,7 +71,7 @@ static void bt_cli_command_carrier_rx(PipeSide* pipe, FuriString* args, void* co
 
         furi_hal_bt_start_packet_rx(channel, 1);
 
-        while(!cli_app_should_stop(pipe)) {
+        while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             furi_delay_ms(250);
             printf("RSSI: %6.1f dB\r", (double)furi_hal_bt_get_rssi());
             fflush(stdout);
@@ -121,7 +121,7 @@ static void bt_cli_command_packet_tx(PipeSide* pipe, FuriString* args, void* con
         printf("Press CTRL+C to stop\r\n");
         furi_hal_bt_start_packet_tx(channel, pattern, datarate);
 
-        while(!cli_app_should_stop(pipe)) {
+        while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             furi_delay_ms(250);
         }
         furi_hal_bt_stop_packet_test();
@@ -154,7 +154,7 @@ static void bt_cli_command_packet_rx(PipeSide* pipe, FuriString* args, void* con
         printf("Press CTRL+C to stop\r\n");
         furi_hal_bt_start_packet_rx(channel, datarate);
 
-        while(!cli_app_should_stop(pipe)) {
+        while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             furi_delay_ms(250);
             printf("RSSI: %03.1f dB\r", (double)furi_hal_bt_get_rssi());
             fflush(stdout);
@@ -232,7 +232,7 @@ static void bt_cli(PipeSide* pipe, FuriString* args, void* context) {
 void bt_on_system_start(void) {
 #ifdef SRV_CLI
     CliRegistry* registry = furi_record_open(RECORD_CLI_MASTER);
-    cli_registry_add_command(registry, "bt", CliCommandFlagParallelUnsafe, bt_cli, NULL);
+    cli_registry_add_command(registry, "bt", CliCommandFlagDefault, bt_cli, NULL);
     furi_record_close(RECORD_CLI_MASTER);
 #else
     UNUSED(bt_cli);

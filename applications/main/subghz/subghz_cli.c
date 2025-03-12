@@ -94,7 +94,7 @@ void subghz_cli_command_tx_carrier(PipeSide* pipe, FuriString* args, void* conte
     if(furi_hal_subghz_tx()) {
         printf("Transmitting at frequency %lu Hz\r\n", frequency);
         printf("Press CTRL+C to stop\r\n");
-        while(!cli_app_should_stop(pipe)) {
+        while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             furi_delay_ms(250);
         }
     } else {
@@ -135,7 +135,7 @@ void subghz_cli_command_rx_carrier(PipeSide* pipe, FuriString* args, void* conte
 
     furi_hal_subghz_rx();
 
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         furi_delay_ms(250);
         printf("RSSI: %03.1fdbm\r", (double)furi_hal_subghz_get_rssi());
         fflush(stdout);
@@ -238,7 +238,9 @@ void subghz_cli_command_tx(PipeSide* pipe, FuriString* args, void* context) {
 
     furi_hal_power_suppress_charge_enter();
     if(subghz_devices_start_async_tx(device, subghz_transmitter_yield, transmitter)) {
-        while(!(subghz_devices_is_async_complete_tx(device) || cli_app_should_stop(pipe))) {
+        while(
+            !(subghz_devices_is_async_complete_tx(device) ||
+              cli_is_pipe_broken_or_is_etx_next_char(pipe))) {
             printf(".");
             fflush(stdout);
             furi_delay_ms(333);
@@ -351,7 +353,7 @@ void subghz_cli_command_rx(PipeSide* pipe, FuriString* args, void* context) {
         frequency,
         device_ind);
     LevelDuration level_duration;
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         int ret = furi_stream_buffer_receive(
             instance->stream, &level_duration, sizeof(LevelDuration), 10);
         if(ret == sizeof(LevelDuration)) {
@@ -422,7 +424,7 @@ void subghz_cli_command_rx_raw(PipeSide* pipe, FuriString* args, void* context) 
     printf("Listening at %lu. Press CTRL+C to stop\r\n", frequency);
     LevelDuration level_duration;
     size_t counter = 0;
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         int ret = furi_stream_buffer_receive(
             instance->stream, &level_duration, sizeof(LevelDuration), 10);
         if(ret == 0) {
@@ -528,7 +530,7 @@ void subghz_cli_command_decode_raw(PipeSide* pipe, FuriString* args, void* conte
             furi_string_get_cstr(file_name));
 
         LevelDuration level_duration;
-        while(!cli_app_should_stop(pipe)) {
+        while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             furi_delay_us(500); //you need to have time to read from the file from the SD card
             level_duration = subghz_file_encoder_worker_get_level_duration(file_worker_encoder);
             if(!level_duration_is_reset(level_duration)) {
@@ -776,7 +778,8 @@ void subghz_cli_command_tx_from_file(PipeSide* pipe, FuriString* args, void* con
             furi_delay_ms(200);
             if(subghz_devices_start_async_tx(device, subghz_transmitter_yield, transmitter)) {
                 while(
-                    !(subghz_devices_is_async_complete_tx(device) || cli_app_should_stop(pipe))) {
+                    !(subghz_devices_is_async_complete_tx(device) ||
+                      cli_is_pipe_broken_or_is_etx_next_char(pipe))) {
                     printf(".");
                     fflush(stdout);
                     furi_delay_ms(333);
@@ -790,11 +793,11 @@ void subghz_cli_command_tx_from_file(PipeSide* pipe, FuriString* args, void* con
             if(!strcmp(furi_string_get_cstr(temp_str), "RAW")) {
                 subghz_transmitter_stop(transmitter);
                 repeat--;
-                if(!cli_app_should_stop(pipe) && repeat)
+                if(!cli_is_pipe_broken_or_is_etx_next_char(pipe) && repeat)
                     subghz_transmitter_deserialize(transmitter, fff_data_raw);
             }
 
-        } while(!cli_app_should_stop(pipe) &&
+        } while(!cli_is_pipe_broken_or_is_etx_next_char(pipe) &&
                 (repeat && !strcmp(furi_string_get_cstr(temp_str), "RAW")));
 
         subghz_devices_sleep(device);
@@ -1089,7 +1092,7 @@ static void subghz_cli_command_chat(PipeSide* pipe, FuriString* args) {
                 break;
             }
         }
-        if(!cli_app_should_stop(pipe)) {
+        if(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
             printf("\r\n");
             chat_event.event = SubGhzChatEventUserExit;
             subghz_chat_worker_put_event_chat(subghz_chat, &chat_event);

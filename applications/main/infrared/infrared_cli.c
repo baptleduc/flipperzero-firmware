@@ -143,7 +143,7 @@ static void infrared_cli_start_ir_rx(PipeSide* pipe, FuriString* args) {
     infrared_worker_rx_set_received_signal_callback(worker, signal_received_callback, pipe);
 
     printf("Receiving %s INFRARED...\r\nPress Ctrl+C to abort\r\n", enable_decoding ? "" : "RAW");
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         furi_delay_ms(50);
     }
 
@@ -490,7 +490,7 @@ static void infrared_cli_brute_force_signals(
         while(running) {
             running = infrared_brute_force_send(brute_force, current_signal);
 
-            if(cli_app_should_stop(pipe)) break;
+            if(cli_is_pipe_broken_or_is_etx_next_char(pipe)) break;
 
             printf("\r%d%% complete.", (int)((float)current_signal++ / (float)signal_count * 100));
             fflush(stdout);
