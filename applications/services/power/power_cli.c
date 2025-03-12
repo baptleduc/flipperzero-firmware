@@ -116,7 +116,7 @@ void power_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
 
-    cli_add_command(cli, "power", CliCommandFlagDefault, power_cli, NULL);
+    cli_add_command(cli, "power", CliCommandFlagParallelSafe, power_cli, NULL);
 
     furi_record_close(RECORD_CLI);
 #else

@@ -131,7 +131,7 @@ void cli_shell_execute_command(CliShell* cli_shell, FuriString* command) {
         }
 
         // lock loader
-        if(command_data.flags & CliCommandFlagParallelUnsafe) {
+        if(!(command_data.flags & CliCommandFlagParallelSafe)) {
             loader = furi_record_open(RECORD_LOADER);
             bool success = loader_lock(loader);
             if(!success) {

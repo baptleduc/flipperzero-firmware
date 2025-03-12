@@ -782,7 +782,7 @@ Function,+,cli_ansi_parser_alloc,CliAnsiParser*,
 Function,+,cli_ansi_parser_feed,CliAnsiParserResult,"CliAnsiParser*, char"
 Function,+,cli_ansi_parser_feed_timeout,CliAnsiParserResult,CliAnsiParser*
 Function,+,cli_ansi_parser_free,void,CliAnsiParser*
-Function,+,cli_app_should_stop,_Bool,PipeSide*
+Function,+,cli_is_pipe_broken_or_is_etx_next_char,_Bool,PipeSide*
 Function,+,cli_delete_command,void,"Cli*, const char*"
 Function,+,cli_enumerate_external_commands,void,Cli*
 Function,+,cli_print_usage,void,"const char*, const char*, const char*"
@@ -1136,6 +1136,7 @@ Function,+,furi_event_loop_subscribe_message_queue,void,"FuriEventLoop*, FuriMes
 Function,+,furi_event_loop_subscribe_mutex,void,"FuriEventLoop*, FuriMutex*, FuriEventLoopEvent, FuriEventLoopEventCallback, void*"
 Function,+,furi_event_loop_subscribe_semaphore,void,"FuriEventLoop*, FuriSemaphore*, FuriEventLoopEvent, FuriEventLoopEventCallback, void*"
 Function,+,furi_event_loop_subscribe_stream_buffer,void,"FuriEventLoop*, FuriStreamBuffer*, FuriEventLoopEvent, FuriEventLoopEventCallback, void*"
+Function,+,furi_event_loop_subscribe_thread_flags,void,"FuriEventLoop*, FuriEventLoopThreadFlagsCallback, void*"
 Function,+,furi_event_loop_tick_set,void,"FuriEventLoop*, uint32_t, FuriEventLoopTickCallback, void*"
 Function,+,furi_event_loop_timer_alloc,FuriEventLoopTimer*,"FuriEventLoop*, FuriEventLoopTimerCallback, FuriEventLoopTimerType, void*"
 Function,+,furi_event_loop_timer_free,void,FuriEventLoopTimer*
@@ -1146,6 +1147,7 @@ Function,+,furi_event_loop_timer_restart,void,FuriEventLoopTimer*
 Function,+,furi_event_loop_timer_start,void,"FuriEventLoopTimer*, uint32_t"
 Function,+,furi_event_loop_timer_stop,void,FuriEventLoopTimer*
 Function,+,furi_event_loop_unsubscribe,void,"FuriEventLoop*, FuriEventLoopObject*"
+Function,+,furi_event_loop_unsubscribe_thread_flags,void,FuriEventLoop*
 Function,+,furi_get_tick,uint32_t,
 Function,+,furi_hal_adc_acquire,FuriHalAdcHandle*,
 Function,+,furi_hal_adc_configure,void,FuriHalAdcHandle*
@@ -2362,13 +2364,13 @@ Function,-,pow,double,"double, double"
 Function,-,pow10,double,double
 Function,-,pow10f,float,float
 Function,+,power_enable_low_battery_level_notification,void,"Power*, _Bool"
+Function,+,power_enable_otg,void,"Power*, _Bool"
 Function,+,power_get_info,void,"Power*, PowerInfo*"
 Function,+,power_get_pubsub,FuriPubSub*,Power*
 Function,+,power_is_battery_healthy,_Bool,Power*
 Function,+,power_is_otg_enabled,_Bool,Power*
 Function,+,power_off,void,Power*
 Function,+,power_reboot,void,"Power*, PowerBootMode"
-Function,+,power_enable_otg,void,"Power*, _Bool"
 Function,+,powf,float,"float, float"
 Function,-,powl,long double,"long double, long double"
 Function,+,pretty_format_bytes_hex_canonical,void,"FuriString*, size_t, const char*, const uint8_t*, size_t"
