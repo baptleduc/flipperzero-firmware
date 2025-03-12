@@ -34,7 +34,7 @@ static void nfc_cli_field(PipeSide* pipe, FuriString* args) {
     printf("Field is on. Don't leave device in this mode for too long.\r\n");
     printf("Press Ctrl+C to abort\r\n");
 
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         furi_delay_ms(50);
     }
 
@@ -68,7 +68,7 @@ static void nfc_cli(PipeSide* pipe, FuriString* args, void* context) {
 void nfc_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, "nfc", CliCommandFlagParallelUnsafe, nfc_cli, NULL);
+    cli_add_command(cli, "nfc", CliCommandFlagDefault, nfc_cli, NULL);
     furi_record_close(RECORD_CLI);
 #else
     UNUSED(nfc_cli);

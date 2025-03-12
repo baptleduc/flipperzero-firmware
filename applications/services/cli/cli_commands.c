@@ -226,7 +226,7 @@ void cli_command_log(PipeSide* pipe, FuriString* args, void* context) {
 
     printf("Use <log ?> to list available log levels\r\n");
     printf("Press CTRL+C to stop...\r\n");
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         furi_delay_ms(100);
     }
 
@@ -402,7 +402,7 @@ static void cli_command_top(PipeSide* pipe, FuriString* args, void* context) {
     args_read_int_and_trim(args, &interval);
 
     FuriThreadList* thread_list = furi_thread_list_alloc();
-    while(!cli_app_should_stop(pipe)) {
+    while(!cli_is_pipe_broken_or_is_etx_next_char(pipe)) {
         uint32_t tick = furi_get_tick();
         furi_thread_enumerate(thread_list);
 
@@ -512,24 +512,49 @@ void cli_command_i2c(PipeSide* pipe, FuriString* args, void* context) {
     furi_hal_i2c_release(&furi_hal_i2c_handle_external);
 }
 
+/**
+ * Echoes any bytes it receives except ASCII ETX (0x03, Ctrl+C)
+ */
+void cli_command_echo(PipeSide* pipe, FuriString* args, void* context) {
+    UNUSED(args);
+    UNUSED(context);
+    const FuriWait timeout = furi_ms_to_ticks(500);
+
+    uint8_t buffer[256];
+
+    while(true) {
+        size_t read = pipe_receive(pipe, buffer, sizeof(buffer), timeout);
+        if(!read) continue;
+
+        if(pipe_state(pipe) == PipeStateBroken) break;
+        if(memchr(buffer, CliKeyETX, read)) break;
+
+        size_t written = pipe_send(pipe, buffer, read, timeout);
+        if(written != read) {
+            FURI_LOG_E("CliEcho", "read=%zu written=%zu", read, written);
+        }
+    }
+}
+
 void cli_commands_init(Cli* cli) {
-    cli_add_command(cli, "!", CliCommandFlagDefault, cli_command_info, (void*)true);
-    cli_add_command(cli, "info", CliCommandFlagDefault, cli_command_info, NULL);
-    cli_add_command(cli, "device_info", CliCommandFlagDefault, cli_command_info, (void*)true);
+    cli_add_command(cli, "!", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
+    cli_add_command(cli, "info", CliCommandFlagParallelSafe, cli_command_info, NULL);
+    cli_add_command(cli, "device_info", CliCommandFlagParallelSafe, cli_command_info, (void*)true);
 
-    cli_add_command(cli, "?", CliCommandFlagDefault, cli_command_help, NULL);
-    cli_add_command(cli, "help", CliCommandFlagDefault, cli_command_help, NULL);
+    cli_add_command(cli, "?", CliCommandFlagParallelSafe, cli_command_help, NULL);
+    cli_add_command(cli, "help", CliCommandFlagParallelSafe, cli_command_help, NULL);
 
-    cli_add_command(cli, "uptime", CliCommandFlagParallelUnsafe, cli_command_uptime, NULL);
-    cli_add_command(cli, "date", CliCommandFlagDefault, cli_command_date, NULL);
-    cli_add_command(cli, "log", CliCommandFlagDefault, cli_command_log, NULL);
-    cli_add_command(cli, "sysctl", CliCommandFlagParallelUnsafe, cli_command_sysctl, NULL);
-    cli_add_command(cli, "top", CliCommandFlagDefault, cli_command_top, NULL);
-    cli_add_command(cli, "free", CliCommandFlagDefault, cli_command_free, NULL);
-    cli_add_command(cli, "free_blocks", CliCommandFlagDefault, cli_command_free_blocks, NULL);
+    cli_add_command(cli, "uptime", CliCommandFlagDefault, cli_command_uptime, NULL);
+    cli_add_command(cli, "date", CliCommandFlagParallelSafe, cli_command_date, NULL);
+    cli_add_command(cli, "log", CliCommandFlagParallelSafe, cli_command_log, NULL);
+    cli_add_command(cli, "sysctl", CliCommandFlagDefault, cli_command_sysctl, NULL);
+    cli_add_command(cli, "top", CliCommandFlagParallelSafe, cli_command_top, NULL);
+    cli_add_command(cli, "free", CliCommandFlagParallelSafe, cli_command_free, NULL);
+    cli_add_command(cli, "free_blocks", CliCommandFlagParallelSafe, cli_command_free_blocks, NULL);
+    cli_add_command(cli, "echo", CliCommandFlagParallelSafe, cli_command_echo, NULL);
 
-    cli_add_command(cli, "vibro", CliCommandFlagParallelUnsafe, cli_command_vibro, NULL);
-    cli_add_command(cli, "led", CliCommandFlagParallelUnsafe, cli_command_led, NULL);
-    cli_add_command(cli, "gpio", CliCommandFlagParallelUnsafe, cli_command_gpio, NULL);
-    cli_add_command(cli, "i2c", CliCommandFlagParallelUnsafe, cli_command_i2c, NULL);
+    cli_add_command(cli, "vibro", CliCommandFlagDefault, cli_command_vibro, NULL);
+    cli_add_command(cli, "led", CliCommandFlagDefault, cli_command_led, NULL);
+    cli_add_command(cli, "gpio", CliCommandFlagDefault, cli_command_gpio, NULL);
+    cli_add_command(cli, "i2c", CliCommandFlagDefault, cli_command_i2c, NULL);
 }

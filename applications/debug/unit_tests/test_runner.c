@@ -148,7 +148,7 @@ static void test_runner_run_internal(TestRunner* instance) {
         }
 
         while(true) {
-            if(cli_app_should_stop(instance->pipe)) {
+            if(cli_is_pipe_broken_or_is_etx_next_char(instance->pipe)) {
                 break;
             }
 

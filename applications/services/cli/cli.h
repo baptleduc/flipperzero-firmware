@@ -17,7 +17,7 @@ extern "C" {
 
 typedef enum {
     CliCommandFlagDefault = 0, /**< Default */
-    CliCommandFlagParallelUnsafe = (1 << 0), /**< Unsafe to run in parallel with other apps */
+    CliCommandFlagParallelSafe = (1 << 0), /**< Safe to run in parallel with other apps */
     CliCommandFlagInsomniaSafe = (1 << 1), /**< Safe to run with insomnia mode on */
     CliCommandFlagDontAttachStdio = (1 << 2), /**< Do no attach I/O pipe to thread stdio */
 } CliCommandFlag;
@@ -93,9 +93,9 @@ void cli_delete_command(Cli* cli, const char* name);
  * @param [in] side Pointer to pipe side given to the command thread
  * @warning This function also assumes that the pipe is installed as the
  *          thread's stdio
- * @warning This function will consume 0 or 1 bytes from the pipe
+ * @warning This function will consume 1 byte from the pipe
  */
-bool cli_app_should_stop(PipeSide* side);
+bool cli_is_pipe_broken_or_is_etx_next_char(PipeSide* side);
 
 /** Print unified cmd usage tip
  *

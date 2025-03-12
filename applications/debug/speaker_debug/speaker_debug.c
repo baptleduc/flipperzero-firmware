@@ -96,7 +96,7 @@ static void speaker_app_run(SpeakerDebugApp* app, const char* arg) {
         return;
     }
 
-    cli_add_command(app->cli, CLI_COMMAND, CliCommandFlagDefault, speaker_app_cli, app);
+    cli_add_command(app->cli, CLI_COMMAND, CliCommandFlagParallelSafe, speaker_app_cli, app);
 
     SpeakerDebugAppMessage message;
     FuriStatus status;

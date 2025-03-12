@@ -142,7 +142,7 @@ static void loader_cli(PipeSide* pipe, FuriString* args, void* context) {
 void loader_on_system_start(void) {
 #ifdef SRV_CLI
     Cli* cli = furi_record_open(RECORD_CLI);
-    cli_add_command(cli, RECORD_LOADER, CliCommandFlagDefault, loader_cli, NULL);
+    cli_add_command(cli, RECORD_LOADER, CliCommandFlagParallelSafe, loader_cli, NULL);
     furi_record_close(RECORD_CLI);
 #else
     UNUSED(loader_cli);
