@@ -202,24 +202,20 @@ static int32_t ducky_parse_line(BadUsbScript* bad_usb, FuriString* line) {
     uint16_t modifiers = 0;
     while(1) {
         key = ducky_get_next_modifier_keycode_by_name(&line_cstr);
-        if(key == HID_KEYBOARD_NONE)
-            break;
+        if(key == HID_KEYBOARD_NONE) break;
 
         modifiers |= key;
         char next_char = *line_cstr;
-        if(next_char == ' ' || next_char == '-')
-            line_cstr++;
+        if(next_char == ' ' || next_char == '-') line_cstr++;
     }
 
     // Main key
     char next_char = *line_cstr;
     uint16_t main_key = ducky_get_keycode_by_name(line_cstr);
-    if(!main_key && next_char)
-        main_key = BADUSB_ASCII_TO_KEY(bad_usb, next_char);
+    if(!main_key && next_char) main_key = BADUSB_ASCII_TO_KEY(bad_usb, next_char);
     key = modifiers | main_key;
 
-    if(key == 0 && next_char)
-        ducky_error(bad_usb, "No keycode defined for %s", line_cstr);
+    if(key == 0 && next_char) ducky_error(bad_usb, "No keycode defined for %s", line_cstr);
 
     bad_usb->hid->kb_press(bad_usb->hid_inst, key);
     bad_usb->hid->kb_release(bad_usb->hid_inst, key);
