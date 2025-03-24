@@ -3,7 +3,7 @@
 #include "tests/test_api.h"
 
 #include <cli/cli.h>
-#include <toolbox/path.h>
+#include <storage_util/path.h>
 #include <loader/loader.h>
 #include <storage/storage.h>
 #include <notification/notification_messages.h>

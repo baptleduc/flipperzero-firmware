@@ -2,7 +2,7 @@
 #include "usb_cdc.h"
 #include <cli/cli_vcp.h>
 #include <cli/cli.h>
-#include <toolbox/api_lock.h>
+#include <api_lock.h>
 #include <furi_hal.h>
 #include <furi_hal_usb_cdc.h>
 

@@ -2,7 +2,7 @@
 
 #include <furi_hal.h>
 #include <cli/cli.h>
-#include <lib/toolbox/args.h>
+#include <lib/cli_util/args.h>
 #include <power/power_service/power.h>
 
 void power_cli_off(Cli* cli, FuriString* args) {

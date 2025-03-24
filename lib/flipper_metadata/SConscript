@@ -1,52 +1,22 @@
 from fbt.version import get_fast_git_version_id
 
-
 Import("env")
 
 env.Append(
     CPPPATH=[
-        "#/lib/toolbox",
+        "#/lib/flipper_metadata",
     ],
     LINT_SOURCES=[
         Dir("."),
     ],
     SDK_HEADERS=[
-        File("api_lock.h"),
-        File("compress.h"),
-        File("manchester_decoder.h"),
-        File("manchester_encoder.h"),
-        File("path.h"),
-        File("name_generator.h"),
-        File("crc32_calc.h"),
-        File("dir_walk.h"),
-        File("args.h"),
-        File("saved_struct.h"),
+        File("property.h"),
         File("version.h"),
-        File("float_tools.h"),
-        File("value_index.h"),
-        File("tar/tar_archive.h"),
-        File("stream/stream.h"),
-        File("stream/file_stream.h"),
-        File("stream/string_stream.h"),
-        File("stream/buffered_file_stream.h"),
-        File("strint.h"),
-        File("pipe.h"),
-        File("protocols/protocol_dict.h"),
-        File("pretty_format.h"),
-        File("hex.h"),
-        File("simple_array.h"),
-        File("bit_buffer.h"),
-        File("keys_dict.h"),
-        File("pulse_protocols/pulse_glue.h"),
-        File("md5_calc.h"),
-        File("varint.h"),
     ],
 )
 
-
-libenv = env.Clone(tools=["fbt_version"], FW_LIB_NAME="toolbox")
+libenv = env.Clone(tools=["fbt_version"], FW_LIB_NAME="flipper_metadata")
 libenv.ApplyLibFlags()
-
 
 # Git Version management
 version_depends = []
@@ -67,7 +37,6 @@ Alias("version_json", fw_version_json)
 env.Append(FW_VERSION_JSON=fw_version_json)
 
 # Default(fw_version_json)
-
 
 if not version_depends:
     libenv.Precious(build_version)

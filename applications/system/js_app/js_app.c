@@ -2,7 +2,7 @@
 #include "js_thread.h"
 #include <storage/storage.h>
 #include "js_app_i.h"
-#include <toolbox/path.h>
+#include <storage_util/path.h>
 #include <assets_icons.h>
 #include <cli/cli.h>
 

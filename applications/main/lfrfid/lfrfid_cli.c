@@ -2,17 +2,17 @@
 #include <furi_hal.h>
 #include <stdarg.h>
 #include <cli/cli.h>
-#include <lib/toolbox/args.h>
+#include <lib/cli_util/args.h>
 #include <lib/lfrfid/lfrfid_worker.h>
 #include <storage/storage.h>
-#include <toolbox/stream/file_stream.h>
+#include <stream/file_stream.h>
 
-#include <toolbox/varint.h>
+#include <varint.h>
 
-#include <toolbox/protocols/protocol_dict.h>
+#include <protocols/protocol_dict.h>
 #include <lfrfid/protocols/lfrfid_protocols.h>
 #include <lfrfid/lfrfid_raw_file.h>
-#include <toolbox/pulse_protocols/pulse_glue.h>
+#include <pulse_protocols/pulse_glue.h>
 
 static void lfrfid_cli(Cli* cli, FuriString* args, void* context);
 

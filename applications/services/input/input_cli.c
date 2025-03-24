@@ -2,7 +2,7 @@
 
 #include <furi.h>
 #include <cli/cli.h>
-#include <toolbox/args.h>
+#include <cli_util/args.h>
 
 static void input_cli_usage(void) {
     printf("Usage:\r\n");

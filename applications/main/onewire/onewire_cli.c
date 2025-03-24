@@ -4,7 +4,7 @@
 #include <power/power_service/power.h>
 
 #include <cli/cli.h>
-#include <toolbox/args.h>
+#include <cli_util/args.h>
 
 #include <one_wire/one_wire_host.h>
 

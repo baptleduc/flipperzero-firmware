@@ -3,8 +3,8 @@
 #include <furi.h>
 #include <cli/cli.h>
 #include <applications.h>
-#include <lib/toolbox/args.h>
-#include <lib/toolbox/strint.h>
+#include <lib/cli_util/args.h>
+#include <pure/strint.h>
 #include <notification/notification_messages.h>
 
 static void loader_cli_print_usage(void) {

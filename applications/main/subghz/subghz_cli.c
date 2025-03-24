@@ -14,8 +14,8 @@
 #include <lib/subghz/devices/devices.h>
 #include <lib/subghz/devices/cc1101_configs.h>
 
-#include <lib/toolbox/args.h>
-#include <lib/toolbox/strint.h>
+#include <lib/cli_util/args.h>
+#include <pure/strint.h>
 
 #include "helpers/subghz_chat.h"
 
