@@ -3,6 +3,8 @@
 import time
 from typing import Optional
 
+from serial.serialutil import SerialException
+
 from flipper.app import App
 from flipper.storage import FlipperStorage
 from flipper.utils.cdc import resolve_port
@@ -47,7 +49,13 @@ class Main(App):
             return None
 
         flipper = FlipperStorage(port)
-        flipper.start()
+        for i in range(retry_count):
+            try:
+                flipper.start()
+                break
+            except SerialException as e:
+                self.logger.error(f"Failed to start flipper: {e}")
+                time.sleep(1)
         return flipper
 
     def power_off(self):

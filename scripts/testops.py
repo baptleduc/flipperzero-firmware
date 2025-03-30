@@ -4,6 +4,8 @@ import time
 from datetime import datetime
 from typing import Optional
 
+from serial.serialutil import SerialException
+
 from flipper.app import App
 from flipper.storage import FlipperStorage
 from flipper.utils.cdc import resolve_port
@@ -38,18 +40,24 @@ class Main(App):
 
         for i in range(retry_count):
             time.sleep(1)
-            self.logger.info(f"Attempt to find flipper #{i}.")
+            self.logger.info(f"Attempting to find flipper #{i}.")
 
             if port := resolve_port(self.logger, self.args.port):
                 self.logger.info(f"Found flipper at {port}")
                 break
 
         if not port:
-            self.logger.info(f"Failed to find flipper {port}")
+            self.logger.info(f"Failed to find flipper")
             return None
 
         flipper = FlipperStorage(port)
-        flipper.start()
+        for i in range(retry_count):
+            try:
+                flipper.start()
+                break
+            except SerialException as e:
+                self.logger.error(f"Failed to start flipper: {e}")
+                time.sleep(1)
         return flipper
 
     def await_flipper(self):
