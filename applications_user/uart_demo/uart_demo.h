@@ -25,22 +25,22 @@
 
 
 typedef struct {
-    Gui* gui;
-    FuriTimer* timer;
-    ViewDispatcher* view_dispatcher;
-    Submenu* submenu;
+    Gui *gui;
+    FuriTimer *timer;
+    ViewDispatcher *view_dispatcher;
+    Submenu *submenu;
     uint32_t index;
-    UartHelper* uart_helper;
-    FuriString* send_cmd;
+    UartHelper *uart_helper;
+    FuriString *send_cmd;
 } UartDemoApp;
 
 typedef enum {
     UartDemoSubMenuViewId = 1,
 } UartDemoViewIds;
 
-void handle_default_response(FuriString* line, void* context);
-void handle_msg_response(FuriString* line, void* context);
-void handle_cmsg_response(FuriString* line, void* context);
+void handle_default_response(FuriString * line, void *context);
+void handle_msg_response(FuriString * line, void *context);
+void handle_cmsg_response(FuriString * line, void *context);
 
 
 

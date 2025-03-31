@@ -21,14 +21,14 @@ typedef struct RingBuffer RingBuffer;
  * 
  * @return A new ring buffer
 */
-RingBuffer* ring_buffer_alloc();
+RingBuffer *ring_buffer_alloc();
 
 /**
  * Frees a ring buffer.
  * 
  * @param rb The ring buffer to free
 */
-void ring_buffer_free(RingBuffer* rb);
+void ring_buffer_free(RingBuffer * rb);
 
 /**
  * Sets the delimiter for the ring buffer.  The delimiter is the character that will be
@@ -38,7 +38,8 @@ void ring_buffer_free(RingBuffer* rb);
  * @param delimiter         The delimiter character
  * @param include_delimiter If true, the delimiter will be included in the extracted line
 */
-void ring_buffer_set_delimiter(RingBuffer* rb, char delimiter, bool include_delimiter);
+void ring_buffer_set_delimiter(RingBuffer * rb, char delimiter,
+                               bool include_delimiter);
 
 /**
  * Returns the number of bytes available in the ring buffer.  This is the number of bytes
@@ -48,7 +49,7 @@ void ring_buffer_set_delimiter(RingBuffer* rb, char delimiter, bool include_deli
  * 
  * @return The number of bytes available in the ring buffer
 */
-size_t ring_buffer_available(RingBuffer* rb);
+size_t ring_buffer_available(RingBuffer * rb);
 
 /**
  * Adds data to the ring buffer.  If the buffer is full, the oldest data will be overwritten.
@@ -59,7 +60,7 @@ size_t ring_buffer_available(RingBuffer* rb);
  * 
  * @return True if the data was added successfully, false if the buffer is full
 */
-bool ring_buffer_add(RingBuffer* rb, uint8_t* data, size_t length);
+bool ring_buffer_add(RingBuffer * rb, uint8_t * data, size_t length);
 
 /**
  * Searches the ring buffer for the delimiter.  If the delimiter is found, the index of the
@@ -70,7 +71,7 @@ bool ring_buffer_add(RingBuffer* rb, uint8_t* data, size_t length);
  * 
  * @return The index of the delimiter, or FURI_STRING_FAILURE if the delimiter is not found
 */
-size_t ring_buffer_find_delim(RingBuffer* rb);
+size_t ring_buffer_find_delim(RingBuffer * rb);
 
 /**
  * Extracts a line from the ring buffer.  The line is stored in the provided FuriString.
@@ -79,7 +80,8 @@ size_t ring_buffer_find_delim(RingBuffer* rb);
  * @param delim_index The index of the delimiter
  * @param line        The FuriString to store the line in
 */
-void ring_buffer_extract_line(RingBuffer* rb, size_t delim_index, FuriString* line);
+void ring_buffer_extract_line(RingBuffer * rb, size_t delim_index,
+                              FuriString * line);
 
 /**
  * Reads text from the ring buffer.  If a line is found in the buffer, it is stored in the
@@ -90,13 +92,13 @@ void ring_buffer_extract_line(RingBuffer* rb, size_t delim_index, FuriString* li
  * @param text The FuriString to store the line in
  * @return true if a line was read, false if no line was found
  */
-bool ring_buffer_read(RingBuffer* rb, FuriString* text);
+bool ring_buffer_read(RingBuffer * rb, FuriString * text);
 
 /**
  * Clears the ring buffer.  This will remove all data from the buffer.
  * 
  * @param rb The ring buffer
 */
-void ring_buffer_clear(RingBuffer* rb);
+void ring_buffer_clear(RingBuffer * rb);
 
 #endif
