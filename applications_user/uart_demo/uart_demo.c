@@ -124,18 +124,20 @@ static void uart_demo_submenu_item_callback(void *context, uint32_t index)
 void handle_msg_response(FuriString *line, void *context)
 {
     (void) context;
-    FURI_LOG_I("handle_msg_response", "Line: %s",
+    FURI_LOG_I("handle_msg_response", "%s",
                furi_string_get_cstr(line));
 }
 
 void handle_cmsg_response(FuriString *line, void *context)
 {
     (void) context;
-    FURI_LOG_I("handle_cmsg_response", "Line: %s",
+    FURI_LOG_I("handle_cmsg_response", "%s",
                furi_string_get_cstr(line));
 }
 void handle_join_response(FuriString *line, void *context)
 {
+    FURI_LOG_I("handle_join_response", "%s",
+               furi_string_get_cstr(line));
     UartDemoApp *app = context;
     if (furi_string_start_with(line, "+JOIN: Network joined")) {
         app->lora_bitmask |= JOINED;
@@ -153,7 +155,7 @@ void handle_default_response(FuriString *line, void *context)
     //     app->index++,
     //     uart_demo_submenu_item_callback,
     //     app);
-    FURI_LOG_I("UART_DEMO", "Line: %s", furi_string_get_cstr(line));
+    FURI_LOG_I("UART_DEMO", "%s", furi_string_get_cstr(line));
 }
 #else
 void uart_demo_timer_callback(void *context)
