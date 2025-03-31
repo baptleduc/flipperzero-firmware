@@ -35,7 +35,32 @@ static void uart_demo_submenu_add_default_entries(Submenu *submenu,
 
 static void otaa_join_procedure(void *context)
 {
-    (void) context;
+    UartDemoApp *app = context;
+    int join_attempts = 1;
+    
+    // Loop until the device is joined to the network
+    while (!(app->lora_bitmask & JOINED)) {
+        FURI_LOG_I("OTAA_JOIN", "Attempting to join the network...");
+        // Send the join command
+        uart_helper_send(app->uart_helper, "AT+JOIN\n", 9, JOIN);
+        furi_delay_ms(10000);
+        
+        if(app->lora_bitmask & JOINED) {
+            // Device is joined, break the loop
+            break;
+        }
+
+        join_attempts++;
+
+        if(join_attempts > 3){
+            // If the device is not joined after 3 attempts, break the loop
+            FURI_LOG_I("OTAA_JOIN", "Failed to join after 3 attempts");
+            break;
+        }
+
+        FURI_LOG_I("OTAA_JOIN", "Join attempt %d", join_attempts);
+        
+    }
 
 }
 
@@ -43,7 +68,7 @@ static void setup_lora_connexion(void *context)
 {
     UartDemoApp *app = context;
 
-    uart_helper_send(app->uart_helper, "AT+ID\n", 7, FTD_MSG);
+    uart_helper_send(app->uart_helper, "AT+ID\n", 7, MSG);
     furi_delay_ms(1000);
 
     uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16,
@@ -72,6 +97,10 @@ static void setup_lora_connexion(void *context)
     uart_helper_send_string(app->uart_helper, app->send_cmd,
                             DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
+
+    // TODO : change because we need to pass to a specific callback
+    app->lora_bitmask |= CONFIG;
+
 }
 
 static void uart_demo_submenu_item_callback(void *context, uint32_t index)
@@ -86,7 +115,7 @@ static void uart_demo_submenu_item_callback(void *context, uint32_t index)
         otaa_join_procedure(app);
     } else if (index == 2) {
         furi_string_printf(app->send_cmd, "Index is %ld.\n", app->index);
-        uart_helper_send_string(app->uart_helper, app->send_cmd, FTD_CMG);
+        uart_helper_send_string(app->uart_helper, app->send_cmd, CMSG);
     } else {
         // The item was received data.
     }
@@ -105,7 +134,15 @@ void handle_cmsg_response(FuriString *line, void *context)
     FURI_LOG_I("handle_cmsg_response", "Line: %s",
                furi_string_get_cstr(line));
 }
-
+void handle_join_response(FuriString *line, void *context)
+{
+    UartDemoApp *app = context;
+    if (furi_string_start_with(line, "+JOIN: Network joined")) {
+        app->lora_bitmask |= JOINED;
+        FURI_LOG_I("handle_join_response", "Network joined");
+        return;
+    } 
+}
 #ifdef DEMO_PROCESS_LINE
 void handle_default_response(FuriString *line, void *context)
 {
@@ -172,6 +209,7 @@ static UartDemoApp *uart_demo_app_alloc()
 
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
+    app->lora_bitmask = 0;
 
     // Initialize the UART helper.
     app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE);

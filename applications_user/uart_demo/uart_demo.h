@@ -32,15 +32,24 @@ typedef struct {
     uint32_t index;
     UartHelper *uart_helper;
     FuriString *send_cmd;
+    uint32_t lora_bitmask; // Bitmask to store the state of the LoRa device
 } UartDemoApp;
+
+typedef enum{
+    CONFIG = 1, // Being on this state means the device has been configured (e.g. AppKey, DR, TxPower)
+    JOINED = 2, // Being on this state means the device has joined the network
+    SENDING = 4, // Being on this state means the device is sending data
+} LoraStateFlags;
 
 typedef enum {
     UartDemoSubMenuViewId = 1,
 } UartDemoViewIds;
 
+// Callback to handle UART responses
 void handle_default_response(FuriString * line, void *context);
 void handle_msg_response(FuriString * line, void *context);
 void handle_cmsg_response(FuriString * line, void *context);
+void handle_join_response(FuriString * line, void *context);
 
 
 

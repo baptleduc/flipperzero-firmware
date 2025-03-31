@@ -60,8 +60,9 @@ typedef struct {
 
 typedef enum {
     DEFAULT_MSG_TYPE = 0,
-    FTD_MSG = 1,
-    FTD_CMG = 2,
+    MSG = 1,
+    CMSG = 2,
+    JOIN = 3,
     MESSAGE_TYPE_COUNT,
 } MessageType;
 
