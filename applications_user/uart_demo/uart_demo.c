@@ -1,36 +1,8 @@
-#include <expansion/expansion.h>
-#include <furi_hal.h>
-#include <gui/gui.h>
-#include <gui/modules/submenu.h>
-#include <gui/view_dispatcher.h>
-#include <gui/canvas.h>
-#include <input/input.h>
+#include "uart_demo.h"
 
-#include "uart_helper.h"
-
-#define DEVICE_BAUDRATE 115200
-
-// Comment out the following line to process data as it is received.
-#define DEMO_PROCESS_LINE yes
-
-#ifdef DEMO_PROCESS_LINE
-#define LINE_DELIMITER         '\n'
-#define INCLUDE_LINE_DELIMITER false
-#endif
-
-typedef struct {
-    Gui* gui;
-    FuriTimer* timer;
-    ViewDispatcher* view_dispatcher;
-    Submenu* submenu;
-    uint32_t index;
-    UartHelper* uart_helper;
-    FuriString* message2;
-} UartDemoApp;
-
-typedef enum {
-    UartDemoSubMenuViewId = 1,
-} UartDemoViewIds;
+// Global variables
+int dr = DEFAULT_DR; // Data rate
+int tx_power = DEFAULT_TX_POWER; // Transmit power
 
 /**
  * This callback function is called when a submenu item is clicked.
@@ -50,10 +22,44 @@ static void uart_demo_submenu_add_default_entries(Submenu* submenu, void* contex
     UartDemoApp* app = context;
     submenu_reset(submenu);
     submenu_add_item(submenu, "Clear", 0, uart_demo_submenu_item_callback, context);
-    submenu_add_item(submenu, "Send Msg 1", 1, uart_demo_submenu_item_callback, context);
+    submenu_add_item(submenu, "OTAA JOIN", 1, uart_demo_submenu_item_callback, context);
     submenu_add_item(submenu, "Send Msg 2", 2, uart_demo_submenu_item_callback, context);
 
     app->index = 3;
+}
+
+// static void otaa_join_procedure(void *context)
+// {
+    
+// }
+
+static void setup_lora_connexion(void * context)
+{
+    UartDemoApp* app = context;
+
+    uart_helper_send(app->uart_helper, "AT+ID\n", 7);
+    furi_delay_ms(1000);
+
+    uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16);
+    furi_delay_ms(1000);
+
+    furi_string_printf(app->send_cmd, "AT+DR=%d\n", dr);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
+    furi_delay_ms(1000);
+
+    furi_string_printf(app->send_cmd, "AT+POWER=%d\n", tx_power);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
+    furi_delay_ms(1000);
+
+    uart_helper_send(app->uart_helper, "AT+ADR=ON\n", 11);
+    furi_delay_ms(1000);
+
+    uart_helper_send(app->uart_helper, "AT+CLASS=A\n", 12);
+    furi_delay_ms(1000);
+
+    furi_string_printf(app->send_cmd, "AT+KEY=APPKEY,%s\n", APPKEY);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
+    furi_delay_ms(1000);
 }
 
 static void uart_demo_submenu_item_callback(void* context, uint32_t index) {
@@ -63,11 +69,11 @@ static void uart_demo_submenu_item_callback(void* context, uint32_t index) {
         // Clear the submenu and add the default entries.
         uart_demo_submenu_add_default_entries(app->submenu, app);
     } else if(index == 1) {
-        // Send a "Hello World!" message over the UART.
-        uart_helper_send(app->uart_helper, "Hello World!\n", 13);
+        setup_lora_connexion(app);
+        otaa_join_procedure(app);
     } else if(index == 2) {
-        furi_string_printf(app->message2, "Index is %ld.\n", app->index);
-        uart_helper_send_string(app->uart_helper, app->message2);
+        furi_string_printf(app->send_cmd, "Index is %ld.\n", app->index);
+        uart_helper_send_string(app->uart_helper, app->send_cmd);
     } else {
         // The item was received data.
     }
@@ -75,13 +81,15 @@ static void uart_demo_submenu_item_callback(void* context, uint32_t index) {
 
 #ifdef DEMO_PROCESS_LINE
 void uart_demo_process_line(FuriString* line, void* context) {
-    UartDemoApp* app = context;
-    submenu_add_item(
-        app->submenu,
-        furi_string_get_cstr(line),
-        app->index++,
-        uart_demo_submenu_item_callback,
-        app);
+    (void) context; // Not used for now.
+    // UartDemoApp* app = context;
+    // submenu_add_item(
+    //     app->submenu,
+    //     furi_string_get_cstr(line),
+    //     app->index++,
+    //     uart_demo_submenu_item_callback,
+    //     app);
+    FURI_LOG_I("UART_DEMO", "Line: %s", furi_string_get_cstr(line));
 }
 #else
 void uart_demo_timer_callback(void* context) {
@@ -130,7 +138,7 @@ static UartDemoApp* uart_demo_app_alloc() {
     view_dispatcher_switch_to_view(app->view_dispatcher, UartDemoSubMenuViewId);
 
     // Allocate a string to store the second message.
-    app->message2 = furi_string_alloc();
+    app->send_cmd = furi_string_alloc();
 
     // Initialize the UART helper.
     app->uart_helper = uart_helper_alloc();
@@ -152,7 +160,7 @@ static void uart_demo_app_free(UartDemoApp* app) {
     }
     uart_helper_free(app->uart_helper);
 
-    furi_string_free(app->message2);
+    furi_string_free(app->send_cmd);
 
     view_dispatcher_remove_view(app->view_dispatcher, UartDemoSubMenuViewId);
     view_dispatcher_free(app->view_dispatcher);
