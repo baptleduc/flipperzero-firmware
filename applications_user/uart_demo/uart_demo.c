@@ -28,37 +28,38 @@ static void uart_demo_submenu_add_default_entries(Submenu* submenu, void* contex
     app->index = 3;
 }
 
-// static void otaa_join_procedure(void *context)
-// {
+static void otaa_join_procedure(void *context)
+{
+    (void) context;
     
-// }
+}
 
 static void setup_lora_connexion(void * context)
 {
     UartDemoApp* app = context;
 
-    uart_helper_send(app->uart_helper, "AT+ID\n", 7);
+    uart_helper_send(app->uart_helper, "AT+ID\n", 7, FTD_MSG);
     furi_delay_ms(1000);
 
-    uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16);
+    uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+DR=%d\n", dr);
-    uart_helper_send_string(app->uart_helper, app->send_cmd);
+    uart_helper_send_string(app->uart_helper, app->send_cmd, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+POWER=%d\n", tx_power);
-    uart_helper_send_string(app->uart_helper, app->send_cmd);
+    uart_helper_send_string(app->uart_helper, app->send_cmd, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 
-    uart_helper_send(app->uart_helper, "AT+ADR=ON\n", 11);
+    uart_helper_send(app->uart_helper, "AT+ADR=ON\n", 11, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 
-    uart_helper_send(app->uart_helper, "AT+CLASS=A\n", 12);
+    uart_helper_send(app->uart_helper, "AT+CLASS=A\n", 12, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+KEY=APPKEY,%s\n", APPKEY);
-    uart_helper_send_string(app->uart_helper, app->send_cmd);
+    uart_helper_send_string(app->uart_helper, app->send_cmd, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 }
 
@@ -73,16 +74,25 @@ static void uart_demo_submenu_item_callback(void* context, uint32_t index) {
         otaa_join_procedure(app);
     } else if(index == 2) {
         furi_string_printf(app->send_cmd, "Index is %ld.\n", app->index);
-        uart_helper_send_string(app->uart_helper, app->send_cmd);
+        uart_helper_send_string(app->uart_helper, app->send_cmd, FTD_CMG);
     } else {
         // The item was received data.
     }
 }
 
+void handle_msg_response(FuriString* line, void* context) {
+    (void) context;
+    FURI_LOG_I("handle_msg_response", "Line: %s", furi_string_get_cstr(line));
+}
+
+void handle_cmsg_response(FuriString* line, void* context) {
+    (void) context;
+    FURI_LOG_I("handle_cmsg_response", "Line: %s", furi_string_get_cstr(line));
+}
+
 #ifdef DEMO_PROCESS_LINE
-void uart_demo_process_line(FuriString* line, void* context) {
-    (void) context; // Not used for now.
-    // UartDemoApp* app = context;
+void handle_default_response(FuriString* line, void* context) {
+    (void) context;
     // submenu_add_item(
     //     app->submenu,
     //     furi_string_get_cstr(line),
@@ -119,6 +129,7 @@ static uint32_t uart_demo_exit(void* context) {
     return VIEW_NONE;
 }
 
+
 static UartDemoApp* uart_demo_app_alloc() {
     UartDemoApp* app = malloc(sizeof(UartDemoApp));
 
@@ -137,15 +148,15 @@ static UartDemoApp* uart_demo_app_alloc() {
         app->view_dispatcher, uart_demo_navigation_callback);
     view_dispatcher_switch_to_view(app->view_dispatcher, UartDemoSubMenuViewId);
 
-    // Allocate a string to store the second message.
+    // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
 
     // Initialize the UART helper.
-    app->uart_helper = uart_helper_alloc();
-    uart_helper_set_baud_rate(app->uart_helper, DEVICE_BAUDRATE);
+    app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE);
+    
 #ifdef DEMO_PROCESS_LINE
     uart_helper_set_delimiter(app->uart_helper, LINE_DELIMITER, INCLUDE_LINE_DELIMITER);
-    uart_helper_set_callback(app->uart_helper, uart_demo_process_line, app);
+    uart_helper_set_callback(app->uart_helper, handle_default_response, app);
 #else
     app->timer = furi_timer_alloc(uart_demo_timer_callback, FuriTimerTypePeriodic, app);
     furi_timer_start(app->timer, 1000);

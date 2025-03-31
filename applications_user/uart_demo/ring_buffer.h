@@ -5,7 +5,8 @@
  * 
  * @author CodeAllNight
 */
-
+#ifndef RING_BUFFER_H
+#define RING_BUFFER_H
 #include <furi.h>
 
 /**
@@ -97,3 +98,5 @@ bool ring_buffer_read(RingBuffer* rb, FuriString* text);
  * @param rb The ring buffer
 */
 void ring_buffer_clear(RingBuffer* rb);
+
+#endif

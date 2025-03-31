@@ -10,44 +10,15 @@
 
 #include <furi_hal.h>
 #include "ring_buffer.h"
+#include "uart_demo.h"
+#include "uart_helper.h"
 
-/**
- * Callback invoked when a line is read from the UART.
-*/
-typedef void (*ProcessLine)(FuriString* line, void* context);
+static ProcessLine callbacks[MESSAGE_TYPE_COUNT] = {
+    handle_default_response, // DEFAULT
+    handle_msg_response,     // FTD_MSG
+    handle_cmsg_response     // FTD_CMG
+};
 
-/**
- * UartHelper is a utility class that helps with reading lines of data from a UART.
-*/
-typedef struct {
-    // UART bus & channel to use
-    FuriHalBus uart_bus;
-    FuriHalSerialHandle* serial_handle;
-    bool uart_init_by_app;
-
-    // Stream buffer to hold incoming data (worker will dequeue and process)
-    FuriStreamBuffer* rx_stream;
-
-    // Worker thread that dequeues data from the stream buffer and processes it
-    FuriThread* worker_thread;
-
-    // Buffer to hold data until a delimiter is found
-    RingBuffer* ring_buffer;
-
-    // Callback to invoke when a line is read
-    ProcessLine process_line;
-    void* context;
-} UartHelper;
-
-/**
- * WorkerEventFlags are used to signal the worker thread to exit or to process data.
- * Each flag is a bit in a 32-bit integer, so we can use the FuriThreadFlags API to
- * wait for either flag to be set.
-*/
-typedef enum {
-    WorkerEventDataWaiting = 1 << 0, // bit flag 0 - data is waiting to be processed
-    WorkerEventExiting = 1 << 1, // bit flag 1 - worker thread is exiting
-} WorkerEventFlags;
 
 /** 
  * Invoked when a byte of data is received on the UART bus.  This function
@@ -159,7 +130,7 @@ static int32_t uart_helper_worker(void* context) {
     return 0;
 }
 
-UartHelper* uart_helper_alloc() {
+UartHelper* uart_helper_alloc(uint32_t baudrate) {
     // rx_buffer_size should be large enough to hold the entire response from the device.
     const size_t rx_buffer_size = 2048;
 
@@ -167,7 +138,7 @@ UartHelper* uart_helper_alloc() {
     const size_t worker_stack_size = 1024;
 
     // uart_baud is the default baud rate for the UART.
-    const uint32_t uart_baud = 115200;
+    const uint32_t uart_baud = baudrate;
 
     // The uart_helper uses USART1.
     UartHelper* helper = malloc(sizeof(UartHelper));
@@ -181,7 +152,6 @@ UartHelper* uart_helper_alloc() {
         // If UART is already initialized, disable the console so it doesn't write to the UART.
         // furi_hal_console_disable();
     }
-
     // process_line callback gets invoked when a line is read.  By default the callback is not set.
     helper->process_line = NULL;
 
@@ -231,7 +201,8 @@ bool uart_helper_read(UartHelper* helper, FuriString* text) {
     return ring_buffer_read(helper->ring_buffer, text);
 }
 
-void uart_helper_send(UartHelper* helper, const char* data, size_t length) {
+void uart_helper_send(UartHelper* helper, const char* data, size_t length, MessageType msg_type) {
+    uart_helper_set_callback(helper, callbacks[msg_type], helper->context);
     if(length == 0) {
         length = strlen(data); // Exclude the null character.
         char* buf = malloc(length + 2); // Null and delimiter.
@@ -247,7 +218,7 @@ void uart_helper_send(UartHelper* helper, const char* data, size_t length) {
     }
 }
 
-void uart_helper_send_string(UartHelper* helper, FuriString* string) {
+void uart_helper_send_string(UartHelper* helper, FuriString* string, MessageType msg_type) {
     const char* str = furi_string_get_cstr(string);
 
     // UTF-8 strings can have character counts different then lengths!
@@ -258,7 +229,7 @@ void uart_helper_send_string(UartHelper* helper, FuriString* string) {
     }
 
     // Transmit data
-    uart_helper_send(helper, str, length);
+    uart_helper_send(helper, str, length, msg_type);
 }
 
 void uart_helper_free(UartHelper* helper) {

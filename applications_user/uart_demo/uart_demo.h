@@ -38,6 +38,9 @@ typedef enum {
     UartDemoSubMenuViewId = 1,
 } UartDemoViewIds;
 
+void handle_default_response(FuriString* line, void* context);
+void handle_msg_response(FuriString* line, void* context);
+void handle_cmsg_response(FuriString* line, void* context);
 
 
 
