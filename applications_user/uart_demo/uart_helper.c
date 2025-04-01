@@ -16,7 +16,7 @@
 static ProcessLine callbacks[MESSAGE_TYPE_COUNT] = {
     handle_default_response,    // DEFAULT
     handle_msg_response,        // MSG
-    handle_cmsg_response,        // CMSG
+    handle_msg_response,        // CMSG (same as MSG because we process response the same way)
     handle_join_response        // JOIN
 };
 

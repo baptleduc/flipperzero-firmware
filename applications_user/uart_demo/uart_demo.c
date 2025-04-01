@@ -1,4 +1,6 @@
+#include <stdlib.h>
 #include "uart_demo.h"
+
 
 // Global variables
 int dr = DEFAULT_DR;            // Data rate
@@ -68,7 +70,7 @@ static void setup_lora_connexion(void *context)
 {
     UartDemoApp *app = context;
 
-    uart_helper_send(app->uart_helper, "AT+ID\n", 7, MSG);
+    uart_helper_send(app->uart_helper, "AT+ID\n", 7, DEFAULT_MSG_TYPE);
     furi_delay_ms(1000);
 
     uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16,
@@ -102,7 +104,13 @@ static void setup_lora_connexion(void *context)
     app->lora_bitmask |= CONFIG;
 
 }
-
+static void send_cmsg(UartDemoApp *app, const char *msg)
+{   
+    furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
+    uart_helper_send_string(app->uart_helper, app->send_cmd,
+                            CMSG);
+    furi_delay_ms(1000);
+}
 static void uart_demo_submenu_item_callback(void *context, uint32_t index)
 {
     UartDemoApp *app = context;
@@ -114,25 +122,150 @@ static void uart_demo_submenu_item_callback(void *context, uint32_t index)
         setup_lora_connexion(app);
         otaa_join_procedure(app);
     } else if (index == 2) {
-        furi_string_printf(app->send_cmd, "Index is %ld.\n", app->index);
-        uart_helper_send_string(app->uart_helper, app->send_cmd, CMSG);
+        // Send a confirmed message to the server.
+        send_cmsg(app, "Hello World");
     } else {
         // The item was received data.
     }
 }
 
-void handle_msg_response(FuriString *line, void *context)
-{
-    (void) context;
-    FURI_LOG_I("handle_msg_response", "%s",
+// static uint64_t convert_char_to_uint64(const char* cstr) {
+//     if (cstr == NULL || *cstr < '0' || *cstr > '9') {
+//         return 0;  
+//     }
+//     return (uint64_t)(*cstr - '0');
+// }
+
+
+static int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
+    if (!line || !msg_response) return -1;
+
+    // Parse the line to extract the fields
+    size_t index;
+    FURI_LOG_D("parse_msg_response", "%s",
                furi_string_get_cstr(line));
+    // Get delimiter `:` index
+    index = furi_string_search_char(line, ':', 0);
+    if (index == FURI_STRING_FAILURE) {
+        return -1; // No delimiter found
+    }
+    // Extract the right part of the line (e.g +CMSG: Port:0, we extract the right part Port:0 )
+    furi_string_right(line, index + 1); // Trim
+
+    index = furi_string_search_str(line, "FPENDING", 0);
+    if (index != FURI_STRING_FAILURE) {
+        msg_response->is_pending = true;
+        return 0;
+    }
+
+    index = furi_string_search_str(line, "Link ", 0);
+    if (index != FURI_STRING_FAILURE) {
+        char buffer_margin[4] = {0}; // Buffer to store extracted numbers as strings
+        size_t i = 0, j= 0;
+        char c;
+        // Read the first number (margin)
+        while (i < 5) {
+            c = furi_string_get_char(line, index + 5 + i); // "Link " is 5 characters long
+            if (c == ',' || c == '\0') break; // Stop at ',' or end of string
+            buffer_margin[i++] = c;
+        }
+        msg_response->margin = (uint8_t)atoi(buffer_margin);
+
+        char buffer_gw[4] = {0};
+
+        // Read the second number (gateway_count)
+        if (c == ',') { // Ensure there is a second value
+            i++; // Skip the comma
+            while (i < 5) {
+                char c2 = furi_string_get_char(line, index + 5 + i);
+                if (c2 == '\0') break; // Stop at end of string
+                buffer_gw[j++] = c2;
+            }
+            msg_response->gateway_count = (uint8_t)atoi(buffer_gw); // Convert to integer
+        }
+        return 0;
+    }
+
+    index = furi_string_search_str(line, "RXWIN", 0);
+    if (index != FURI_STRING_FAILURE) {
+        msg_response->rx_window = (uint8_t)(furi_string_get_char(line, index + 5) - '0'); // Convert char to int
+
+        char buffer_rssi[4] = {0}; // Buffer to store RSSI value
+        size_t i = 0;
+        // Read the RSSI value
+        while (i < 3) {
+            char c = furi_string_get_char(line, index + 14 + i); // "RXWIN1, RSSI " is 13 characters long, we use +1 to skip the minus
+            if (c == ',' || c == '\0') break; // Stop at ',' or end of string
+            buffer_rssi[i++] = c;
+        }
+        msg_response->rssi = -(int8_t)atoi(buffer_rssi); // Convert to integer
+
+        char buffer_snr[4] = {0}; // Buffer to store SNR value
+        bool is_negative = false;
+        size_t j = 0;
+        // Read the SNR value
+        while (j < 3) {
+            char c = furi_string_get_char(line, index + 14 + i + j + 6); // "SNR " is 3 characters long + 3 to skip the comma and space before and after
+            if (c == ',' || c == '\0') break; // Stop at ',' or end of string
+            if (c == '-') {
+                is_negative = true; // Mark as negative
+                continue;
+            }
+            buffer_snr[j++] = c;
+        }
+        if (is_negative) {
+            msg_response->snr = -(int8_t)atoi(buffer_snr); // Convert to integer
+        } else {
+            msg_response->snr = (int8_t)atoi(buffer_snr); // Convert to integer
+        }
+        FURI_LOG_D("parse_msg_response", "snr buffer: %s",
+                   buffer_snr);
+    }
+
+    index = furi_string_search_str(line, "ACK Received", 0);
+    if (index != FURI_STRING_FAILURE) {
+        msg_response->is_ack = true;
+        return 0;
+    }
+
+    index = furi_string_search_str(line, "MULTICAST", 0);
+    if (index != FURI_STRING_FAILURE) {
+        msg_response->is_multicast = true;
+        return 0;
+    }
+
+    index = furi_string_search_str(line, "PORT: ", 0);
+    if (index != FURI_STRING_FAILURE) {
+        char buffer[4] = {0}; // Permettre jusqu'à 3 chiffres + terminaison
+        size_t i = 0;
+
+        // Read Port characters until ';' or null terminator
+        while (i < 3) {
+            char c = furi_string_get_char(line, index + 6 + i); // "PORT: " = 6 char
+            if (c == ';' || c == '\0') break; // End if we reach ';' or null terminator
+            buffer[i++] = c;
+        }
+        
+        msg_response->port = (uint8_t)atoi(buffer);
+    }
+
+    index = furi_string_search_str(line, "RX: ", 0);
+    if (index != FURI_STRING_FAILURE) {
+        const char* data_start = furi_string_get_cstr(line) + index + 1; // Skip "RX: "
+        strcpy(msg_response->data, data_start);
+        return 0;
+    }
+
+    return 0;
 }
 
-void handle_cmsg_response(FuriString *line, void *context)
+void handle_msg_response(FuriString *line, void *context)
 {
-    (void) context;
+    UartDemoApp *app = context;
     FURI_LOG_I("handle_cmsg_response", "%s",
                furi_string_get_cstr(line));
+    parse_msg_response(line, app->msg_response);
+    DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
 }
 void handle_join_response(FuriString *line, void *context)
 {
@@ -212,6 +345,9 @@ static UartDemoApp *uart_demo_app_alloc()
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
     app->lora_bitmask = 0;
+
+    app->msg_response = malloc(sizeof(LoRaMsgResponse));
+    app->msg_response->data = malloc(256); // Allocate memory for the data field
 
     // Initialize the UART helper.
     app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE);
