@@ -23,6 +23,7 @@
 #define DEMO_PROCESS_LINE
 #define LINE_DELIMITER         '\n'
 #define INCLUDE_LINE_DELIMITER false
+#define MAX_DATA_SIZE        (1<<8) // 256 bytes
 
 typedef struct {
     uint8_t  margin;          // Link margin in dB (0-254) from the last LinkCheckReq.
@@ -31,7 +32,7 @@ typedef struct {
     int8_t   rssi;            // RSSI (Received Signal Strength Indicator) of the last frame.
     int8_t   snr;             // SNR (Signal-to-Noise Ratio) of the last frame.
     uint8_t  port;            // Port number used in the last transmission.
-    char *   data;            // Payload data of the last transmitted frame.
+    char     data[MAX_DATA_SIZE];            // Payload data of the last transmitted frame.
     bool     is_multicast;    // True if the frame was received in a multicast group.
     bool     is_pending;      // True if the server has pending data for the device.
     bool     is_ack;         // True if the last frame was acknowledged by the server.
@@ -78,6 +79,11 @@ typedef enum {
 void handle_default_response(FuriString * line, void *context);
 void handle_msg_response(FuriString * line, void *context);
 void handle_join_response(FuriString * line, void *context);
+
+
+// Parse the response from the server
+int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response);
+
 
 
 
