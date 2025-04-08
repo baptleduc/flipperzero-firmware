@@ -104,12 +104,19 @@ static void setup_lora_connexion(void *context)
     app->lora_bitmask |= CONFIG;
 
 }
+static void decode_data(char *data)
+{
+    // Decode the data received from the server
+    // This function is a placeholder and should be implemented according to the specific requirements
+    FURI_LOG_I("DECODE_DATA", "Data: %s", data);
+}
 static void send_cmsg(UartDemoApp *app, const char *msg)
 {   
     furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
     uart_helper_send_string(app->uart_helper, app->send_cmd,
                             CMSG);
     furi_delay_ms(1000);
+    DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
 }
 static void uart_demo_submenu_item_callback(void *context, uint32_t index)
 {
@@ -217,10 +224,7 @@ int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
 void handle_msg_response(FuriString *line, void *context)
 {
     UartDemoApp *app = context;
-    FURI_LOG_I("handle_cmsg_response", "%s",
-               furi_string_get_cstr(line));
     parse_msg_response(line, app->msg_response);
-    DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
 }
 void handle_join_response(FuriString *line, void *context)
 {
