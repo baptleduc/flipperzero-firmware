@@ -11,19 +11,17 @@
 
 #include "uart_helper.h"
 
-
-#define DEVICE_BAUDRATE 9600
-#define DEFAULT_DR 5
+#define DEVICE_BAUDRATE  9600
+#define DEFAULT_DR       5
 #define DEFAULT_TX_POWER 14
-#define APPKEY "2FFA5393E446D6CEC8EB9D9AFA5521F3"
-#define PORT 10
-
+#define APPKEY           "2FFA5393E446D6CEC8EB9D9AFA5521F3"
+#define PORT             10
 
 // Comment out the following line to process data as it is received.
 #define DEMO_PROCESS_LINE
 #define LINE_DELIMITER         '\n'
 #define INCLUDE_LINE_DELIMITER false
-#define MAX_DATA_SIZE        (1<<8) // 256 bytes
+#define MAX_DATA_SIZE          (1 << 8) // 256 bytes
 
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
@@ -62,17 +60,17 @@ typedef enum {
     UartDemoSubMenuViewId = 1,
 } UartDemoViewIds;
 
-
-#define DEBUG_LORA_MSG_RESPONSE(msg_response) \
-    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponse Debug:"); \
-    FURI_LOG_D("DebugMsgResponse", "  Port: %hhu", (msg_response).port); \
-    FURI_LOG_D("DebugMsgResponse", "  Data: %s", (msg_response).data); \
-    FURI_LOG_D("DebugMsgResponse", "  Margin: %hhu", (msg_response).margin); \
-    FURI_LOG_D("DebugMsgResponse", "  Gateway Count: %u", (msg_response).gateway_count); \
-    FURI_LOG_D("DebugMsgResponse", "  RX Window: %d", (msg_response).rx_window); \
-    FURI_LOG_D("DebugMsgResponse", "  RSSI: %d dBm", (msg_response).rssi); \
-    FURI_LOG_D("DebugMsgResponse", "  SNR: %d dB", (msg_response).snr); \
-    FURI_LOG_D("DebugMsgResponse", "  Multicast: %s", (msg_response).is_multicast ? "Yes" : "No"); \
+#define DEBUG_LORA_MSG_RESPONSE(msg_response)                                                  \
+    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponse Debug:");                                  \
+    FURI_LOG_D("DebugMsgResponse", "  Port: %hhu", (msg_response).port);                       \
+    FURI_LOG_D("DebugMsgResponse", "  Data: %s", (msg_response).data);                         \
+    FURI_LOG_D("DebugMsgResponse", "  Margin: %hhu", (msg_response).margin);                   \
+    FURI_LOG_D("DebugMsgResponse", "  Gateway Count: %u", (msg_response).gateway_count);       \
+    FURI_LOG_D("DebugMsgResponse", "  RX Window: %d", (msg_response).rx_window);               \
+    FURI_LOG_D("DebugMsgResponse", "  RSSI: %d dBm", (msg_response).rssi);                     \
+    FURI_LOG_D("DebugMsgResponse", "  SNR: %d dB", (msg_response).snr);                        \
+    FURI_LOG_D(                                                                                \
+        "DebugMsgResponse", "  Multicast: %s", (msg_response).is_multicast ? "Yes" : "No");    \
     FURI_LOG_D("DebugMsgResponse", "  Pending: %s", (msg_response).is_pending ? "Yes" : "No"); \
     FURI_LOG_D("DebugMsgResponse", "  ACK Received: %s", (msg_response).is_ack ? "Yes" : "No");
 
@@ -90,11 +88,8 @@ void handle_join_response(FuriString * line, void *context);
  */
 void handle_rx_response(FuriString * line, void *context);
 
-
-// Parse the response from the server
+// Parse a LoRa packet
 int parse_msg_response(FuriString * line, LoRaMsgResponse * msg_response);
-
-
 
 
 #endif

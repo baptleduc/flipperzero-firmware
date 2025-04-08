@@ -2,7 +2,11 @@
 
 #include <furi.h>
 
-// Test 1: FPENDING message: +MSG: FPENDING
+/**
+ * Test case for parsing a FPENDING message.
+ * Input: "+MSG: FPENDING"
+ * Expected: msg_response.is_pending should be true.
+ */
 static void parse_msg_with_fpending_test()
 {
     FuriString *line = furi_string_alloc();
@@ -22,7 +26,11 @@ static void parse_msg_with_fpending_test()
     furi_string_free(line);
 }
 
-// Test 2: Link margin and gateway_count message: +MSG: Link 20, 1
+/**
+ * Test case for parsing a Link message with margin and gateway count.
+ * Input: "+MSG: Link 20, 1"
+ * Expected: msg_response.margin should be 20, msg_response.gateway_count should be 1.
+ */
 static void parse_msg_with_link_test()
 {
     FuriString *line = furi_string_alloc();
@@ -47,7 +55,11 @@ static void parse_msg_with_link_test()
     furi_string_free(line);
 }
 
-// Test 3: RXWIN message with RSSI and SNR : +MSG: RXWIN2, RSSI -106, SNR 4
+/**
+ * Test case for parsing an RXWIN message with RSSI and SNR values.
+ * Input: "+MSG: RXWIN2, RSSI -106, SNR 4"
+ * Expected: msg_response.rx_window should be 2, msg_response.rssi should be -106, msg_response.snr should be 4.
+ */
 static void parse_msg_with_rxwin_test()
 {
     FuriString *line = furi_string_alloc();
@@ -79,7 +91,11 @@ static void parse_msg_with_rxwin_test()
     furi_string_free(line);
 }
 
-// Test 4: ACK Received message of type : +MSG: ACK Received
+/**
+ * Test case for parsing an ACK Received message.
+ * Input: "+MSG: ACK Received"
+ * Expected: msg_response.is_ack should be true.
+ */
 static void parse_msg_with_ack_received_test()
 {
     FuriString *line = furi_string_alloc();
@@ -99,7 +115,11 @@ static void parse_msg_with_ack_received_test()
     furi_string_free(line);
 }
 
-// Test 5: Test parsing function with message of type : +MSG: PORT: 8; RX: "12345678"
+/**
+ * Test case for parsing a message containing port and RX data.
+ * Input: "+MSG: PORT: 8; RX: \"12345678\""
+ * Expected: msg_response.port should be 8, msg_response.data should be "12345678".
+ */
 static void parse_msg_with_port_and_data()
 {
     FuriString *line = furi_string_alloc();
@@ -115,7 +135,6 @@ static void parse_msg_with_port_and_data()
         FURI_LOG_E("parse_msg_with_port_and_data",
                    "Incorrect RX data: expected: 12345678, got: %s",
                    msg_response.data);
-
     }
     if (msg_response.port != 8) {
         FURI_LOG_E("parse_msg_with_port_and_data",
@@ -126,6 +145,11 @@ static void parse_msg_with_port_and_data()
     furi_string_free(line);
 }
 
+/**
+ * Test case for parsing a MULTICAST message.
+ * Input: "+MSG: MULTICAST"
+ * Expected: msg_response.is_multicast should be true.
+ */
 static void parse_msg_with_multicast()
 {
     FuriString *line = furi_string_alloc();
@@ -145,9 +169,31 @@ static void parse_msg_with_multicast()
     furi_string_free(line);
 }
 
+/**
+ * Test case for extracting raw data from an RX packet.
+ * Input: "+TEST: RX \"48656C6C6F20576F726C642021\""
+ * Expected: msg_response.data should be "48656C6C6F20576F726C642021".
+ */
+static void parse_data_rx_packet()
+{
+    FuriString *line = furi_string_alloc();
+    furi_string_set(line, "+TEST: RX \"48656C6C6F20576F726C642021\"\n");
+    LoRaMsgResponse rx_response = { 0 };
+    int result = parse_msg_response(line, &rx_response);
+    if (result != 0) {
+        FURI_LOG_E("parse_data_rx_response_test",
+                   "parse_rx_packet() failed");
+    }
+    if (strcmp(rx_response.data, "48656C6C6F20576F726C642021") != 0) {
+        FURI_LOG_E("parse_data_rx_response_test",
+                   "Incorrect RX data: expected: 12345678, got: %s",
+                   rx_response.data);
+    }
 
+    furi_string_free(line);
+}
 
-int parse_msg_test_suite()
+int parsers_test_suite()
 {
     parse_msg_with_fpending_test();
     parse_msg_with_link_test();
@@ -155,7 +201,8 @@ int parse_msg_test_suite()
     parse_msg_with_ack_received_test();
     parse_msg_with_port_and_data();
     parse_msg_with_multicast();
+    parse_data_rx_packet();
 
-    FURI_LOG_I("parse_msg_test_suite", "All Unit Tests passed");
+    FURI_LOG_I("parsers_test_suite", "All Unit Tests passed");
     return 0;
 }
