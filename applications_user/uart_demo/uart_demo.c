@@ -27,9 +27,11 @@ static void uart_demo_submenu_add_default_entries(Submenu *submenu,
     submenu_reset(submenu);
     submenu_add_item(submenu, "Clear", 0, uart_demo_submenu_item_callback,
                      context);
-    submenu_add_item(submenu, "OTAA JOIN", 1,
+    submenu_add_item(submenu, "OTAA join", 1,
                      uart_demo_submenu_item_callback, context);
-    submenu_add_item(submenu, "Send Msg 2", 2,
+    submenu_add_item(submenu, "Reiceive Mode", 2,
+                     uart_demo_submenu_item_callback, context);
+    submenu_add_item(submenu, "Send Msg 2", 3,
                      uart_demo_submenu_item_callback, context);
 
     app->index = 3;
@@ -44,7 +46,7 @@ static void otaa_join_procedure(void *context)
     while (!(app->lora_bitmask & JOINED)) {
         FURI_LOG_I("OTAA_JOIN", "Attempting to join the network...");
         // Send the join command
-        uart_helper_send(app->uart_helper, "AT+JOIN\n", 9, JOIN);
+        uart_helper_send(app->uart_helper, "AT+JOIN_CMD\n", 9, JOIN_CMD);
         furi_delay_ms(10000);
         
         if(app->lora_bitmask & JOINED) {
@@ -70,58 +72,91 @@ static void setup_lora_connexion(void *context)
 {
     UartDemoApp *app = context;
 
-    uart_helper_send(app->uart_helper, "AT+ID\n", 7, DEFAULT_MSG_TYPE);
+    uart_helper_send(app->uart_helper, "AT+ID\n", 7, CONFIG_CMD);
     furi_delay_ms(1000);
 
     uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16,
-                     DEFAULT_MSG_TYPE);
+                     CONFIG_CMD);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+DR=%d\n", dr);
     uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            DEFAULT_MSG_TYPE);
+                            CONFIG_CMD);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+POWER=%d\n", tx_power);
     uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            DEFAULT_MSG_TYPE);
+                            CONFIG_CMD);
     furi_delay_ms(1000);
 
     uart_helper_send(app->uart_helper, "AT+ADR=ON\n", 11,
-                     DEFAULT_MSG_TYPE);
+                     CONFIG_CMD);
     furi_delay_ms(1000);
 
     uart_helper_send(app->uart_helper, "AT+CLASS=A\n", 12,
-                     DEFAULT_MSG_TYPE);
+                     CONFIG_CMD);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+KEY=APPKEY,%s\n", APPKEY);
     uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            DEFAULT_MSG_TYPE);
+                            CONFIG_CMD);
     furi_delay_ms(1000);
 
     // TODO : change because we need to pass to a specific callback
     app->lora_bitmask |= CONFIG;
 
 }
-static void decode_data(char *data)
-{
-    // Decode the data received from the server
-    // This function is a placeholder and should be implemented according to the specific requirements
-    FURI_LOG_I("DECODE_DATA", "Data: %s", data);
-}
+// static void decode_data(char *data)
+// {
+//     // Decode the data received from the server
+//     // This function is a placeholder and should be implemented according to the specific requirements
+//     FURI_LOG_I("DECODE_DATA", "Data: %s", data);
+// }
 static void send_cmsg(UartDemoApp *app, const char *msg)
 {   
     furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
     uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            CMSG);
+                            CMSG_CMD);
     furi_delay_ms(1000);
     DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
 }
+
+static void enter_test_mode(UartDemoApp *app)
+{
+    uart_helper_send(app->uart_helper, "AT+MODE=TEST\n", 10, CONFIG_CMD);
+    furi_delay_ms(1000);
+}
+static void enter_rx_mode(UartDemoApp *app)
+{   
+    enter_test_mode(app);
+    furi_delay_ms(1000);
+}
+
 static void uart_demo_submenu_item_callback(void *context, uint32_t index)
 {
     UartDemoApp *app = context;
 
+    switch (index)
+    {
+    case 0:
+        // Clear the submenu and add the default entries.
+        uart_demo_submenu_add_default_entries(app->submenu, app);
+        break;
+    case 1: 
+        setup_lora_connexion(app);
+        otaa_join_procedure(app);
+        break;
+    case 2:
+        // Enter RX mode.
+        enter_rx_mode(app);
+        break;
+    case 3:
+        // Send a confirmed message to the server.
+        send_cmsg(app, "Hello World");
+        break;
+    default:
+        break;
+    }
     if (index == 0) {
         // Clear the submenu and add the default entries.
         uart_demo_submenu_add_default_entries(app->submenu, app);
@@ -130,8 +165,11 @@ static void uart_demo_submenu_item_callback(void *context, uint32_t index)
         otaa_join_procedure(app);
     } else if (index == 2) {
         // Send a confirmed message to the server.
+    
+    } else if (index == 3){
         send_cmsg(app, "Hello World");
-    } else {
+    }
+    else {
         // The item was received data.
     }
 }
@@ -231,7 +269,7 @@ void handle_join_response(FuriString *line, void *context)
     FURI_LOG_I("handle_join_response", "%s",
                furi_string_get_cstr(line));
     UartDemoApp *app = context;
-    if (furi_string_start_with(line, "+JOIN: Network joined")) {
+    if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
         app->lora_bitmask |= JOINED;
         FURI_LOG_I("handle_join_response", "Network joined");
         return;

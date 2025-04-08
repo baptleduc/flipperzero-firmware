@@ -13,7 +13,7 @@
 #include "uart_demo.h"
 #include "uart_helper.h"
 
-static ProcessLine callbacks[MESSAGE_TYPE_COUNT] = {
+static ProcessLine callbacks[CMD_TYPE_COUNT] = {
     handle_default_response,    // DEFAULT
     handle_msg_response,        // MSG
     handle_msg_response,        // CMSG (same as MSG because we process response the same way)
@@ -229,9 +229,9 @@ bool uart_helper_read(UartHelper *helper, FuriString *text)
 }
 
 void uart_helper_send(UartHelper *helper, const char *data, size_t length,
-                      MessageType msg_type)
+                      CmdType cmd_type)
 {
-    uart_helper_set_callback(helper, callbacks[msg_type], helper->context);
+    uart_helper_set_callback(helper, callbacks[cmd_type], helper->context);
     if (length == 0) {
         length = strlen(data);  // Exclude the null character.
         char *buf = malloc(length + 2); // Null and delimiter.
@@ -250,7 +250,7 @@ void uart_helper_send(UartHelper *helper, const char *data, size_t length,
 }
 
 void uart_helper_send_string(UartHelper *helper, FuriString *string,
-                             MessageType msg_type)
+                             CmdType cmd_type)
 {
     const char *str = furi_string_get_cstr(string);
 
@@ -262,7 +262,7 @@ void uart_helper_send_string(UartHelper *helper, FuriString *string,
     }
 
     // Transmit data
-    uart_helper_send(helper, str, length, msg_type);
+    uart_helper_send(helper, str, length, cmd_type);
 }
 
 void uart_helper_free(UartHelper *helper)

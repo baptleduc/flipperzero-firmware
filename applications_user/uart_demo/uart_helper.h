@@ -59,15 +59,16 @@ typedef struct {
 } UartHelper;
 
 typedef enum {
-    DEFAULT_MSG_TYPE = 0,
-    MSG = 1,
-    CMSG = 2,
-    JOIN = 3,
-    MESSAGE_TYPE_COUNT,
-} MessageType;
+    DEFAULT_CMD = 0,
+    MSG_CMD = 1,
+    CMSG_CMD = 2,
+    JOIN_CMD = 3,
+    CONFIG_CMD = 4,
+    CMD_TYPE_COUNT,
+} CmdType;
 
 typedef struct {
-    MessageType msg_type;
+    CmdType msg_type;
     ProcessLine process_line;
 } UpLinkHandler;
 /**
@@ -118,13 +119,13 @@ bool uart_helper_read(UartHelper * helper, FuriString * text);
  * Sends data over the UART TX pin.
 */
 void uart_helper_send(UartHelper * helper, const char *data, size_t length,
-                      MessageType msg_type);
+                      CmdType msg_type);
 
 /**
  * Sends a string over the UART TX pin.
 */
 void uart_helper_send_string(UartHelper * helper, FuriString * string,
-                             MessageType msg_type);
+                             CmdType msg_type);
 
 /**
  * Frees the UartHelper & enables log messages.
