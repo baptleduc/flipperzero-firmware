@@ -41,71 +41,64 @@ static void otaa_join_procedure(void *context)
 {
     UartDemoApp *app = context;
     int join_attempts = 1;
-    
+
     // Loop until the device is joined to the network
-    while (!(app->lora_bitmask & JOINED)) {
+    while (app->current_state != JOINED) {
         FURI_LOG_I("OTAA_JOIN", "Attempting to join the network...");
         // Send the join command
-        uart_helper_send(app->uart_helper, "AT+JOIN_CMD\n", 9, JOIN_CMD);
+        uart_helper_send(app->uart_helper, "AT+JOIN_CMD\n", 13);
         furi_delay_ms(10000);
-        
-        if(app->lora_bitmask & JOINED) {
+
+        if (app->current_state == JOINED) {
             // Device is joined, break the loop
             break;
         }
 
         join_attempts++;
 
-        if(join_attempts > 3){
+        if (join_attempts > 3) {
             // If the device is not joined after 3 attempts, break the loop
             FURI_LOG_I("OTAA_JOIN", "Failed to join after 3 attempts");
             break;
         }
 
         FURI_LOG_I("OTAA_JOIN", "Join attempt %d", join_attempts);
-        
-    }
 
+    }
 }
 
 static void setup_lora_connexion(void *context)
 {
     UartDemoApp *app = context;
 
-    uart_helper_send(app->uart_helper, "AT+ID\n", 7, CONFIG_CMD);
+    uart_helper_send(app->uart_helper, "AT+ID\n", 7);
     furi_delay_ms(1000);
 
-    uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16,
-                     CONFIG_CMD);
+    uart_helper_send(app->uart_helper, "AT+MODE=LWOTAA\n", 16);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+DR=%d\n", dr);
-    uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            CONFIG_CMD);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+POWER=%d\n", tx_power);
-    uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            CONFIG_CMD);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
 
-    uart_helper_send(app->uart_helper, "AT+ADR=ON\n", 11,
-                     CONFIG_CMD);
+    uart_helper_send(app->uart_helper, "AT+ADR=ON\n", 11);
     furi_delay_ms(1000);
 
-    uart_helper_send(app->uart_helper, "AT+CLASS=A\n", 12,
-                     CONFIG_CMD);
+    uart_helper_send(app->uart_helper, "AT+CLASS=A\n", 12);
     furi_delay_ms(1000);
 
     furi_string_printf(app->send_cmd, "AT+KEY=APPKEY,%s\n", APPKEY);
-    uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            CONFIG_CMD);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
 
-    // TODO : change because we need to pass to a specific callback
-    app->lora_bitmask |= CONFIG;
+    app->current_state = CONFIG;
 
 }
+
 // static void decode_data(char *data)
 // {
 //     // Decode the data received from the server
@@ -113,36 +106,41 @@ static void setup_lora_connexion(void *context)
 //     FURI_LOG_I("DECODE_DATA", "Data: %s", data);
 // }
 static void send_cmsg(UartDemoApp *app, const char *msg)
-{   
+{
     furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
-    uart_helper_send_string(app->uart_helper, app->send_cmd,
-                            CMSG_CMD);
+    uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
     DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
 }
 
-static void enter_test_mode(UartDemoApp *app)
+static void enter_test_mode(void *context)
 {
-    uart_helper_send(app->uart_helper, "AT+MODE=TEST\n", 10, CONFIG_CMD);
+    UartDemoApp *app = context;
+    app->current_state = CONFIG;
+    uart_helper_send(app->uart_helper, "AT+MODE=TEST\n", 14);
     furi_delay_ms(1000);
 }
-static void enter_rx_mode(UartDemoApp *app)
-{   
+
+static void enter_rx_mode(void *context)
+{
+    UartDemoApp *app = context;
+    app->current_state = CONFIG;
     enter_test_mode(app);
+    uart_helper_send(app->uart_helper, "AT+TEST=RXLRPKT\n", 17);
     furi_delay_ms(1000);
+    app->current_state = RX;
 }
 
 static void uart_demo_submenu_item_callback(void *context, uint32_t index)
 {
     UartDemoApp *app = context;
 
-    switch (index)
-    {
+    switch (index) {
     case 0:
         // Clear the submenu and add the default entries.
         uart_demo_submenu_add_default_entries(app->submenu, app);
         break;
-    case 1: 
+    case 1:
         setup_lora_connexion(app);
         otaa_join_procedure(app);
         break;
@@ -157,25 +155,12 @@ static void uart_demo_submenu_item_callback(void *context, uint32_t index)
     default:
         break;
     }
-    if (index == 0) {
-        // Clear the submenu and add the default entries.
-        uart_demo_submenu_add_default_entries(app->submenu, app);
-    } else if (index == 1) {
-        setup_lora_connexion(app);
-        otaa_join_procedure(app);
-    } else if (index == 2) {
-        // Send a confirmed message to the server.
-    
-    } else if (index == 3){
-        send_cmsg(app, "Hello World");
-    }
-    else {
-        // The item was received data.
-    }
 }
 
-int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
-    if (!line || !msg_response) return -1;
+int parse_msg_response(FuriString *line, LoRaMsgResponse *msg_response)
+{
+    if (!line || !msg_response)
+        return -1;
 
     // Parse the line to extract the fields
     size_t index;
@@ -184,9 +169,8 @@ int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
     // Get delimiter `:` index
     index = furi_string_search_char(line, ':', 0);
     if (index == FURI_STRING_FAILURE) {
-        return -1; // No delimiter found
+        return -1;              // No delimiter found
     }
-    
     // Extract the right part of the line
     furi_string_right(line, index + 1); // Trim
 
@@ -198,31 +182,33 @@ int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
 
     index = furi_string_search_str(line, "Link ", 0);
     if (index != FURI_STRING_FAILURE) {
-        char* endptr;
-        const char* str_start = furi_string_get_cstr(line) + index + 5;
-        
+        char *endptr;
+        const char *str_start = furi_string_get_cstr(line) + index + 5;
+
         // Extract margin
-        msg_response->margin = (uint8_t)strtol(str_start, &endptr, 10);
-        
+        msg_response->margin = (uint8_t) strtol(str_start, &endptr, 10);
+
         // Extract gateway_count if there's a comma
         if (*endptr == ',') {
-            msg_response->gateway_count = (uint8_t)strtol(endptr + 1, NULL, 10);
+            msg_response->gateway_count =
+                (uint8_t) strtol(endptr + 1, NULL, 10);
         }
         return 0;
     }
 
     index = furi_string_search_str(line, "RXWIN", 0);
     if (index != FURI_STRING_FAILURE) {
-        msg_response->rx_window = (uint8_t)(furi_string_get_char(line, index + 5) - '0');
-        
-        char* endptr;
-        const char* str_start = furi_string_get_cstr(line) + index + 14;
-        
+        msg_response->rx_window =
+            (uint8_t) (furi_string_get_char(line, index + 5) - '0');
+
+        char *endptr;
+        const char *str_start = furi_string_get_cstr(line) + index + 14;
+
         // Extract RSSI value
-        msg_response->rssi = -(int8_t)strtol(str_start, &endptr, 10);
-        
+        msg_response->rssi = -(int8_t) strtol(str_start, &endptr, 10);
+
         // Extract SNR value
-        msg_response->snr = (int8_t)strtol(endptr + 6, NULL, 10);
+        msg_response->snr = (int8_t) strtol(endptr + 6, NULL, 10);
         return 0;
     }
 
@@ -240,18 +226,18 @@ int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
 
     index = furi_string_search_str(line, "PORT: ", 0);
     if (index != FURI_STRING_FAILURE) {
-        const char* str_start = furi_string_get_cstr(line) + index + 6;
-        msg_response->port = (uint8_t)strtol(str_start, NULL, 10);
+        const char *str_start = furi_string_get_cstr(line) + index + 6;
+        msg_response->port = (uint8_t) strtol(str_start, NULL, 10);
     }
 
     index = furi_string_search_str(line, "RX: ", 0);
     if (index != FURI_STRING_FAILURE) {
-        const char* data_start = furi_string_get_cstr(line) + index + 5; // Skip RX: "
+        const char *data_start = furi_string_get_cstr(line) + index + 5; // Skip RX: "
         strcpy(msg_response->data, data_start);
 
         size_t length = strlen(msg_response->data);
-        if (length > 0 && msg_response->data[length - 1] == '"') {
-            msg_response->data[length - 1] = '\0'; // Remove the trailing quote
+        if (length > 0 && msg_response->data[length - 2] == '"') {
+            msg_response->data[length - 2] = '\0'; // Remove the trailing quote
         }
         return 0;
     }
@@ -259,22 +245,63 @@ int parse_msg_response(FuriString* line, LoRaMsgResponse* msg_response) {
     return 0;
 }
 
+static int parse_rx_response(FuriString *line,
+                             LoRaMsgResponse *rx_response)
+{
+    if (!line || !rx_response)
+        return -1;
+    // Parse the line to extract the fields
+    size_t index;
+    FURI_LOG_D("parse_rx_response", "%s", furi_string_get_cstr(line));
+
+    // Get delimiter `:` index
+    index = furi_string_search_char(line, ':', 0);
+    if (index == FURI_STRING_FAILURE) {
+        return -1;              // No delimiter found
+    }
+    // Extract the right part of the line
+    furi_string_right(line, index + 1); // Trim
+
+    index = furi_string_search_str(line, "RX", 0);
+    if (index != FURI_STRING_FAILURE) {
+        const char *data_start = furi_string_get_cstr(line) + index + 4; // Skip RX "
+        strcpy(rx_response->data, data_start);
+
+        size_t length = strlen(rx_response->data);
+        if (length > 0 && rx_response->data[length - 2] == '"') {
+            rx_response->data[length - 2] = '\0'; // Remove the trailing quote
+        }
+        return 0;
+    }
+
+    return 0;
+}
+
+
 void handle_msg_response(FuriString *line, void *context)
 {
     UartDemoApp *app = context;
     parse_msg_response(line, app->msg_response);
 }
+
+void handle_rx_response(FuriString *line, void *context)
+{
+    UartDemoApp *app = context;
+    parse_rx_response(line, app->msg_response);
+    DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
+}
+
 void handle_join_response(FuriString *line, void *context)
 {
-    FURI_LOG_I("handle_join_response", "%s",
-               furi_string_get_cstr(line));
+    FURI_LOG_I("handle_join_response", "%s", furi_string_get_cstr(line));
     UartDemoApp *app = context;
     if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
-        app->lora_bitmask |= JOINED;
+        app->current_state = JOINED;
         FURI_LOG_I("handle_join_response", "Network joined");
         return;
-    } 
+    }
 }
+
 #ifdef DEMO_PROCESS_LINE
 void handle_default_response(FuriString *line, void *context)
 {
@@ -341,7 +368,7 @@ static UartDemoApp *uart_demo_app_alloc()
 
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
-    app->lora_bitmask = 0;
+    app->current_state = INIT;
 
     app->msg_response = malloc(sizeof(LoRaMsgResponse));
     // Initialize the UART helper.
@@ -350,8 +377,7 @@ static UartDemoApp *uart_demo_app_alloc()
 #ifdef DEMO_PROCESS_LINE
     uart_helper_set_delimiter(app->uart_helper, LINE_DELIMITER,
                               INCLUDE_LINE_DELIMITER);
-    uart_helper_set_callback(app->uart_helper, handle_default_response,
-                             app);
+    uart_helper_set_callback(app->uart_helper, app);
 #else
     app->timer =
         furi_timer_alloc(uart_demo_timer_callback, FuriTimerTypePeriodic,

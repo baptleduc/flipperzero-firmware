@@ -13,14 +13,6 @@
 #include "uart_demo.h"
 #include "uart_helper.h"
 
-static ProcessLine callbacks[CMD_TYPE_COUNT] = {
-    handle_default_response,    // DEFAULT
-    handle_msg_response,        // MSG
-    handle_msg_response,        // CMSG (same as MSG because we process response the same way)
-    handle_join_response        // JOIN
-};
-
-
 /** 
  * Invoked when a byte of data is received on the UART bus.  This function
  * adds the byte to the stream buffer and sets the WorkerEventDataWaiting flag.
@@ -62,6 +54,9 @@ static int32_t uart_helper_worker(void *context)
             furi_thread_flags_wait(WorkerEventDataWaiting |
                                    WorkerEventExiting, FuriFlagWaitAny,
                                    FuriWaitForever);
+
+        // Update callback depending on the current state
+        uart_helper_set_callback(helper, helper->context);
 
         if (events & WorkerEventDataWaiting) {
             size_t length_read = 0;
@@ -115,16 +110,15 @@ static int32_t uart_helper_worker(void *context)
                         do {
                             // Find the next delimiter in the ring buffer.
                             index =
-                                ring_buffer_find_delim(helper->
-                                                       ring_buffer);
+                                ring_buffer_find_delim
+                                (helper->ring_buffer);
 
                             // If a delimiter was found, extract the line and process it.
                             if (index != FURI_STRING_FAILURE) {
                                 // Extract the line from the ring buffer, advancing the read
                                 // pointer to the next byte after the delimiter.
-                                ring_buffer_extract_line(helper->
-                                                         ring_buffer,
-                                                         index, line);
+                                ring_buffer_extract_line
+                                    (helper->ring_buffer, index, line);
 
                                 // Invoke the callback to process the line.
                                 if (helper->process_line) {
@@ -208,12 +202,30 @@ void uart_helper_set_delimiter(UartHelper *helper, char delimiter,
                               include_delimiter);
 }
 
-void uart_helper_set_callback(UartHelper *helper, ProcessLine process_line,
-                              void *context)
+void uart_helper_set_callback(UartHelper *helper, void *context)
 {
     // Set the process_line callback and context.
-    helper->process_line = process_line;
     helper->context = context;
+    UartDemoApp *app = context;
+    FURI_LOG_D("uart_helper_set_callback", "current_state: %d",
+               app->current_state);
+    switch (app->current_state) {
+    case CONFIG:
+        helper->process_line = handle_default_response;
+        break;
+    case JOINED:
+        helper->process_line = handle_join_response;
+        break;
+    case SENDING:
+        helper->process_line = handle_msg_response;
+        break;
+    case RX:
+        helper->process_line = handle_rx_response;
+        break;
+    default:
+        helper->process_line = handle_default_response;
+        break;
+    }
 }
 
 void uart_helper_set_baud_rate(UartHelper *helper, uint32_t baud_rate)
@@ -228,10 +240,8 @@ bool uart_helper_read(UartHelper *helper, FuriString *text)
     return ring_buffer_read(helper->ring_buffer, text);
 }
 
-void uart_helper_send(UartHelper *helper, const char *data, size_t length,
-                      CmdType cmd_type)
+void uart_helper_send(UartHelper *helper, const char *data, size_t length)
 {
-    uart_helper_set_callback(helper, callbacks[cmd_type], helper->context);
     if (length == 0) {
         length = strlen(data);  // Exclude the null character.
         char *buf = malloc(length + 2); // Null and delimiter.
@@ -243,14 +253,14 @@ void uart_helper_send(UartHelper *helper, const char *data, size_t length,
                            length);
         free(buf);
     } else {
+        FURI_LOG_D("uart_helper_send", data);
         // Transmit data via UART TX.
         furi_hal_serial_tx(helper->serial_handle, (uint8_t *) data,
                            length);
     }
 }
 
-void uart_helper_send_string(UartHelper *helper, FuriString *string,
-                             CmdType cmd_type)
+void uart_helper_send_string(UartHelper *helper, FuriString *string)
 {
     const char *str = furi_string_get_cstr(string);
 
@@ -262,7 +272,7 @@ void uart_helper_send_string(UartHelper *helper, FuriString *string,
     }
 
     // Transmit data
-    uart_helper_send(helper, str, length, cmd_type);
+    uart_helper_send(helper, str, length);
 }
 
 void uart_helper_free(UartHelper *helper)
