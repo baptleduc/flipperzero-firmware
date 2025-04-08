@@ -168,6 +168,26 @@ static int trim_until_delimiter(FuriString *line, char delimiter)
     return 0;
 }
 
+// -- UTILITY FUNCTIONS ---------------------------------------------
+
+// Function to convert hex string to ASCII string
+static void hex_to_string(char *hex_str, char *output_str)
+{
+    size_t len = strlen(hex_str);
+
+    if (len % 2 != 0) {
+        printf("Error: Hex string length must be even.\n");
+        return;
+    }
+
+    for (size_t i = 0; i < len; i += 2) {
+        char hex_pair[3] = { hex_str[i], hex_str[i + 1], '\0' };
+        output_str[i / 2] = (char) strtol(hex_pair, NULL, 16);
+    }
+
+    output_str[len / 2] = '\0'; // Null-terminate the string
+}
+
 // -- INDIVIDUAL PARSERS -----------------------------------------------
 
 static int parse_pending(FuriString *line, LoRaMsgResponse *msg_response)
@@ -316,7 +336,10 @@ void handle_rx_response(FuriString *line, void *context)
 {
     UartDemoApp *app = (UartDemoApp *) context;
     parse_msg_response(line, app->msg_response);
-    DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
+    hex_to_string(app->msg_response->data,
+                  app->msg_response->decoded_data);
+    FURI_LOG_I("handle_rx_response", "Decoded data: %s",
+               app->msg_response->decoded_data);
 }
 
 void handle_join_response(FuriString *line, void *context)
@@ -329,6 +352,8 @@ void handle_join_response(FuriString *line, void *context)
         return;
     }
 }
+
+
 
 #ifdef DEMO_PROCESS_LINE
 void handle_default_response(FuriString *line, void *context)

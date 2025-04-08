@@ -31,6 +31,7 @@ typedef struct {
     int8_t snr;                 // SNR (Signal-to-Noise Ratio) of the last frame.
     uint8_t port;               // Port number used in the last transmission.
     char data[MAX_DATA_SIZE];   // Payload data of the last transmitted frame.
+    char decoded_data[MAX_DATA_SIZE]; // Decoded data of the last transmitted frame.
     bool is_multicast;          // True if the frame was received in a multicast group.
     bool is_pending;            // True if the server has pending data for the device.
     bool is_ack;                // True if the last frame was acknowledged by the server.
