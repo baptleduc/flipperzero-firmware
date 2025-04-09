@@ -10,7 +10,7 @@
 
 #include <furi_hal.h>
 #include "ring_buffer.h"
-#include "uart_demo.h"
+#include "lora.h"
 #include "uart_helper.h"
 
 /** 
@@ -110,16 +110,15 @@ static int32_t uart_helper_worker(void *context)
                         do {
                             // Find the next delimiter in the ring buffer.
                             index =
-                                ring_buffer_find_delim(helper->
-                                                       ring_buffer);
+                                ring_buffer_find_delim
+                                (helper->ring_buffer);
 
                             // If a delimiter was found, extract the line and process it.
                             if (index != FURI_STRING_FAILURE) {
                                 // Extract the line from the ring buffer, advancing the read
                                 // pointer to the next byte after the delimiter.
-                                ring_buffer_extract_line(helper->
-                                                         ring_buffer,
-                                                         index, line);
+                                ring_buffer_extract_line
+                                    (helper->ring_buffer, index, line);
 
                                 // Invoke the callback to process the line.
                                 if (helper->process_line) {

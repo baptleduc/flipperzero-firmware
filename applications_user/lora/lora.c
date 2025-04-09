@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "uart_demo.h"
+#include "lora.h"
 
 // Global variables
 int dr = DEFAULT_DR;            // Data rate
@@ -354,7 +354,8 @@ void handle_join_response(FuriString *line, void *context)
 void handle_default_response(FuriString *line, void *context)
 {
     (void) context;
-    FURI_LOG_I("UART_DEMO", "%s", furi_string_get_cstr(line));
+    FURI_LOG_I("handle_default_response", "%s",
+               furi_string_get_cstr(line));
 }
 #else
 void lora_timer_callback(void *context)

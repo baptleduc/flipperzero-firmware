@@ -159,16 +159,16 @@ void ring_buffer_extract_line(RingBuffer *rb, size_t delim_index,
         if (delim_index > rb->ring_buffer_read) {
             // line is in one chunk
             furi_string_set_strn(line,
-                                 (char *) &rb->ring_buffer[rb->
-                                                           ring_buffer_read],
+                                 (char *) &rb->
+                                 ring_buffer[rb->ring_buffer_read],
                                  delim_index - rb->ring_buffer_read +
                                  (rb->include_delimiter ? 1 : 0));
         } else {
             // line is split across the buffer wrap, so we need to copy it in two chunks
             // first chunk is from read index to end of buffer
             furi_string_set_strn(line,
-                                 (char *) &rb->ring_buffer[rb->
-                                                           ring_buffer_read],
+                                 (char *) &rb->
+                                 ring_buffer[rb->ring_buffer_read],
                                  ring_buffer_size - rb->ring_buffer_read);
 
             // second chunk is from start of buffer to delimiter
@@ -199,16 +199,16 @@ bool ring_buffer_read(RingBuffer *rb, FuriString *text)
     if (furi_mutex_acquire(rb->mutex, FuriWaitForever) == FuriStatusOk) {
         if (rb->ring_buffer_read < rb->ring_buffer_write) {
             furi_string_set_strn(text,
-                                 (char *) &rb->ring_buffer[rb->
-                                                           ring_buffer_read],
+                                 (char *) &rb->
+                                 ring_buffer[rb->ring_buffer_read],
                                  rb->ring_buffer_write -
                                  rb->ring_buffer_read);
             rb->ring_buffer_read = rb->ring_buffer_write;
             read = true;
         } else if (rb->ring_buffer_read > rb->ring_buffer_write) {
             furi_string_set_strn(text,
-                                 (char *) &rb->ring_buffer[rb->
-                                                           ring_buffer_read],
+                                 (char *) &rb->
+                                 ring_buffer[rb->ring_buffer_read],
                                  ring_buffer_size - rb->ring_buffer_read);
             rb->ring_buffer_read = 0;
             read = true;

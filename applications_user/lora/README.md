@@ -15,7 +15,7 @@ This project contains two apps: the main application and a test suite.
 To build the main app in **Release mode**, use:
 
 ```sh
-./fbt COMPACT=1 DEBUG=0 APPSRC=uart_demo
+./fbt COMPACT=1 DEBUG=0 APPSRC=lora
 ```
 
 ## Deploying the App
@@ -23,7 +23,7 @@ To build the main app in **Release mode**, use:
 To upload and launch the compiled app via USB, run:
 
 ```sh
-./fbt DEBUG=0 launch APPSRC=uart_demo
+./fbt DEBUG=0 launch APPSRC=lora
 ```
 
 To **build** and **upload** all FAP apps in one command:
