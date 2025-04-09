@@ -3,6 +3,6 @@
 
 #include <furi.h>
 
-int32_t run_lora_tests(void* context);
+int32_t run_lora_tests(void *context);
 
 #endif

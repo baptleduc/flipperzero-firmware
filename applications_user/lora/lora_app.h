@@ -45,6 +45,15 @@ typedef enum {
     RX,                         // Being on this state means the device is receiving data
 } LoraStateFlag;
 
+typedef enum {
+    DEFAULT_CMD = 0,
+    MSG_CMD = 1,
+    CMSG_CMD = 2,
+    JOIN_CMD = 3,
+    CONFIG_CMD = 4,
+    CMD_TYPE_COUNT,
+} LoraCmdType;
+
 typedef struct {
     Gui *gui;
     FuriTimer *timer;
@@ -55,7 +64,7 @@ typedef struct {
     FuriString *send_cmd;
     LoRaMsgResponse *msg_response;
     LoraStateFlag current_state;
-} UartDemoApp;
+} LoraApp;
 
 typedef enum {
     UartDemoSubMenuViewId = 1,
@@ -88,9 +97,5 @@ void handle_join_response(FuriString * line, void *context);
  * data and updates the LoRaMsgResponse structure with the received data.
  */
 void handle_rx_response(FuriString * line, void *context);
-
-// Parse a LoRa packet
-int parse_msg_response(FuriString * line, LoRaMsgResponse * msg_response);
-
 
 #endif

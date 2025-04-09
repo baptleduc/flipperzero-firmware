@@ -9,8 +9,10 @@
 */
 
 #include <furi_hal.h>
+#include <stdbool.h>
+
 #include "ring_buffer.h"
-#include "uart_demo.h"
+#include "lora_app.h"
 #include "uart_helper.h"
 
 /** 
@@ -206,7 +208,7 @@ void uart_helper_set_callback(UartHelper *helper, void *context)
 {
     // Set the process_line callback and context.
     helper->context = context;
-    UartDemoApp *app = context;
+    LoraApp *app = context;
     FURI_LOG_D("uart_helper_set_callback", "current_state: %d",
                app->current_state);
     switch (app->current_state) {

@@ -1,6 +1,7 @@
-#include "../../uart_demo.h"
-
 #include <furi.h>
+#include <stdbool.h>
+
+#include "../../lora_parsers.h"
 
 /**
  * Test case for parsing a FPENDING message.
