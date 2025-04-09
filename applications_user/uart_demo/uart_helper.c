@@ -110,15 +110,16 @@ static int32_t uart_helper_worker(void *context)
                         do {
                             // Find the next delimiter in the ring buffer.
                             index =
-                                ring_buffer_find_delim
-                                (helper->ring_buffer);
+                                ring_buffer_find_delim(helper->
+                                                       ring_buffer);
 
                             // If a delimiter was found, extract the line and process it.
                             if (index != FURI_STRING_FAILURE) {
                                 // Extract the line from the ring buffer, advancing the read
                                 // pointer to the next byte after the delimiter.
-                                ring_buffer_extract_line
-                                    (helper->ring_buffer, index, line);
+                                ring_buffer_extract_line(helper->
+                                                         ring_buffer,
+                                                         index, line);
 
                                 // Invoke the callback to process the line.
                                 if (helper->process_line) {
@@ -206,7 +207,7 @@ void uart_helper_set_callback(UartHelper *helper, void *context)
 {
     // Set the process_line callback and context.
     helper->context = context;
-    UartDemoApp *app = context;
+    LoraApp *app = context;
     FURI_LOG_D("uart_helper_set_callback", "current_state: %d",
                app->current_state);
     switch (app->current_state) {

@@ -15,7 +15,6 @@
 #include <furi.h>
 #include "ring_buffer.h"
 
-
 /**
  * WorkerEventFlags are used to signal the worker thread to exit or to process data.
  * Each flag is a bit in a 32-bit integer, so we can use the FuriThreadFlags API to
@@ -25,7 +24,6 @@ typedef enum {
     WorkerEventDataWaiting = 1 << 0, // bit flag 0 - data is waiting to be processed
     WorkerEventExiting = 1 << 1, // bit flag 1 - worker thread is exiting
 } WorkerEventFlags;
-
 
 /**
  * Callback function for processing a line of data.
@@ -58,19 +56,6 @@ typedef struct {
 
 } UartHelper;
 
-typedef enum {
-    DEFAULT_CMD = 0,
-    MSG_CMD = 1,
-    CMSG_CMD = 2,
-    JOIN_CMD = 3,
-    CONFIG_CMD = 4,
-    CMD_TYPE_COUNT,
-} CmdType;
-
-typedef struct {
-    CmdType msg_type;
-    ProcessLine process_line;
-} UpLinkHandler;
 /**
  * Allocates a new UartHelper.  The UartHelper will be initialized with a baud rate of 115200.
  * Log messages will be disabled since they also use the UART.
