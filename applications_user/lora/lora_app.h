@@ -98,7 +98,4 @@ void handle_join_response(FuriString * line, void *context);
  */
 void handle_rx_response(FuriString * line, void *context);
 
-// Parse a LoRa packet
-int parse_msg_response(FuriString * line, LoRaMsgResponse * msg_response);
-
 #endif

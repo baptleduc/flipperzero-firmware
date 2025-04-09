@@ -9,6 +9,8 @@
 */
 
 #include <furi_hal.h>
+#include <stdbool.h>
+
 #include "ring_buffer.h"
 #include "lora_app.h"
 #include "uart_helper.h"
