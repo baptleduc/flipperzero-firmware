@@ -1,4 +1,4 @@
-#include "../../lora.h"
+#include "../../lora_app.h"
 
 #include <furi.h>
 

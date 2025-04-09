@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include "lora.h"
+#include "lora_app.h"
 
 // Global variables
 int dr = DEFAULT_DR;            // Data rate
@@ -446,7 +446,7 @@ static void lora_app_free(LoraApp *app)
     free(app);
 }
 
-int32_t lora_main(void *p)
+int32_t lora_app_main(void *p)
 {
     UNUSED(p);
 

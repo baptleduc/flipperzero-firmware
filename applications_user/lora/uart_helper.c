@@ -10,7 +10,7 @@
 
 #include <furi_hal.h>
 #include "ring_buffer.h"
-#include "lora.h"
+#include "lora_app.h"
 #include "uart_helper.h"
 
 /** 

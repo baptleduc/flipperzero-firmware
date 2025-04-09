@@ -1,8 +1,8 @@
 App(
-    appid="lora",
+    appid="lora_app",
     name="LoRa",
     apptype=FlipperAppType.EXTERNAL,
-    entry_point="lora_main",
+    entry_point="lora_app_main",
     requires=["gui"],
     stack_size=1 * 1024,
     fap_icon="lora_10px.png",
