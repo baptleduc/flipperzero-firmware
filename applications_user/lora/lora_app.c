@@ -1,42 +1,14 @@
 #include "lora_app.h"
 #include "lora_parsers.h"
+#include "scenes/lora_scene.h"
+
+#include <gui/modules/submenu.h>
 
 // Global variables
 int dr = DEFAULT_DR;            // Data rate
 int tx_power = DEFAULT_TX_POWER; // Transmit power
 
-/**
- * This callback function is called when a submenu item is clicked.
- * 
- * @param context The context passed to the submenu.
- * @param index   The index of the submenu item that was clicked.
-*/
-static void lora_submenu_item_callback(void *context, uint32_t index);
-
-/**
- * Adds the default submenu entries.
- * 
- * @param submenu The submenu.
- * @param context The context to pass to the submenu item callback function.
-*/
-static void lora_submenu_add_default_entries(Submenu *submenu,
-                                             void *context)
-{
-    LoraApp *app = context;
-    submenu_reset(submenu);
-    submenu_add_item(submenu, "Clear", 0, lora_submenu_item_callback,
-                     context);
-    submenu_add_item(submenu, "OTAA join", 1, lora_submenu_item_callback,
-                     context);
-    submenu_add_item(submenu, "Reiceive Mode", 2,
-                     lora_submenu_item_callback, context);
-    submenu_add_item(submenu, "Send Msg 2", 3, lora_submenu_item_callback,
-                     context);
-
-    app->index = 3;
-}
-
-static void otaa_join_procedure(void *context)
+void otaa_join_procedure(void *context)
 {
     LoraApp *app = context;
     int join_attempts = 1;
@@ -65,7 +37,7 @@ static void otaa_join_procedure(void *context)
     }
 }
 
-static void setup_lora_connexion(void *context)
+void setup_lora_connexion(void *context)
 {
     LoraApp *app = context;
 
@@ -96,13 +68,7 @@ static void setup_lora_connexion(void *context)
     app->current_state = CONFIG;
 }
 
-// static void decode_data(char *data)
-// {
-//     // Decode the data received from the server
-//     // This function is a placeholder and should be implemented according to the specific requirements
-//     FURI_LOG_I("DECODE_DATA", "Data: %s", data);
-// }
-static void send_cmsg(LoraApp *app, const char *msg)
+void send_cmsg(LoraApp *app, const char *msg)
 {
     furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
     uart_helper_send_string(app->uart_helper, app->send_cmd);
@@ -118,7 +84,7 @@ static void enter_test_mode(void *context)
     furi_delay_ms(1000);
 }
 
-static void enter_rx_mode(void *context)
+void enter_rx_mode(void *context)
 {
     LoraApp *app = context;
     app->current_state = CONFIG;
@@ -128,31 +94,6 @@ static void enter_rx_mode(void *context)
     app->current_state = RX;
 }
 
-static void lora_submenu_item_callback(void *context, uint32_t index)
-{
-    LoraApp *app = context;
-
-    switch (index) {
-    case 0:
-        // Clear the submenu and add the default entries.
-        lora_submenu_add_default_entries(app->submenu, app);
-        break;
-    case 1:
-        setup_lora_connexion(app);
-        otaa_join_procedure(app);
-        break;
-    case 2:
-        // Enter RX mode.
-        enter_rx_mode(app);
-        break;
-    case 3:
-        // Send a confirmed message to the server.
-        send_cmsg(app, "Hello World");
-        break;
-    default:
-        break;
-    }
-}
 
 // Function to convert hex string to ASCII string
 static void hex_to_string(char *hex_str, char *output_str)
@@ -223,18 +164,19 @@ void lora_timer_callback(void *context)
 }
 #endif
 
-static bool lora_navigation_callback(void *context)
+
+static bool lora_app_custom_event_callback(void *context, uint32_t event)
 {
-    UNUSED(context);
-    // We don't want to handle any navigation events, the back button should exit the app.
-    return true;
+    furi_assert(context);
+    LoraApp *app = context;
+    return scene_manager_handle_custom_event(app->scene_manager, event);
 }
 
-static uint32_t lora_exit(void *context)
+static bool lora_app_back_event_callback(void *context)
 {
-    UNUSED(context);
-    // Exit the app.
-    return VIEW_NONE;
+    furi_assert(context);
+    LoraApp *app = context;
+    return scene_manager_handle_back_event(app->scene_manager);
 }
 
 static LoraApp *lora_app_alloc()
@@ -245,19 +187,26 @@ static LoraApp *lora_app_alloc()
     // Create a submenu, add default entries and add the submenu to the view
     // dispatcher. Set the submenu as the current view.
     app->gui = furi_record_open(RECORD_GUI);
+    app->scene_manager = scene_manager_alloc(&lora_scene_handlers, app);
+
     app->view_dispatcher = view_dispatcher_alloc();
+    view_dispatcher_set_event_callback_context(app->view_dispatcher, app);
+    view_dispatcher_set_event_callback_context(app->view_dispatcher, app);
+    view_dispatcher_set_custom_event_callback(app->view_dispatcher,
+                                              lora_app_custom_event_callback);
+    view_dispatcher_set_navigation_event_callback(app->view_dispatcher,
+                                                  lora_app_back_event_callback);
+
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui,
                                   ViewDispatcherTypeFullscreen);
-    app->submenu = submenu_alloc();
-    lora_submenu_add_default_entries(app->submenu, app);
-    view_dispatcher_add_view(app->view_dispatcher, UartDemoSubMenuViewId,
-                             submenu_get_view(app->submenu));
-    view_set_previous_callback(submenu_get_view(app->submenu), lora_exit);
-    view_dispatcher_set_navigation_event_callback(app->view_dispatcher,
-                                                  lora_navigation_callback);
-    view_dispatcher_switch_to_view(app->view_dispatcher,
-                                   UartDemoSubMenuViewId);
 
+
+    app->submenu = submenu_alloc();
+    view_dispatcher_add_view(app->view_dispatcher,
+                             LoraAppSubMenuView,
+                             submenu_get_view(app->submenu));
+
+    scene_manager_next_scene(app->scene_manager, LoraSceneStart);
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
     app->current_state = INIT;
@@ -289,8 +238,7 @@ static void lora_app_free(LoraApp *app)
 
     furi_string_free(app->send_cmd);
 
-    view_dispatcher_remove_view(app->view_dispatcher,
-                                UartDemoSubMenuViewId);
+    view_dispatcher_remove_view(app->view_dispatcher, LoraAppSubMenuView);
     view_dispatcher_free(app->view_dispatcher);
     submenu_free(app->submenu);
     furi_record_close(RECORD_GUI);
@@ -306,6 +254,8 @@ int32_t lora_app_main(void *p)
     Expansion *expansion = furi_record_open(RECORD_EXPANSION);
     expansion_disable(expansion);
     view_dispatcher_run(app->view_dispatcher);
+
+    // Free the resources
     lora_app_free(app);
     expansion_enable(expansion);
     furi_record_close(RECORD_EXPANSION);

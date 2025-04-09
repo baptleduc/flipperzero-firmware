@@ -58,6 +58,7 @@ typedef struct {
     Gui *gui;
     FuriTimer *timer;
     ViewDispatcher *view_dispatcher;
+    SceneManager *scene_manager;
     Submenu *submenu;
     uint32_t index;
     UartHelper *uart_helper;
@@ -67,8 +68,9 @@ typedef struct {
 } LoraApp;
 
 typedef enum {
-    UartDemoSubMenuViewId = 1,
-} UartDemoViewIds;
+    LoraAppSubMenuView,
+    LoraAppTextBoxView,
+} LoraAppView;
 
 #define DEBUG_LORA_MSG_RESPONSE(msg_response)                                                  \
     FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponse Debug:");                                  \
@@ -98,4 +100,9 @@ void handle_join_response(FuriString * line, void *context);
  */
 void handle_rx_response(FuriString * line, void *context);
 
+
+void enter_rx_mode(void *context);
+void send_cmsg(LoraApp * app, const char *msg);
+void setup_lora_connexion(void *context);
+void otaa_join_procedure(void *context);
 #endif
