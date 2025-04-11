@@ -3,8 +3,6 @@
 
 #include "lora_parsers.h"
 
-
-
 /**
  * Trim everything before and including the given delimiter.
  * Returns -1 if delimiter not found.
@@ -19,10 +17,10 @@ static int trim_until_delimiter(FuriString *line, char delimiter)
     return 0;
 }
 
-
 // -- INDIVIDUAL PARSERS -----------------------------------------------
 
-static int parse_pending(FuriString *line, LoRaMsgResponse *msg_response)
+static int parse_pending(FuriString *line,
+                         LoRaMsgResponseModel *msg_response)
 {
     if (furi_string_search_str(line, "FPENDING", 0) != FURI_STRING_FAILURE) {
         msg_response->is_pending = true;
@@ -31,7 +29,8 @@ static int parse_pending(FuriString *line, LoRaMsgResponse *msg_response)
     return 1;
 }
 
-static int parse_link_info(FuriString *line, LoRaMsgResponse *msg_response)
+static int parse_link_info(FuriString *line,
+                           LoRaMsgResponseModel *msg_response)
 {
     size_t index = furi_string_search_str(line, "Link ", 0);
     if (index == FURI_STRING_FAILURE)
@@ -49,7 +48,7 @@ static int parse_link_info(FuriString *line, LoRaMsgResponse *msg_response)
 }
 
 static int parse_rxwin_info(FuriString *line,
-                            LoRaMsgResponse *msg_response)
+                            LoRaMsgResponseModel *msg_response)
 {
     size_t index = furi_string_search_str(line, "RXWIN", 0);
     if (index == FURI_STRING_FAILURE)
@@ -66,7 +65,7 @@ static int parse_rxwin_info(FuriString *line,
     return 0;
 }
 
-static int parse_ack(FuriString *line, LoRaMsgResponse *msg_response)
+static int parse_ack(FuriString *line, LoRaMsgResponseModel *msg_response)
 {
     if (furi_string_search_str(line, "ACK Received", 0) !=
         FURI_STRING_FAILURE) {
@@ -76,7 +75,8 @@ static int parse_ack(FuriString *line, LoRaMsgResponse *msg_response)
     return 1;
 }
 
-static int parse_multicast(FuriString *line, LoRaMsgResponse *msg_response)
+static int parse_multicast(FuriString *line,
+                           LoRaMsgResponseModel *msg_response)
 {
     if (furi_string_search_str(line, "MULTICAST", 0) !=
         FURI_STRING_FAILURE) {
@@ -86,7 +86,7 @@ static int parse_multicast(FuriString *line, LoRaMsgResponse *msg_response)
     return 1;
 }
 
-static int parse_port(FuriString *line, LoRaMsgResponse *msg_response)
+static int parse_port(FuriString *line, LoRaMsgResponseModel *msg_response)
 {
     size_t index = furi_string_search_str(line, "PORT: ", 0);
     if (index != FURI_STRING_FAILURE) {
@@ -97,7 +97,7 @@ static int parse_port(FuriString *line, LoRaMsgResponse *msg_response)
 }
 
 // Function to parse the RX packet without trimming the input string
-int parse_rx_packet(FuriString *line, LoRaMsgResponse *rx_response)
+int parse_rx_packet(FuriString *line, LoRaMsgResponseModel *rx_response)
 {
     if (!line || !rx_response)
         return -1;
@@ -123,7 +123,8 @@ int parse_rx_packet(FuriString *line, LoRaMsgResponse *rx_response)
     return 0;
 }
 
-int parse_msg_response(FuriString *line, LoRaMsgResponse *msg_response)
+int parse_msg_response(FuriString *line,
+                       LoRaMsgResponseModel *msg_response)
 {
     if (!line || !msg_response)
         return -1;

@@ -11,8 +11,8 @@
 #include <input/input.h>
 
 #include "uart_helper.h"
+#include "views/lora_receiver.h"
 #include "lora_custom_event.h"
-
 
 #define DEVICE_BAUDRATE  9600
 #define DEFAULT_DR       5
@@ -24,21 +24,6 @@
 #define DEMO_PROCESS_LINE
 #define LINE_DELIMITER         '\n'
 #define INCLUDE_LINE_DELIMITER false
-#define MAX_DATA_SIZE          (1 << 8) // 256 bytes
-
-typedef struct {
-    uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
-    uint16_t gateway_count;     // Number of gateways that received the last transmitted frame.
-    uint8_t rx_window;          // RX window number where the last frame was received.
-    int8_t rssi;                // RSSI (Received Signal Strength Indicator) of the last frame.
-    int8_t snr;                 // SNR (Signal-to-Noise Ratio) of the last frame.
-    uint8_t port;               // Port number used in the last transmission.
-    char data[MAX_DATA_SIZE];   // Payload data of the last transmitted frame.
-    char decoded_data[MAX_DATA_SIZE]; // Decoded data of the last transmitted frame.
-    bool is_multicast;          // True if the frame was received in a multicast group.
-    bool is_pending;            // True if the server has pending data for the device.
-    bool is_ack;                // True if the last frame was acknowledged by the server.
-} LoRaMsgResponse;
 
 typedef enum {
     INIT,                       // Being on this state means the device is not configured yet
@@ -67,7 +52,7 @@ typedef struct {
     uint32_t index;
     UartHelper *uart_helper;
     FuriString *send_cmd;
-    LoRaMsgResponse *msg_response;
+    LoraReceiver *receiver;
     LoraStateFlag current_state;
 } LoraApp;
 
@@ -77,7 +62,7 @@ typedef enum {
 } LoraAppView;
 
 #define DEBUG_LORA_MSG_RESPONSE(msg_response)                                                  \
-    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponse Debug:");                                  \
+    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponseModel Debug:");                             \
     FURI_LOG_D("DebugMsgResponse", "  Port: %hhu", (msg_response).port);                       \
     FURI_LOG_D("DebugMsgResponse", "  Data: %s", (msg_response).data);                         \
     FURI_LOG_D("DebugMsgResponse", "  Margin: %hhu", (msg_response).margin);                   \
@@ -100,7 +85,7 @@ void handle_join_response(FuriString * line, void *context);
  *
  * This function is triggered on the receiver side when a LoRa packet is 
  * received from the transmitter during TEST mode operation. It decodes the
- * data and updates the LoRaMsgResponse structure with the received data.
+ * data and updates the LoRaMsgResponseModel structure with the received data.
  */
 void handle_rx_response(FuriString * line, void *context);
 

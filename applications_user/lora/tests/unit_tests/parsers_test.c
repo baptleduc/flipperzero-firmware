@@ -12,7 +12,7 @@ static void parse_msg_with_fpending_test()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+MSG: FPENDING");
-    LoRaMsgResponse msg_response = { 0 };
+    LoRaMsgResponseModel msg_response = { 0 };
     int result = parse_msg_response(line, &msg_response);
 
     if (result != 0) {
@@ -36,7 +36,7 @@ static void parse_msg_with_link_test()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+MSG: Link 20, 1\n");
-    LoRaMsgResponse msg_response = { 0 };
+    LoRaMsgResponseModel msg_response = { 0 };
     int result = parse_msg_response(line, &msg_response);
     if (result != 0) {
         FURI_LOG_E("parse_msg_with_link_test",
@@ -65,7 +65,7 @@ static void parse_msg_with_rxwin_test()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+MSG: RXWIN2, RSSI -106, SNR 4\n");
-    LoRaMsgResponse msg_response = { 0 };
+    LoRaMsgResponseModel msg_response = { 0 };
     int result = parse_msg_response(line, &msg_response);
 
     if (result != 0) {
@@ -101,7 +101,7 @@ static void parse_msg_with_ack_received_test()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+MSG: ACK Received\n");
-    LoRaMsgResponse msg_response = { 0 };
+    LoRaMsgResponseModel msg_response = { 0 };
     int result = parse_msg_response(line, &msg_response);
     if (result != 0) {
         FURI_LOG_E("parse_msg_with_ack_received_test",
@@ -125,7 +125,7 @@ static void parse_msg_with_port_and_data()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+MSG: PORT: 8; RX: \"12345678\"\n");
-    LoRaMsgResponse msg_response = { 0 };
+    LoRaMsgResponseModel msg_response = { 0 };
     int result = parse_msg_response(line, &msg_response);
 
     if (result != 0) {
@@ -155,7 +155,7 @@ static void parse_msg_with_multicast()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+MSG: MULTICAST\n");
-    LoRaMsgResponse msg_response = { 0 };
+    LoRaMsgResponseModel msg_response = { 0 };
     int result = parse_msg_response(line, &msg_response);
     if (result != 0) {
         FURI_LOG_E("parse_msg_with_multicast",
@@ -179,7 +179,7 @@ static void parse_data_rx_packet()
 {
     FuriString *line = furi_string_alloc();
     furi_string_set(line, "+TEST: RX \"48656C6C6F20576F726C642021\"\n");
-    LoRaMsgResponse rx_response = { 0 };
+    LoRaMsgResponseModel rx_response = { 0 };
     int result = parse_msg_response(line, &rx_response);
     if (result != 0) {
         FURI_LOG_E("parse_data_rx_response_test",

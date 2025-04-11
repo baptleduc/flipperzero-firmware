@@ -28,7 +28,7 @@ bool lora_scene_receive_mode_on_event(void *context,
         if (event.event == LoraCustomEventRxResponse) {
             // Display the received message
             text_box_set_text(app->text_box,
-                              app->msg_response->decoded_data);
+                              app->receiver->msg_response->decoded_data);
         }
     }
 

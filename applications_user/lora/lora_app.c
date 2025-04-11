@@ -73,7 +73,7 @@ void send_cmsg(LoraApp *app, const char *msg)
     furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
     uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
-    DEBUG_LORA_MSG_RESPONSE(*app->msg_response);
+    DEBUG_LORA_MSG_RESPONSE(*app->receiver->msg_response);
 }
 
 static void enter_test_mode(void *context)
@@ -117,20 +117,20 @@ static void hex_to_string(char *hex_str, char *output_str)
 void handle_msg_response(FuriString *line, void *context)
 {
     LoraApp *app = (LoraApp *) context;
-    parse_msg_response(line, app->msg_response);
+    parse_msg_response(line, app->receiver->msg_response);
 }
 
 void handle_rx_response(FuriString *line, void *context)
 {
     LoraApp *app = (LoraApp *) context;
-    parse_msg_response(line, app->msg_response);
-    hex_to_string(app->msg_response->data,
-                  app->msg_response->decoded_data);
+    parse_msg_response(line, app->receiver->msg_response);
+    hex_to_string(app->receiver->msg_response->data,
+                  app->receiver->msg_response->decoded_data);
     // Notify view dispatcher to update the view
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraCustomEventRxResponse);
     FURI_LOG_I("handle_rx_response", "Decoded data: %s",
-               app->msg_response->decoded_data);
+               app->receiver->msg_response->decoded_data);
 }
 
 void handle_join_response(FuriString *line, void *context)
@@ -213,7 +213,9 @@ static LoraApp *lora_app_alloc()
     app->send_cmd = furi_string_alloc();
     app->current_state = INIT;
 
-    app->msg_response = malloc(sizeof(LoRaMsgResponse));
+    // Allocate a receiver object
+    app->receiver = lora_receiver_alloc();
+
     // Initialize the UART helper.
     app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE);
 
