@@ -246,6 +246,7 @@ static void lora_app_free(LoraApp *app)
     view_dispatcher_remove_view(app->view_dispatcher, LoraAppTextBoxView);
     view_dispatcher_free(app->view_dispatcher);
     submenu_free(app->submenu);
+    lora_receiver_free(app->receiver);
     furi_record_close(RECORD_GUI);
 
     free(app);

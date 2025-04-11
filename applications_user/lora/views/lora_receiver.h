@@ -28,3 +28,4 @@ typedef struct {
 } LoraReceiver;
 
 LoraReceiver *lora_receiver_alloc(void);
+void lora_receiver_free(LoraReceiver * receiver);
