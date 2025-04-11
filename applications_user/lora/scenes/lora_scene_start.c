@@ -17,8 +17,8 @@ static void lora_submenu_item_callback(void *context, uint32_t index)
         // scene_manager_next_scene(app->scene_manager, LoraSceneLorawan);
         break;
     case 1:
-        enter_rx_mode(app);
-        // scene_manager_next_scene(app->scene_manager, LoraSceneReceiveMode);
+        scene_manager_next_scene(app->scene_manager, LoraSceneReceiveMode);
+        lora_enter_receive_mode(app);
         break;
     case 2:
         send_cmsg(app, "Hello World");
@@ -39,7 +39,6 @@ static void lora_submenu_add_default_entries(Submenu *submenu,
                                              void *context)
 {
     LoraApp *app = context;
-    submenu_reset(submenu);
     submenu_add_item(submenu, "OTAA join", 0, lora_submenu_item_callback,
                      context);
     submenu_add_item(submenu, "Reiceive Mode", 1,
@@ -60,6 +59,7 @@ void lora_scene_start_on_enter(void *context)
 
 void lora_scene_start_on_exit(void *context)
 {
+    FURI_LOG_D("LoraSceneStart", "Exiting Lora Scene Start");
     LoraApp *app = context;
     submenu_reset(app->submenu);
 }
@@ -67,10 +67,6 @@ void lora_scene_start_on_exit(void *context)
 bool lora_scene_start_on_event(void *context, SceneManagerEvent event)
 {
     UNUSED(context);
-    bool consumed = false;
-    if (event.type == SceneManagerEventTypeCustom) {
-        // Handle custom events here
-
-    }
-    return consumed;
+    UNUSED(event);
+    return false;
 }

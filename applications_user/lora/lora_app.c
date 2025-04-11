@@ -84,7 +84,7 @@ static void enter_test_mode(void *context)
     furi_delay_ms(1000);
 }
 
-void enter_rx_mode(void *context)
+void lora_enter_receive_mode(void *context)
 {
     LoraApp *app = context;
     app->current_state = CONFIG;
@@ -93,7 +93,6 @@ void enter_rx_mode(void *context)
     furi_delay_ms(1000);
     app->current_state = RX;
 }
-
 
 // Function to convert hex string to ASCII string
 static void hex_to_string(char *hex_str, char *output_str)
@@ -112,7 +111,6 @@ static void hex_to_string(char *hex_str, char *output_str)
 
     output_str[len / 2] = '\0'; // Null-terminate the string
 }
-
 
 // -- HANDLERS ---------------------------------------------------------
 
@@ -164,7 +162,6 @@ void lora_timer_callback(void *context)
 }
 #endif
 
-
 static bool lora_app_custom_event_callback(void *context, uint32_t event)
 {
     furi_assert(context);
@@ -200,13 +197,15 @@ static LoraApp *lora_app_alloc()
     view_dispatcher_attach_to_gui(app->view_dispatcher, app->gui,
                                   ViewDispatcherTypeFullscreen);
 
-
     app->submenu = submenu_alloc();
-    view_dispatcher_add_view(app->view_dispatcher,
-                             LoraAppSubMenuView,
+    view_dispatcher_add_view(app->view_dispatcher, LoraAppSubMenuView,
                              submenu_get_view(app->submenu));
 
-    scene_manager_next_scene(app->scene_manager, LoraSceneStart);
+    app->text_box = text_box_alloc();
+    text_box_set_font(app->text_box, TextBoxFontText);
+    view_dispatcher_add_view(app->view_dispatcher, LoraAppTextBoxView,
+                             text_box_get_view(app->text_box));
+
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
     app->current_state = INIT;
@@ -225,7 +224,7 @@ static LoraApp *lora_app_alloc()
                          app);
     furi_timer_start(app->timer, 1000);
 #endif
-
+    scene_manager_next_scene(app->scene_manager, LoraSceneStart);
     return app;
 }
 
@@ -239,6 +238,7 @@ static void lora_app_free(LoraApp *app)
     furi_string_free(app->send_cmd);
 
     view_dispatcher_remove_view(app->view_dispatcher, LoraAppSubMenuView);
+    view_dispatcher_remove_view(app->view_dispatcher, LoraAppTextBoxView);
     view_dispatcher_free(app->view_dispatcher);
     submenu_free(app->submenu);
     furi_record_close(RECORD_GUI);

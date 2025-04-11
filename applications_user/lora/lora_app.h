@@ -5,6 +5,7 @@
 #include <furi_hal.h>
 #include <gui/gui.h>
 #include <gui/modules/submenu.h>
+#include <gui/modules/text_box.h>
 #include <gui/view_dispatcher.h>
 #include <gui/canvas.h>
 #include <input/input.h>
@@ -60,6 +61,7 @@ typedef struct {
     ViewDispatcher *view_dispatcher;
     SceneManager *scene_manager;
     Submenu *submenu;
+    TextBox *text_box;
     uint32_t index;
     UartHelper *uart_helper;
     FuriString *send_cmd;
@@ -100,8 +102,7 @@ void handle_join_response(FuriString * line, void *context);
  */
 void handle_rx_response(FuriString * line, void *context);
 
-
-void enter_rx_mode(void *context);
+void lora_enter_receive_mode(void *context);
 void send_cmsg(LoraApp * app, const char *msg);
 void setup_lora_connexion(void *context);
 void otaa_join_procedure(void *context);
