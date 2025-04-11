@@ -126,6 +126,9 @@ void handle_rx_response(FuriString *line, void *context)
     parse_msg_response(line, app->msg_response);
     hex_to_string(app->msg_response->data,
                   app->msg_response->decoded_data);
+    // Notify view dispatcher to update the view
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraCustomEventRxResponse);
     FURI_LOG_I("handle_rx_response", "Decoded data: %s",
                app->msg_response->decoded_data);
 }

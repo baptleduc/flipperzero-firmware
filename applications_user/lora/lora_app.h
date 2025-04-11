@@ -11,6 +11,8 @@
 #include <input/input.h>
 
 #include "uart_helper.h"
+#include "lora_custom_event.h"
+
 
 #define DEVICE_BAUDRATE  9600
 #define DEFAULT_DR       5
