@@ -1,4 +1,14 @@
 # LoRa Satellite Balloon Tracker App
+## Connection Instructions
+
+### LoRa Grove-Wio-E5 Module
+To connect the Grove-Wio-E5 module to the Flipper zero, simply connect the pins as follows: 
+
+Pinout: Grove cable on Flipper GPIO
+* `Red` on `3V3` (9)
+* `Black` on `GND` (11)
+* `White` on `TX` (13)
+* `Yellow` on `RX` (14)
 
 ## Build Instructions
 
