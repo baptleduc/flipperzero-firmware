@@ -48,7 +48,6 @@ typedef struct {
     ViewDispatcher *view_dispatcher;
     SceneManager *scene_manager;
     Submenu *submenu;
-    TextBox *text_box;
     uint32_t index;
     UartHelper *uart_helper;
     FuriString *send_cmd;
@@ -58,22 +57,9 @@ typedef struct {
 
 typedef enum {
     LoraAppSubMenuView,
-    LoraAppTextBoxView,
+    LoraAppReceiverView,
 } LoraAppView;
 
-#define DEBUG_LORA_MSG_RESPONSE(msg_response)                                                  \
-    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponseModel Debug:");                             \
-    FURI_LOG_D("DebugMsgResponse", "  Port: %hhu", (msg_response).port);                       \
-    FURI_LOG_D("DebugMsgResponse", "  Data: %s", (msg_response).data);                         \
-    FURI_LOG_D("DebugMsgResponse", "  Margin: %hhu", (msg_response).margin);                   \
-    FURI_LOG_D("DebugMsgResponse", "  Gateway Count: %u", (msg_response).gateway_count);       \
-    FURI_LOG_D("DebugMsgResponse", "  RX Window: %d", (msg_response).rx_window);               \
-    FURI_LOG_D("DebugMsgResponse", "  RSSI: %d dBm", (msg_response).rssi);                     \
-    FURI_LOG_D("DebugMsgResponse", "  SNR: %d dB", (msg_response).snr);                        \
-    FURI_LOG_D(                                                                                \
-        "DebugMsgResponse", "  Multicast: %s", (msg_response).is_multicast ? "Yes" : "No");    \
-    FURI_LOG_D("DebugMsgResponse", "  Pending: %s", (msg_response).is_pending ? "Yes" : "No"); \
-    FURI_LOG_D("DebugMsgResponse", "  ACK Received: %s", (msg_response).is_ack ? "Yes" : "No");
 
 // Callback to handle UART responses
 void handle_default_response(FuriString * line, void *context);

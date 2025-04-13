@@ -1,5 +1,4 @@
 #include "lora_app.h"
-#include "lora_parsers.h"
 #include "scenes/lora_scene.h"
 
 #include <gui/modules/submenu.h>
@@ -73,7 +72,6 @@ void send_cmsg(LoraApp *app, const char *msg)
     furi_string_printf(app->send_cmd, "AT+CMSG=%s\n", msg);
     uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
-    DEBUG_LORA_MSG_RESPONSE(*app->receiver->msg_response);
 }
 
 static void enter_test_mode(void *context)
@@ -94,43 +92,20 @@ void lora_enter_receive_mode(void *context)
     app->current_state = RX;
 }
 
-// Function to convert hex string to ASCII string
-static void hex_to_string(char *hex_str, char *output_str)
-{
-    size_t len = strlen(hex_str);
 
-    if (len % 2 != 0) {
-        printf("Error: Hex string length must be even.\n");
-        return;
-    }
-
-    for (size_t i = 0; i < len; i += 2) {
-        char hex_pair[3] = { hex_str[i], hex_str[i + 1], '\0' };
-        output_str[i / 2] = (char) strtol(hex_pair, NULL, 16);
-    }
-
-    output_str[len / 2] = '\0'; // Null-terminate the string
-}
 
 // -- HANDLERS ---------------------------------------------------------
 
 void handle_msg_response(FuriString *line, void *context)
 {
     LoraApp *app = (LoraApp *) context;
-    parse_msg_response(line, app->receiver->msg_response);
+    lora_receiver_decode_msg_response(app->receiver, line);
 }
 
 void handle_rx_response(FuriString *line, void *context)
 {
     LoraApp *app = (LoraApp *) context;
-    parse_msg_response(line, app->receiver->msg_response);
-    hex_to_string(app->receiver->msg_response->data,
-                  app->receiver->msg_response->decoded_data);
-    // Notify view dispatcher to update the view
-    view_dispatcher_send_custom_event(app->view_dispatcher,
-                                      LoraCustomEventRxResponse);
-    FURI_LOG_I("handle_rx_response", "Decoded data: %s",
-               app->receiver->msg_response->decoded_data);
+    lora_receiver_decode_msg_response(app->receiver, line);
 }
 
 void handle_join_response(FuriString *line, void *context)
@@ -204,17 +179,15 @@ static LoraApp *lora_app_alloc()
     view_dispatcher_add_view(app->view_dispatcher, LoraAppSubMenuView,
                              submenu_get_view(app->submenu));
 
-    app->text_box = text_box_alloc();
-    text_box_set_font(app->text_box, TextBoxFontText);
-    view_dispatcher_add_view(app->view_dispatcher, LoraAppTextBoxView,
-                             text_box_get_view(app->text_box));
+    // Allocate a receiver object
+    app->receiver = lora_receiver_alloc();
+    view_dispatcher_add_view(app->view_dispatcher, LoraAppReceiverView,
+                             lora_receiver_get_view(app->receiver));
 
+    FURI_LOG_D("LoraApp", "1");
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
     app->current_state = INIT;
-
-    // Allocate a receiver object
-    app->receiver = lora_receiver_alloc();
 
     // Initialize the UART helper.
     app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE);
@@ -243,7 +216,7 @@ static void lora_app_free(LoraApp *app)
     furi_string_free(app->send_cmd);
 
     view_dispatcher_remove_view(app->view_dispatcher, LoraAppSubMenuView);
-    view_dispatcher_remove_view(app->view_dispatcher, LoraAppTextBoxView);
+    view_dispatcher_remove_view(app->view_dispatcher, LoraAppReceiverView);
     view_dispatcher_free(app->view_dispatcher);
     submenu_free(app->submenu);
     lora_receiver_free(app->receiver);
