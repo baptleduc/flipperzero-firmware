@@ -10,6 +10,7 @@
 #include <gui/canvas.h>
 #include <input/input.h>
 
+#include "lora_state.h"
 #include "uart_helper.h"
 #include "views/lora_receiver.h"
 #include "lora_custom_event.h"
@@ -25,13 +26,6 @@
 #define LINE_DELIMITER         '\n'
 #define INCLUDE_LINE_DELIMITER false
 
-typedef enum {
-    INIT,                       // Being on this state means the device is not configured yet
-    CONFIG,                     // Being on this state means the device has been configured (e.g. AppKey, DR, TxPower)
-    JOINED,                     // Being on this state means the device has joined the network
-    SENDING,                    // Being on this state means the device is sending data
-    RX,                         // Being on this state means the device is receiving data
-} LoraStateFlag;
 
 typedef enum {
     DEFAULT_CMD = 0,
@@ -52,7 +46,7 @@ typedef struct {
     UartHelper *uart_helper;
     FuriString *send_cmd;
     LoraReceiver *receiver;
-    LoraStateFlag current_state;
+    LoraState current_state;
 } LoraApp;
 
 typedef enum {
@@ -60,10 +54,10 @@ typedef enum {
     LoraAppReceiverView,
 } LoraAppView;
 
-
 // Callback to handle UART responses
 void handle_default_response(FuriString * line, void *context);
-void handle_msg_response(FuriString * line, void *context);
+void lora_receiver_default_response_callback(FuriString * line,
+                                             void *context);
 void handle_join_response(FuriString * line, void *context);
 
 /**
@@ -73,10 +67,13 @@ void handle_join_response(FuriString * line, void *context);
  * received from the transmitter during TEST mode operation. It decodes the
  * data and updates the LoRaMsgResponseModel structure with the received data.
  */
-void handle_rx_response(FuriString * line, void *context);
+void lora_receiver_rx_response_callback(FuriString * line, void *context);
 
 void lora_enter_receive_mode(void *context);
 void send_cmsg(LoraApp * app, const char *msg);
 void setup_lora_connexion(void *context);
 void otaa_join_procedure(void *context);
+
+void lora_app_set_state(LoraApp * app, LoraState state);
+
 #endif

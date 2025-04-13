@@ -8,15 +8,15 @@
 #define MAX_CANAL_NUM (8)       // (1-8)
 
 // Default values for LoRa configuration
-#define DEFAULT_FREQ (868)      // Frequency in MHz
-#define DEFAULT_CANAL_NUM (1)   // Canal 1
-#define DEFAULT_SF (12)         // Spreading Factor 12
-#define DEFAULT_BW (125)        // Bandwidth 125 kHz
-#define DEFAULT_TX_PREAMBLE (12) // TX Preamble length
-#define DEFAULT_RX_PREAMBLE (15) // RX Preamble length
-#define DEFAULT_POWER (14)      // Power level (dBm)
-#define DEFAULT_WITH_CRC (true) // CRC enabled
-#define DEFAULT_IQ_INVERTED (false) // IQ inversion disabled
+#define DEFAULT_FREQ                (868) // Frequency in MHz
+#define DEFAULT_CANAL_NUM           (1) // Canal 1
+#define DEFAULT_SF                  (12) // Spreading Factor 12
+#define DEFAULT_BW                  (125) // Bandwidth 125 kHz
+#define DEFAULT_TX_PREAMBLE         (12) // TX Preamble length
+#define DEFAULT_RX_PREAMBLE         (15) // RX Preamble length
+#define DEFAULT_POWER               (14) // Power level (dBm)
+#define DEFAULT_WITH_CRC            (true) // CRC enabled
+#define DEFAULT_IQ_INVERTED         (false) // IQ inversion disabled
 #define DEFAULT_WITH_PUBLIC_LORAWAN (false) // Public LoRaWAN enabled
 
 typedef struct {
@@ -63,18 +63,33 @@ typedef struct {
 struct LoraReceiver {
     View *view;
     void *context;
+    LoraReceiverProcessCallback callback; // Callback function for received messages
 };
 
 // DEBUG MACRO
-#define DEBUG_LORA_MSG_RESPONSE(lora_receiver)          \
-    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponseModel Debug:");   \
-    FURI_LOG_D("DebugMsgResponse", "  Port: %hhu", (lora_receiver->model->msg_response).port);                   \
-    FURI_LOG_D("DebugMsgResponse", "  Data: %s", (lora_receiver->model->msg_response).data);                   \
-    FURI_LOG_D("DebugMsgResponse", "  Margin: %hhu", (lora_receiver->model->msg_response).margin);             \
-    FURI_LOG_D("DebugMsgResponse", "  Gateway Count: %u", (lora_receiver->model->msg_response).gateway_count); \
-    FURI_LOG_D("DebugMsgResponse", "  RX Window: %d", (lora_receiver->model->msg_response).rx_window);         \
-    FURI_LOG_D("DebugMsgResponse", "  RSSI: %d dBm", (lora_receiver->model->msg_response).rssi);               \
-    FURI_LOG_D("DebugMsgResponse", "  SNR: %d dB", (lora_receiver->model->msg_response).snr);                  \
-    FURI_LOG_D("DebugMsgResponse", "  Multicast: %s", (lora_receiver->model->msg_response).is_multicast ? "Yes" : "No"); \
-    FURI_LOG_D("DebugMsgResponse", "  Pending: %s", (lora_receiver->model->msg_response).is_pending ? "Yes" : "No"); \
-    FURI_LOG_D("DebugMsgResponse", "  ACK Received: %s", (lora_receiver->model->msg_response).is_ack ? "Yes" : "No");
+#define DEBUG_LORA_MSG_RESPONSE(lora_receiver)                                                   \
+    FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponseModel Debug:");                               \
+    FURI_LOG_D("DebugMsgResponse", "  Port: %hhu", (lora_receiver->model->msg_response).port);   \
+    FURI_LOG_D("DebugMsgResponse", "  Data: %s", (lora_receiver->model->msg_response).data);     \
+    FURI_LOG_D(                                                                                  \
+        "DebugMsgResponse", "  Margin: %hhu", (lora_receiver->model->msg_response).margin);      \
+    FURI_LOG_D(                                                                                  \
+        "DebugMsgResponse",                                                                      \
+        "  Gateway Count: %u",                                                                   \
+        (lora_receiver->model->msg_response).gateway_count);                                     \
+    FURI_LOG_D(                                                                                  \
+        "DebugMsgResponse", "  RX Window: %d", (lora_receiver->model->msg_response).rx_window);  \
+    FURI_LOG_D("DebugMsgResponse", "  RSSI: %d dBm", (lora_receiver->model->msg_response).rssi); \
+    FURI_LOG_D("DebugMsgResponse", "  SNR: %d dB", (lora_receiver->model->msg_response).snr);    \
+    FURI_LOG_D(                                                                                  \
+        "DebugMsgResponse",                                                                      \
+        "  Multicast: %s",                                                                       \
+        (lora_receiver->model->msg_response).is_multicast ? "Yes" : "No");                       \
+    FURI_LOG_D(                                                                                  \
+        "DebugMsgResponse",                                                                      \
+        "  Pending: %s",                                                                         \
+        (lora_receiver->model->msg_response).is_pending ? "Yes" : "No");                         \
+    FURI_LOG_D(                                                                                  \
+        "DebugMsgResponse",                                                                      \
+        "  ACK Received: %s",                                                                    \
+        (lora_receiver->model->msg_response).is_ack ? "Yes" : "No");

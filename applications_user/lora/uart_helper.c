@@ -57,9 +57,6 @@ static int32_t uart_helper_worker(void *context)
                                    WorkerEventExiting, FuriFlagWaitAny,
                                    FuriWaitForever);
 
-        // Update callback depending on the current state
-        uart_helper_set_callback(helper, helper->context);
-
         if (events & WorkerEventDataWaiting) {
             size_t length_read = 0;
             do {
@@ -112,20 +109,24 @@ static int32_t uart_helper_worker(void *context)
                         do {
                             // Find the next delimiter in the ring buffer.
                             index =
-                                ring_buffer_find_delim
-                                (helper->ring_buffer);
+                                ring_buffer_find_delim(helper->
+                                                       ring_buffer);
 
                             // If a delimiter was found, extract the line and process it.
                             if (index != FURI_STRING_FAILURE) {
                                 // Extract the line from the ring buffer, advancing the read
                                 // pointer to the next byte after the delimiter.
-                                ring_buffer_extract_line
-                                    (helper->ring_buffer, index, line);
+                                ring_buffer_extract_line(helper->
+                                                         ring_buffer,
+                                                         index, line);
 
                                 // Invoke the callback to process the line.
-                                if (helper->process_line) {
-                                    helper->process_line(line,
-                                                         helper->context);
+                                LoraApp *app = helper->context;
+                                LoraReceiverProcessCallback callback =
+                                    lora_receiver_get_callback(app->
+                                                               receiver);
+                                if (callback) {
+                                    callback(line, app);
                                 }
                             }
                         } while (index != FURI_STRING_FAILURE);
@@ -142,7 +143,7 @@ static int32_t uart_helper_worker(void *context)
     return 0;
 }
 
-UartHelper *uart_helper_alloc(uint32_t baudrate)
+UartHelper *uart_helper_alloc(uint32_t baudrate, LoraApp *lora_app)
 {
     // rx_buffer_size should be large enough to hold the entire response from the device.
     const size_t rx_buffer_size = 2048;
@@ -166,8 +167,6 @@ UartHelper *uart_helper_alloc(uint32_t baudrate)
         // If UART is already initialized, disable the console so it doesn't write to the UART.
         // furi_hal_console_disable();
     }
-    // process_line callback gets invoked when a line is read.  By default the callback is not set.
-    helper->process_line = NULL;
 
     // Set the baud rate for the UART
     furi_hal_serial_set_br(helper->serial_handle, uart_baud);
@@ -187,10 +186,12 @@ UartHelper *uart_helper_alloc(uint32_t baudrate)
                              uart_helper_worker, helper);
     furi_thread_start(helper->worker_thread);
 
+    helper->context = lora_app;
     // Set the callback to invoke when data is received.
     furi_hal_serial_async_rx_start(helper->serial_handle,
                                    uart_helper_received_byte_callback,
                                    helper, false);
+
 
     return helper;
 }
@@ -202,32 +203,6 @@ void uart_helper_set_delimiter(UartHelper *helper, char delimiter,
     // of the response to the process_line callback.
     ring_buffer_set_delimiter(helper->ring_buffer, delimiter,
                               include_delimiter);
-}
-
-void uart_helper_set_callback(UartHelper *helper, void *context)
-{
-    // Set the process_line callback and context.
-    helper->context = context;
-    LoraApp *app = context;
-    FURI_LOG_D("uart_helper_set_callback", "current_state: %d",
-               app->current_state);
-    switch (app->current_state) {
-    case CONFIG:
-        helper->process_line = handle_default_response;
-        break;
-    case JOINED:
-        helper->process_line = handle_join_response;
-        break;
-    case SENDING:
-        helper->process_line = handle_msg_response;
-        break;
-    case RX:
-        helper->process_line = handle_rx_response;
-        break;
-    default:
-        helper->process_line = handle_default_response;
-        break;
-    }
 }
 
 void uart_helper_set_baud_rate(UartHelper *helper, uint32_t baud_rate)

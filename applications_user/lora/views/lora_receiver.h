@@ -2,11 +2,22 @@
 
 #include <gui/view.h>
 
+#include "../lora_state.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
     typedef struct LoraReceiver LoraReceiver;
+
+/**
+ * @brief Callback function called when the LoRa receiver receives a message.
+ * @param receiver Pointer to the LoraReceiver object.
+ * @param line Pointer to the received data.
+ */
+    typedef void (*LoraReceiverProcessCallback)(FuriString * line,
+                                                void *context);
+
 
 /**
  * @brief Allocate and initialize a LoraReceiver object.
@@ -42,6 +53,19 @@ extern "C" {
  */
     void lora_receiver_decode_msg_response(LoraReceiver * receiver,
                                            FuriString * line);
+
+/**
+ * @brief Update process callback that will be called when we receive a frame on serial port.
+ * @param receiver Pointer to the LoraReceiver object.
+ * @param state The current state of the LoRa receiver.
+ * @param context Pointer to the context object.
+ * @return void 
+ */
+    void lora_receiver_update_process_callback(LoraReceiver * receiver,
+                                               LoraState state);
+
+    LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver *
+                                                           receiver);
 
 #ifdef __cplusplus
 }

@@ -1,8 +1,8 @@
 
 #include "lora_receiver_i.h"
+#include "lora_app.h"
 
 #include <gui/elements.h>
-
 
 /**
  * @brief Convert a hex string to a string.
@@ -193,13 +193,12 @@ void lora_receiver_decode_msg_response(LoraReceiver *receiver,
     with_view_model(receiver->view, LoraReceiverModel * model, {
                     parse_msg_response(line, &model->msg_response);
                     hex_to_string(model->msg_response.data,
-                                  model->msg_response.decoded_data);
-                    }, true);
+                                  model->msg_response.decoded_data);},
+                    true);
 }
 
 static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
 {
-
     LoraReceiverModel *model = _model;
     char temp_str[18];
     canvas_draw_line(canvas, 2, 22, 126, 22);
@@ -223,7 +222,6 @@ static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
 
     elements_button_up(canvas, "");
     elements_button_down(canvas, "");
-
 }
 
 static void lora_receiver_next_canal_callback(LoraReceiver *receiver)
@@ -314,6 +312,7 @@ LoraReceiver *lora_receiver_alloc(void)
     LoraReceiver *receiver = malloc(sizeof(LoraReceiver));
     furi_assert(receiver);
 
+    receiver->callback = lora_receiver_default_response_callback;
     receiver->view = view_alloc();
     view_allocate_model(receiver->view, ViewModelTypeLocking,
                         sizeof(LoraReceiverModel));
@@ -338,4 +337,63 @@ View *lora_receiver_get_view(LoraReceiver *receiver)
 {
     furi_assert(receiver);
     return receiver->view;
+}
+
+void lora_receiver_rx_response_callback(FuriString *line, void *context)
+{
+    furi_assert(context);
+    FURI_LOG_D("lora_receiver_rx_response_callback", "%s",
+               furi_string_get_cstr(line));
+    LoraApp *app = context;
+    lora_receiver_decode_msg_response(app->receiver, line);
+}
+
+void lora_receiver_default_response_callback(FuriString *line,
+                                             void *context)
+{
+    UNUSED(line);
+    UNUSED(context);
+    FURI_LOG_D("lora_receiver_default_response_callback", "received: %s",
+               furi_string_get_cstr(line));
+}
+
+void lora_receiver_join_response_callback(FuriString *line, void *context)
+{
+    FURI_LOG_D("lora_receiver_join_response", "%s",
+               furi_string_get_cstr(line));
+    LoraApp *app = context;
+    if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
+        lora_app_set_state(app, JOINED);
+        FURI_LOG_D("lora_receiver_join_response", "Network joined");
+        return;
+    }
+}
+
+static LoraReceiverProcessCallback
+lora_receiver_retrieve_callback(LoraState state)
+{
+    switch (state) {
+        {
+    case JOINED:
+            return lora_receiver_join_response_callback;
+    case RX:
+            return lora_receiver_rx_response_callback;
+        }
+    default:
+        return lora_receiver_default_response_callback;
+    }
+}
+
+void lora_receiver_update_process_callback(LoraReceiver *receiver,
+                                           LoraState state)
+{
+    furi_assert(receiver);
+    receiver->callback = lora_receiver_retrieve_callback(state);
+}
+
+LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver
+                                                       *receiver)
+{
+    furi_assert(receiver);
+    return receiver->callback;
 }

@@ -64,7 +64,7 @@ void setup_lora_connexion(void *context)
     uart_helper_send_string(app->uart_helper, app->send_cmd);
     furi_delay_ms(1000);
 
-    app->current_state = CONFIG;
+    lora_app_set_state(app, CONFIG);
 }
 
 void send_cmsg(LoraApp *app, const char *msg)
@@ -77,7 +77,7 @@ void send_cmsg(LoraApp *app, const char *msg)
 static void enter_test_mode(void *context)
 {
     LoraApp *app = context;
-    app->current_state = CONFIG;
+    lora_app_set_state(app, CONFIG);
     uart_helper_send(app->uart_helper, "AT+MODE=TEST\n", 14);
     furi_delay_ms(1000);
 }
@@ -85,39 +85,18 @@ static void enter_test_mode(void *context)
 void lora_enter_receive_mode(void *context)
 {
     LoraApp *app = context;
-    app->current_state = CONFIG;
+    lora_app_set_state(app, CONFIG);
     enter_test_mode(app);
     uart_helper_send(app->uart_helper, "AT+TEST=RXLRPKT\n", 17);
     furi_delay_ms(1000);
-    app->current_state = RX;
+    lora_app_set_state(app, RX);
 }
 
 
 
 // -- HANDLERS ---------------------------------------------------------
 
-void handle_msg_response(FuriString *line, void *context)
-{
-    LoraApp *app = (LoraApp *) context;
-    lora_receiver_decode_msg_response(app->receiver, line);
-}
 
-void handle_rx_response(FuriString *line, void *context)
-{
-    LoraApp *app = (LoraApp *) context;
-    lora_receiver_decode_msg_response(app->receiver, line);
-}
-
-void handle_join_response(FuriString *line, void *context)
-{
-    FURI_LOG_I("handle_join_response", "%s", furi_string_get_cstr(line));
-    LoraApp *app = context;
-    if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
-        app->current_state = JOINED;
-        FURI_LOG_I("handle_join_response", "Network joined");
-        return;
-    }
-}
 
 #ifdef DEMO_PROCESS_LINE
 void handle_default_response(FuriString *line, void *context)
@@ -184,18 +163,16 @@ static LoraApp *lora_app_alloc()
     view_dispatcher_add_view(app->view_dispatcher, LoraAppReceiverView,
                              lora_receiver_get_view(app->receiver));
 
-    FURI_LOG_D("LoraApp", "1");
     // Allocate a string to store sendings commands
     app->send_cmd = furi_string_alloc();
-    app->current_state = INIT;
+    lora_app_set_state(app, INIT);
 
     // Initialize the UART helper.
-    app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE);
+    app->uart_helper = uart_helper_alloc(DEVICE_BAUDRATE, app);
 
 #ifdef DEMO_PROCESS_LINE
     uart_helper_set_delimiter(app->uart_helper, LINE_DELIMITER,
                               INCLUDE_LINE_DELIMITER);
-    uart_helper_set_callback(app->uart_helper, app);
 #else
     app->timer =
         furi_timer_alloc(uart_demo_timer_callback, FuriTimerTypePeriodic,
@@ -204,6 +181,17 @@ static LoraApp *lora_app_alloc()
 #endif
     scene_manager_next_scene(app->scene_manager, LoraSceneStart);
     return app;
+}
+
+void lora_app_set_state(LoraApp *app, LoraState state)
+{
+    furi_assert(app);
+    if (app->current_state == state) {
+        return;
+    }
+    lora_receiver_update_process_callback(app->receiver, state);
+    app->current_state = state;
+
 }
 
 static void lora_app_free(LoraApp *app)
