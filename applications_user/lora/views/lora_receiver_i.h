@@ -1,10 +1,23 @@
 #pragma once
 
 #include "lora_receiver.h"
-
+#include "../lora_custom_event.h"
 #include <furi.h>
 
 #define MAX_DATA_SIZE (1 << 8)  // 256 bytes
+#define MAX_CANAL_NUM (8)       // (1-8)
+
+// Default values for LoRa configuration
+#define DEFAULT_FREQ (868)      // Frequency in MHz
+#define DEFAULT_CANAL_NUM (1)   // Canal 1
+#define DEFAULT_SF (12)         // Spreading Factor 12
+#define DEFAULT_BW (125)        // Bandwidth 125 kHz
+#define DEFAULT_TX_PREAMBLE (12) // TX Preamble length
+#define DEFAULT_RX_PREAMBLE (15) // RX Preamble length
+#define DEFAULT_POWER (14)      // Power level (dBm)
+#define DEFAULT_WITH_CRC (true) // CRC enabled
+#define DEFAULT_IQ_INVERTED (false) // IQ inversion disabled
+#define DEFAULT_WITH_PUBLIC_LORAWAN (false) // Public LoRaWAN enabled
 
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
@@ -25,7 +38,7 @@ typedef struct {
  */
 typedef struct {
     uint32_t freq;              // Frequency in MHz
-    uint8_t canal;              // Canal number
+    uint8_t canal;              // Canal number (1-8)
     uint8_t sf;                 // Spreading factor
     uint8_t bw;                 // Bandwidth
     uint8_t tx_preamble;        // TX preamble length

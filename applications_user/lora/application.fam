@@ -1,13 +1,13 @@
-# App(
-#     appid="lora_app",
-#     name="LoRa",
-#     apptype=FlipperAppType.EXTERNAL,
-#     entry_point="lora_app_main",
-#     requires=["gui"],
-#     stack_size=1 * 1024,
-#     fap_icon="lora_10px.png",
-#     fap_category="GPIO",
-# )
+App(
+    appid="lora_app",
+    name="LoRa",
+    apptype=FlipperAppType.EXTERNAL,
+    entry_point="lora_app_main",
+    requires=["gui"],
+    stack_size=1 * 1024,
+    fap_icon="lora_10px.png",
+    fap_category="GPIO",
+)
 
 App(
     appid="test_lora",

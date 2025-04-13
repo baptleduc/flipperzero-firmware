@@ -1,6 +1,8 @@
 
 #include "lora_receiver_i.h"
 
+#include <gui/elements.h>
+
 
 /**
  * @brief Convert a hex string to a string.
@@ -191,8 +193,8 @@ void lora_receiver_decode_msg_response(LoraReceiver *receiver,
     with_view_model(receiver->view, LoraReceiverModel * model, {
                     parse_msg_response(line, &model->msg_response);
                     hex_to_string(model->msg_response.data,
-                                  model->msg_response.decoded_data);},
-                    true);
+                                  model->msg_response.decoded_data);
+                    }, true);
 }
 
 static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
@@ -200,16 +202,111 @@ static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
 
     LoraReceiverModel *model = _model;
     char temp_str[18];
+    canvas_draw_line(canvas, 2, 22, 126, 22);
+    canvas_set_font(canvas, FontPrimary);
+
+    snprintf(temp_str, 18, "%ld.%d MHz", model->config.freq,
+             model->config.canal);
+    canvas_draw_str_aligned(canvas, 64, 9, AlignCenter, AlignBottom,
+                            temp_str);
 
     canvas_set_font(canvas, FontSecondary);
-    canvas_draw_str(canvas, 2, 9, "Freq: %d MHz");
+    snprintf(temp_str, 18, "RSSI: %d dBm", model->msg_response.rssi);
     canvas_draw_str(canvas, 2, 20, "RSSI: ");
 
     snprintf(temp_str, 18, "SNR: %d dB", model->msg_response.snr);
     canvas_draw_str_aligned(canvas, 126, 20, AlignRight, AlignBottom,
                             temp_str);
 
+    elements_text_box(canvas, 2, 25, 128, 25, AlignLeft, AlignTop,
+                      model->msg_response.decoded_data, true);
 
+    elements_button_up(canvas, "");
+    elements_button_down(canvas, "");
+
+}
+
+static void lora_receiver_next_canal_callback(LoraReceiver *receiver)
+{
+    furi_assert(receiver);
+    with_view_model(receiver->view, LoraReceiverModel * model, {
+                    model->config.canal++;
+                    if (model->config.canal > MAX_CANAL_NUM) {
+                    model->config.canal = 0;}
+                    }
+                    , true);
+}
+
+static void lora_receiver_prev_canal_callback(LoraReceiver *receiver)
+{
+    furi_assert(receiver);
+    with_view_model(receiver->view, LoraReceiverModel * model, {
+                    if (model->config.canal > 0) {
+                    model->config.canal--;}
+                    else {
+                    model->config.canal = MAX_CANAL_NUM;}
+                    }
+                    , true);
+}
+
+static bool lora_receiver_input_callback(InputEvent *event, void *context)
+{
+    furi_assert(context);
+    LoraReceiver *receiver = context;
+    bool consumed = false;
+    if (event->type == InputTypeShort) {
+        if (event->key == InputKeyUp) {
+            consumed = true;
+            lora_receiver_next_canal_callback(receiver);
+        } else if (event->key == InputKeyDown) {
+            consumed = true;
+            lora_receiver_prev_canal_callback(receiver);
+        }
+    }
+    return consumed;
+}
+
+static void lora_receiver_init_cfg_model(void *context)
+{
+    furi_assert(context);
+    LoraReceiver *lora_receiver = context;
+    with_view_model(lora_receiver->view, LoraReceiverModel * model, {
+                    model->config.freq = DEFAULT_FREQ;
+                    model->config.canal = DEFAULT_CANAL_NUM;
+                    model->config.sf = DEFAULT_SF;
+                    model->config.bw = DEFAULT_BW;
+                    model->config.tx_preamble = DEFAULT_TX_PREAMBLE;
+                    model->config.rx_preamble = DEFAULT_RX_PREAMBLE;
+                    model->config.power = DEFAULT_POWER;
+                    model->config.with_crc = DEFAULT_WITH_CRC;
+                    model->config.is_iq_inverted = DEFAULT_IQ_INVERTED;
+                    model->config.with_public_lorawan =
+                    DEFAULT_WITH_PUBLIC_LORAWAN;}, true)
+}
+
+static void lora_receiver_init_msg_model(void *context)
+{
+    furi_assert(context);
+    LoraReceiver *lora_receiver = context;
+    with_view_model(lora_receiver->view, LoraReceiverModel * model, {
+                    model->msg_response.margin = 0;
+                    model->msg_response.gateway_count = 0;
+                    model->msg_response.rx_window = 0;
+                    model->msg_response.rssi = 0;
+                    model->msg_response.snr = 0;
+                    model->msg_response.port = 0;
+                    model->msg_response.is_multicast = false;
+                    model->msg_response.is_pending = false;
+                    model->msg_response.is_ack = false;
+                    model->msg_response.data[0] = '\0';
+                    model->msg_response.decoded_data[0] = '\0';}, true)
+}
+
+static void lora_receiver_init(void *context)
+{
+    furi_assert(context);
+    lora_receiver_init_cfg_model(context);
+    lora_receiver_init_msg_model(context);
 }
 
 LoraReceiver *lora_receiver_alloc(void)
@@ -221,9 +318,11 @@ LoraReceiver *lora_receiver_alloc(void)
     view_allocate_model(receiver->view, ViewModelTypeLocking,
                         sizeof(LoraReceiverModel));
 
+    lora_receiver_init(receiver);
 
     view_set_context(receiver->view, receiver);
     view_set_draw_callback(receiver->view, lora_receiver_draw_callback);
+    view_set_input_callback(receiver->view, lora_receiver_input_callback);
     return receiver;
 }
 
