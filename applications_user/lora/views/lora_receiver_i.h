@@ -22,6 +22,9 @@
 #define MIN_SF (7)              // Minimum Spreading Factor
 #define MAX_SF (12)             // Maximum Spreading Factor
 
+#define BANDWIDTH_LIST_SIZE (3) // Number of bandwidth options (125, 250, 500 kHz)
+extern const uint32_t bandwidth_list[];
+
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
     uint16_t gateway_count;     // Number of gateways that received the last transmitted frame.
@@ -43,7 +46,7 @@ typedef struct {
     uint32_t freq;              // Frequency in MHz
     uint8_t canal;              // Canal number (1-8)
     uint8_t sf;                 // Spreading factor
-    uint8_t bw;                 // Bandwidth
+    uint8_t bw_idx;             // Bandwidth index (see bandwidth_list)
     uint8_t tx_preamble;        // TX preamble length
     uint8_t rx_preamble;        // RX preamble length
     uint8_t power;              // Power level (dbm)
@@ -67,7 +70,7 @@ struct LoraReceiver {
     View *view;
     void *context;
     LoraReceiverViewCallbak view_callback; // Callback function to be called on view events
-    LoraReceiverProcessCallback process_callback; // Callback function for received messages 
+    LoraReceiverProcessCallback process_callback; // Callback function for received messages
     LoraStateManager *state_manager;
 };
 
