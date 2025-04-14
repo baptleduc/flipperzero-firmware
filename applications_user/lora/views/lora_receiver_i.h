@@ -19,6 +19,9 @@
 #define DEFAULT_IQ_INVERTED         (false) // IQ inversion disabled
 #define DEFAULT_WITH_PUBLIC_LORAWAN (false) // Public LoRaWAN enabled
 
+#define MIN_SF (7)              // Minimum Spreading Factor
+#define MAX_SF (12)             // Maximum Spreading Factor
+
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
     uint16_t gateway_count;     // Number of gateways that received the last transmitted frame.
