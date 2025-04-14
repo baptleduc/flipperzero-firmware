@@ -63,7 +63,8 @@ typedef struct {
 struct LoraReceiver {
     View *view;
     void *context;
-    LoraReceiverProcessCallback callback; // Callback function for received messages
+    LoraReceiverViewCallbak view_callback; // Callback function to be called on view events
+    LoraReceiverProcessCallback process_callback; // Callback function for received messages 
     LoraStateManager *state_manager;
 };
 

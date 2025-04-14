@@ -1,10 +1,21 @@
 #include "lora_scene.h"
 #include "lora_app.h"
 
+
+void lora_scene_receive_mode_callback(LoraCustomEvent event, void *context)
+{
+    furi_assert(context);
+    LoraApp *app = context;
+    FURI_LOG_D("LoraSceneReceiveMode", "Received event: %d", event);
+    view_dispatcher_send_custom_event(app->view_dispatcher, event);
+}
+
 void lora_scene_receive_mode_on_enter(void *context)
 {
     FURI_LOG_D("LoraSceneReceiveMode", "Entering Lora Scene Receive Mode");
     LoraApp *app = context;
+    lora_receiver_set_view_callback(app->receiver,
+                                    lora_scene_receive_mode_callback, app);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverView);
 }
@@ -20,9 +31,10 @@ bool lora_scene_receive_mode_on_event(void *context,
     FURI_LOG_D("lora_scene_receive_mode_on_event", "Event: %ld",
                event.event);
     if (event.type == SceneManagerEventTypeCustom) {
-        if (event.event == LoraCustomEventRxResponse) {
-            // Display the received message
-            // text_box_set_text(app->text_box, app->receiver->msg_response->decoded_data);
+        if (event.event == LoraReceiverEventConfig) {
+            scene_manager_next_scene(app->scene_manager,
+                                     LoraSceneReceiveModeCfg);
+            consumed = true;
         }
     }
 

@@ -5,8 +5,9 @@
 #include <furi_hal.h>
 #include <gui/gui.h>
 #include <gui/modules/submenu.h>
-#include <gui/modules/text_box.h>
 #include <gui/view_dispatcher.h>
+#include <gui/modules/variable_item_list.h>
+
 #include <gui/canvas.h>
 #include <input/input.h>
 
@@ -39,6 +40,7 @@ typedef struct {
     SceneManager *scene_manager;
     LoraStateManager *state_manager;
     Submenu *submenu;
+    VariableItemList *var_item_list;
     uint32_t index;
     LoraReceiver *receiver;
     LoraTransmitter *transmitter;
@@ -48,6 +50,7 @@ typedef struct {
 typedef enum {
     LoraAppSubMenuView,
     LoraAppReceiverView,
+    LoraAppReceiverCfgView,
 } LoraAppView;
 
 // Callback to handle UART responses

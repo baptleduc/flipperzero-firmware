@@ -44,6 +44,11 @@ static LoraApp *lora_app_alloc()
     view_dispatcher_add_view(app->view_dispatcher, LoraAppSubMenuView,
                              submenu_get_view(app->submenu));
 
+    app->var_item_list = variable_item_list_alloc();
+    view_dispatcher_add_view(app->view_dispatcher, LoraAppReceiverCfgView,
+                             variable_item_list_get_view(app->
+                                                         var_item_list));
+
 
     // Allocate a transmitter object
     UartHelper *uart_helper = uart_helper_alloc(DEVICE_BAUDRATE, app);
@@ -93,7 +98,10 @@ static void lora_app_free(LoraApp *app)
 
     view_dispatcher_remove_view(app->view_dispatcher, LoraAppSubMenuView);
     view_dispatcher_remove_view(app->view_dispatcher, LoraAppReceiverView);
+    view_dispatcher_remove_view(app->view_dispatcher,
+                                LoraAppReceiverCfgView);
     view_dispatcher_free(app->view_dispatcher);
+    scene_manager_free(app->scene_manager);
     submenu_free(app->submenu);
     lora_receiver_free(app->receiver);
     lora_transmitter_free(app->transmitter);

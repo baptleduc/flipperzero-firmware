@@ -3,6 +3,7 @@
 #include <gui/view.h>
 
 #include "../lora_state_manager.h"
+#include "../lora_custom_event.h"
 
 
 #ifdef __cplusplus
@@ -18,6 +19,9 @@ extern "C" {
  */
     typedef void (*LoraReceiverProcessCallback)(FuriString * line,
                                                 void *context);
+
+    typedef void (*LoraReceiverViewCallbak)(LoraCustomEvent event,
+                                            void *context);
 
 
 /**
@@ -68,6 +72,10 @@ extern "C" {
     LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver *
                                                            receiver);
 
+
+    void lora_receiver_set_view_callback(LoraReceiver * receiver,
+                                         LoraReceiverViewCallbak callback,
+                                         void *context);
 
     void lora_receiver_set_state_manager(LoraReceiver * receiver,
                                          LoraStateManager * state_manager);
