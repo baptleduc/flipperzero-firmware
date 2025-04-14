@@ -1,5 +1,7 @@
 #pragma once
 
 typedef enum {
-    LoraCustomEventRxResponse
+    LoraCustomEventRxResponse,
+    LoraReceiverEventUpCanal,
+    LoraReceiverEventDownCanal,
 } LoraCustomEvent;

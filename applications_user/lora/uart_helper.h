@@ -50,8 +50,6 @@ typedef struct {
     // Buffer to hold data until a delimiter is found
     RingBuffer *ring_buffer;
 
-    // Callback to invoke when a line is read
-    ProcessLine process_line;
     void *context;
 
 } UartHelper;
@@ -76,15 +74,6 @@ UartHelper *uart_helper_alloc();
 */
 void uart_helper_set_delimiter(UartHelper * helper, char delimiter,
                                bool include_delimiter);
-
-/**
- * Sets the callback function to be called when a line of data is received.
- * 
- * @param helper        The UartHelper.
- * @param process_line  The callback function.
- * @param context       The context to pass to the callback function.
-*/
-void uart_helper_set_callback(UartHelper * helper, void *context);
 
 /**
  * Sets the baud rate for the UART.  The default is 115200.
