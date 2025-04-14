@@ -72,7 +72,7 @@ void lora_transmitter_set_state_manager(LoraTransmitter *transmitter,
     transmitter->state_manager = state_manager;
 }
 
-void otaa_join_procedure(LoraTransmitter *transmitter)
+void lora_transmitter_otaa_join_procedure(LoraTransmitter *transmitter)
 {
 
     int join_attempts = 1;
@@ -80,7 +80,8 @@ void otaa_join_procedure(LoraTransmitter *transmitter)
     // Loop until the device is joined to the network
     while (lora_state_manager_get_state(transmitter->state_manager) !=
            JOINED) {
-        FURI_LOG_I("OTAA_JOIN", "Attempting to join the network...");
+        FURI_LOG_I("lora_transmitter_otaa_join_procedure",
+                   "Attempting to join the network...");
         // Send the join command
         transmitter->send_method(transmitter->context, "AT+JOIN_CMD\n",
                                  13);
@@ -96,11 +97,13 @@ void otaa_join_procedure(LoraTransmitter *transmitter)
 
         if (join_attempts > 3) {
             // If the device is not joined after 3 attempts, break the loop
-            FURI_LOG_I("OTAA_JOIN", "Failed to join after 3 attempts");
+            FURI_LOG_I("lora_transmitter_otaa_join_procedure",
+                       "Failed to join after 3 attempts");
             break;
         }
 
-        FURI_LOG_I("OTAA_JOIN", "Join attempt %d", join_attempts);
+        FURI_LOG_I("lora_transmitter_otaa_join_procedure",
+                   "Join attempt %d", join_attempts);
     }
 }
 
@@ -138,7 +141,8 @@ void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
 }
 
-void send_cmsg(LoraTransmitter *transmitter, const char *msg)
+void lora_transmitter_send_cmsg(LoraTransmitter *transmitter,
+                                const char *msg)
 {
     UartHelper *uart_helper = transmitter->context;
     furi_string_printf(transmitter->send_cmd, "AT+CMSG=%s\n", msg);

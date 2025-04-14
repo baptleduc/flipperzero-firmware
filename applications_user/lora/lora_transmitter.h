@@ -12,16 +12,25 @@ extern "C" {
 
 /**
  * @brief Callback function for sending data
+ * @param context Pointer to the object that will send msg (e.g. UART helper).
+ * @param data Pointer to the data to be sent.
+ * @param length Length of the data to be sent.
  */
     typedef void (*LoraTransmitterMethod)(void *context, const char *data,
                                           size_t length);
 
 /**
  * @brief Context Destructor
+ * @param context Pointer to the object that will be freed.
  */
     typedef void (*LoraTransmitterContextDestructor)(void *context);
+
 /**
  * @brief LoRa Transmitter Constructor
+ * @param context Pointer to the object that will send msg (e.g. UART helper).
+ * @param send_method Pointer to the function that will send the data.
+ * @param context_destructor Pointer to the function that will free the context.
+ * 
  * @return 
  */
     LoraTransmitter *lora_transmitter_alloc(void *context,
@@ -32,17 +41,50 @@ extern "C" {
 
 /**
  * @brief LoRa Transmitter Destructor
+ * @param transmitter Pointer to the LoraTransmitter object.
  */
     void lora_transmitter_free(LoraTransmitter * transmitter);
 
+/**
+ * @brief Enter in receive mode (LoRa P2P)
+ * @param transmitter Pointer to the LoraTransmitter object.
+ */
     void lora_transmitter_enter_receive_mode(LoraTransmitter *
                                              transmitter);
 
-// void lora_transmitter_send_msg(LoraTransmitter *transmitter, const char *msg);
+/**
+ * @brief Do the OTAA join procedure (LoRaWAN)
+ * @param transmitter Pointer to the LoraTransmitter object.
+ */
+    void lora_transmitter_otaa_join_procedure(LoraTransmitter *
+                                              transmitter);
 
+
+/**
+ * @brief Setup configuration for LoRaWAN
+ * @param transmitter Pointer to the LoraTransmitter object.
+ */
+    void lora_transmitter_setup_lorawan(LoraTransmitter * transmitter);
+
+/**
+ * @brief Send an Uplink message
+ * @param transmitter Pointer to the LoraTransmitter object.
+ * @param msg Pointer to the message to be sent.
+ */
+    void lora_transmitter_send_cmsg(LoraTransmitter * transmitter,
+                                    const char *msg);
+
+
+
+/**
+ * @brief Set the state manager for the LoRa Transmitter
+ * @param transmitter Pointer to the LoraTransmitter object.
+ * @param state_manager Pointer to the LoraStateManager object.
+ */
     void lora_transmitter_set_state_manager(LoraTransmitter * transmitter,
                                             LoraStateManager *
                                             state_manager);
+
 #ifdef __cplusplus
 }
 #endif

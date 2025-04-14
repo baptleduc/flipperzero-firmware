@@ -12,7 +12,8 @@ static void lora_submenu_item_callback(void *context, uint32_t index)
     LoraApp *app = context;
     switch (index) {
     case 0:
-        // lora_transmitter_setup_lorawan(app);
+        lora_transmitter_setup_lorawan(app->transmitter);
+        lora_transmitter_otaa_join_procedure(app->transmitter);
         // otaa_join_procedure(app);
         // scene_manager_next_scene(app->scene_manager, LoraSceneLorawan);
         break;
@@ -21,7 +22,7 @@ static void lora_submenu_item_callback(void *context, uint32_t index)
         lora_transmitter_enter_receive_mode(app->transmitter);
         break;
     case 2:
-        // send_cmsg(app, "Hello World");
+        lora_transmitter_send_cmsg(app->transmitter, "Hello World");
         // scene_manager_next_scene(app->scene_manager, LoraSceneLorawan);
         break;
     default:
