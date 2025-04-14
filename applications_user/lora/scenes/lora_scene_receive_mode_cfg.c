@@ -13,8 +13,7 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;
-                    }
+                    model->config.sf = new_sf;}
                     , false);
 }
 
@@ -40,8 +39,7 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;
-                    }
+                    model->config.bw_idx = new_bw;}
                     , false);
 }
 
@@ -49,7 +47,7 @@ static void line_bw(LoraApp *app, LoraReceiverModel *model)
 {
     VariableItem *item;
     item = variable_item_list_add(app->var_item_list,
-                                  "BW",
+                                  "Band width",
                                   BANDWIDTH_LIST_SIZE, line_bw_cb, app);
     variable_item_set_current_value_index(item, model->config.bw_idx);
     char temp[4];
@@ -58,13 +56,74 @@ static void line_bw(LoraApp *app, LoraReceiverModel *model)
     variable_item_set_current_value_text(item, temp);
 }
 
+static void line_tx_preamble_cb(VariableItem *item)
+{
+    LoraApp *app = variable_item_get_context(item);
+    furi_assert(app);
+    char temp[4];
+    uint8_t new_preamble =
+        variable_item_get_current_value_index(item) + MIN_PREAMBLE;
+    snprintf(temp, sizeof(temp), "%u", new_preamble);
+    variable_item_set_current_value_text(item, temp);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    model->config.tx_preamble = new_preamble;}
+                    , false);
+}
+
+static void line_tx_preamble(LoraApp *app, LoraReceiverModel *model)
+{
+    VariableItem *item;
+    item = variable_item_list_add(app->var_item_list, "TX Preamble",
+                                  MAX_PREAMBLE - MIN_PREAMBLE + 1,
+                                  line_tx_preamble_cb, app);
+    variable_item_set_current_value_index(item,
+                                          model->config.tx_preamble -
+                                          MIN_PREAMBLE);
+    char temp[4];
+    snprintf(temp, sizeof(temp), "%u", model->config.tx_preamble);
+    variable_item_set_current_value_text(item, temp);
+}
+
+static void line_rx_preamble_cb(VariableItem *item)
+{
+    LoraApp *app = variable_item_get_context(item);
+    furi_assert(app);
+    char temp[4];
+    uint8_t new_preamble =
+        variable_item_get_current_value_index(item) + MIN_PREAMBLE;
+    snprintf(temp, sizeof(temp), "%u", new_preamble);
+    variable_item_set_current_value_text(item, temp);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    model->config.rx_preamble = new_preamble;}
+                    , false);
+}
+
+static void line_rx_preamble(LoraApp *app, LoraReceiverModel *model)
+{
+    VariableItem *item;
+    item = variable_item_list_add(app->var_item_list, "RX Preamble",
+                                  MAX_PREAMBLE - MIN_PREAMBLE + 1,
+                                  line_rx_preamble_cb, app);
+    variable_item_set_current_value_index(item,
+                                          model->config.rx_preamble -
+                                          MIN_PREAMBLE);
+    char temp[4];
+    snprintf(temp, sizeof(temp), "%u", model->config.rx_preamble);
+    variable_item_set_current_value_text(item, temp);
+}
+
+
 void lora_scene_receive_mode_cfg_on_enter(void *context)
 {
     FURI_LOG_D("LoraSceneReceiveModeCfg",
                "Entering Lora Scene Receive Mode");
     LoraApp *app = context;
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    line_sf(app, model); line_bw(app, model);}, false);
+                    line_sf(app, model);
+                    line_bw(app, model);
+                    line_tx_preamble(app, model);
+                    line_rx_preamble(app, model);
+                    }, false);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverCfgView);
 }
