@@ -2,7 +2,8 @@
 
 #include <gui/view.h>
 
-#include "../lora_state.h"
+#include "../lora_state_manager.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +68,9 @@ extern "C" {
     LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver *
                                                            receiver);
 
+
+    void lora_receiver_set_state_manager(LoraReceiver * receiver,
+                                         LoraStateManager * state_manager);
 #ifdef __cplusplus
 }
 #endif

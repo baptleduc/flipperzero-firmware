@@ -193,8 +193,8 @@ void lora_receiver_decode_msg_response(LoraReceiver *receiver,
     with_view_model(receiver->view, LoraReceiverModel * model, {
                     parse_msg_response(line, &model->msg_response);
                     hex_to_string(model->msg_response.data,
-                                  model->msg_response.decoded_data);},
-                    true);
+                                  model->msg_response.decoded_data);
+                    }, true);
 }
 
 static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
@@ -279,7 +279,8 @@ static void lora_receiver_init_cfg_model(void *context)
                     model->config.with_crc = DEFAULT_WITH_CRC;
                     model->config.is_iq_inverted = DEFAULT_IQ_INVERTED;
                     model->config.with_public_lorawan =
-                    DEFAULT_WITH_PUBLIC_LORAWAN;}, true)
+                    DEFAULT_WITH_PUBLIC_LORAWAN;
+                    }, true)
 }
 
 static void lora_receiver_init_msg_model(void *context)
@@ -297,7 +298,8 @@ static void lora_receiver_init_msg_model(void *context)
                     model->msg_response.is_pending = false;
                     model->msg_response.is_ack = false;
                     model->msg_response.data[0] = '\0';
-                    model->msg_response.decoded_data[0] = '\0';}, true)
+                    model->msg_response.decoded_data[0] = '\0';
+                    }, true)
 }
 
 static void lora_receiver_init(void *context)
@@ -363,7 +365,7 @@ void lora_receiver_join_response_callback(FuriString *line, void *context)
                furi_string_get_cstr(line));
     LoraApp *app = context;
     if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
-        lora_app_set_state(app, JOINED);
+        lora_state_manager_set_state(app->state_manager, JOINED);
         FURI_LOG_D("lora_receiver_join_response", "Network joined");
         return;
     }
@@ -396,4 +398,12 @@ LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver
 {
     furi_assert(receiver);
     return receiver->callback;
+}
+
+void lora_receiver_set_state_manager(LoraReceiver *receiver,
+                                     LoraStateManager *state_manager)
+{
+    furi_assert(receiver);
+    furi_assert(state_manager);
+    receiver->state_manager = state_manager;
 }

@@ -10,22 +10,18 @@
 #include <gui/canvas.h>
 #include <input/input.h>
 
-#include "lora_state.h"
+#include "lora_state_manager.h"
 #include "uart_helper.h"
 #include "views/lora_receiver.h"
+#include "lora_transmitter.h"
 #include "lora_custom_event.h"
 
 #define DEVICE_BAUDRATE  9600
-#define DEFAULT_DR       5
-#define DEFAULT_TX_POWER 14
-#define APPKEY           "2FFA5393E446D6CEC8EB9D9AFA5521F3"
-#define PORT             10
 
 // Comment out the following line to process data as it is received.
 #define DEMO_PROCESS_LINE
 #define LINE_DELIMITER         '\n'
 #define INCLUDE_LINE_DELIMITER false
-
 
 typedef enum {
     DEFAULT_CMD = 0,
@@ -41,11 +37,11 @@ typedef struct {
     FuriTimer *timer;
     ViewDispatcher *view_dispatcher;
     SceneManager *scene_manager;
+    LoraStateManager *state_manager;
     Submenu *submenu;
     uint32_t index;
-    UartHelper *uart_helper;
-    FuriString *send_cmd;
     LoraReceiver *receiver;
+    LoraTransmitter *transmitter;
     LoraState current_state;
 } LoraApp;
 
@@ -69,11 +65,11 @@ void handle_join_response(FuriString * line, void *context);
  */
 void lora_receiver_rx_response_callback(FuriString * line, void *context);
 
-void lora_enter_receive_mode(void *context);
-void send_cmsg(LoraApp * app, const char *msg);
-void setup_lora_connexion(void *context);
-void otaa_join_procedure(void *context);
+extern LoraState lora_app_state;
 
-void lora_app_set_state(LoraApp * app, LoraState state);
+// void lora_enter_receive_mode(void *context);
+// void send_cmsg(LoraApp * app, const char *msg);
+// void lora_transmitter_setup_lorawan(void *context);
+// void otaa_join_procedure(void *context);
 
 #endif

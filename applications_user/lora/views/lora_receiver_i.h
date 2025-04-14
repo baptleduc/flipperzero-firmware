@@ -64,6 +64,7 @@ struct LoraReceiver {
     View *view;
     void *context;
     LoraReceiverProcessCallback callback; // Callback function for received messages
+    LoraStateManager *state_manager;
 };
 
 // DEBUG MACRO
