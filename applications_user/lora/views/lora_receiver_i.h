@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lora_receiver.h"
+#include "../lora_config.h"
 #include "../lora_custom_event.h"
 #include <furi.h>
 
@@ -29,7 +30,6 @@
 #define MAX_PREAMBLE (20)       // For RX and TX preamble
 
 #define BANDWIDTH_LIST_SIZE (3) // Number of bandwidth options (125, 250, 500 kHz)
-extern const uint32_t bandwidth_list[];
 
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
@@ -45,21 +45,6 @@ typedef struct {
     bool is_ack;                // True if the last frame was acknowledged by the server.
 } LoraMsgResponseModel;
 
-/**
- * @brief LoRa configuration Object
- */
-typedef struct {
-    uint32_t freq;              // Frequency in MHz
-    uint8_t canal;              // Canal number (1-8)
-    uint8_t sf;                 // Spreading factor
-    uint8_t bw_idx;             // Bandwidth index (see bandwidth_list)
-    uint8_t tx_preamble;        // TX preamble length
-    uint8_t rx_preamble;        // RX preamble length
-    uint8_t power;              // Power level (dbm)
-    bool with_crc;              // CRC enabled/disabled
-    bool is_iq_inverted;        // IQ inversion enabled/disabled
-    bool with_public_lorawan;   // Public LoRaWAN enabled/disabled
-} LoraConfigModel;
 
 /**
  * @brief LoRa Receiver Model

@@ -5,4 +5,5 @@ typedef enum {
     LoraReceiverEventUpCanal,
     LoraReceiverEventDownCanal,
     LoraReceiverEventConfig,
+    LoraReceiverEventCfgSet,
 } LoraCustomEvent;

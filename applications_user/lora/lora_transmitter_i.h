@@ -34,7 +34,6 @@ typedef struct {
 struct LoraTransmitter {
     void *context;
     LoraStateManager *state_manager;
-    FuriString *send_cmd;
     LoraTransmitterMethod send_method;
     LoraTransmitterModel *model;
     LoraTransmitterContextDestructor context_destructor;

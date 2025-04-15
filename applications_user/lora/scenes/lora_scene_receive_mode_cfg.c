@@ -13,9 +13,10 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;
-                    }
+                    model->config.sf = new_sf;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
 }
 
 static void line_bw_cb(VariableItem *item)
@@ -28,9 +29,10 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;
-                    }
+                    model->config.bw_idx = new_bw;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
 }
 
 static void line_tx_preamble_cb(VariableItem *item)
@@ -43,9 +45,10 @@ static void line_tx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.tx_preamble = new_preamble;
-                    }
+                    model->config.tx_preamble = new_preamble;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
 }
 
 static void line_rx_preamble_cb(VariableItem *item)
@@ -58,9 +61,11 @@ static void line_rx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.rx_preamble = new_preamble;
-                    }
+                    model->config.rx_preamble = new_preamble;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
+
 }
 
 static void line_power_cb(VariableItem *item)
@@ -73,9 +78,11 @@ static void line_power_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_power);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.power = new_power;
-                    }
+                    model->config.power = new_power;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
+
 }
 
 static void line_crc_cb(VariableItem *item)
@@ -87,9 +94,10 @@ static void line_crc_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%s", new_crc ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.with_crc = new_crc;
-                    }
+                    model->config.with_crc = new_crc;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
 }
 
 static void line_iq_inverted_cb(VariableItem *item)
@@ -102,9 +110,11 @@ static void line_iq_inverted_cb(VariableItem *item)
              new_iq_inverted ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.is_iq_inverted = new_iq_inverted;
-                    }
+                    model->config.is_iq_inverted = new_iq_inverted;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
+
 }
 
 
@@ -120,9 +130,11 @@ static void line_public_lorawan_cb(VariableItem *item)
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
                     model->config.with_public_lorawan =
-                    new_with_public_lorawan;
-                    }
+                    new_with_public_lorawan;}
                     , false);
+    view_dispatcher_send_custom_event(app->view_dispatcher,
+                                      LoraReceiverEventCfgSet);
+
 }
 
 static void add_list_value_line(LoraApp *app, uint8_t value_model_idx,
@@ -202,8 +214,7 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
                     add_boolean_line(app,
                                      model->config.with_public_lorawan,
                                      "Public LoraWan",
-                                     line_public_lorawan_cb);
-                    }, false);
+                                     line_public_lorawan_cb);}, false);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverCfgView);
 }
@@ -217,7 +228,22 @@ void lora_scene_receive_mode_cfg_on_exit(void *context)
 bool lora_scene_receive_mode_cfg_on_event(void *context,
                                           SceneManagerEvent event)
 {
-    UNUSED(context);
-    UNUSED(event);
-    return false;
+    LoraApp *app = context;
+    bool consumed = false;
+    if (event.type == SceneManagerEventTypeCustom) {
+        if (event.event == LoraReceiverEventCfgSet) {
+            consumed = true;
+            with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                            // Send the new configuration to the receiver
+                            LoraConfigModel config_copy;
+                            config_copy = model->config;
+                            lora_transmitter_set_rf_test_config(app->
+                                                                transmitter,
+                                                                &config_copy);}
+                            , false);
+
+
+        }
+    }
+    return consumed;
 }
