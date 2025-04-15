@@ -13,8 +13,7 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;
-                    }
+                    model->config.sf = new_sf;}
                     , false);
 }
 
@@ -40,8 +39,7 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;
-                    }
+                    model->config.bw_idx = new_bw;}
                     , false);
 }
 
@@ -68,8 +66,7 @@ static void line_tx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.tx_preamble = new_preamble;
-                    }
+                    model->config.tx_preamble = new_preamble;}
                     , false);
 }
 
@@ -97,8 +94,7 @@ static void line_rx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.rx_preamble = new_preamble;
-                    }
+                    model->config.rx_preamble = new_preamble;}
                     , false);
 }
 
@@ -126,8 +122,7 @@ static void line_power_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_power);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.power = new_power;
-                    }
+                    model->config.power = new_power;}
                     , false);
 }
 
@@ -144,6 +139,90 @@ static void line_power(LoraApp *app, LoraReceiverModel *model)
     variable_item_set_current_value_text(item, temp);
 }
 
+static void line_crc_cb(VariableItem *item)
+{
+    LoraApp *app = variable_item_get_context(item);
+    furi_assert(app);
+    char temp[10];
+    bool new_crc = variable_item_get_current_value_index(item);
+    snprintf(temp, sizeof(temp), "%s", new_crc ? "Enabled" : "Disabled");
+    variable_item_set_current_value_text(item, temp);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    model->config.with_crc = new_crc;}
+                    , false);
+}
+
+static void line_crc(LoraApp *app, LoraReceiverModel *model)
+{
+    VariableItem *item;
+    item = variable_item_list_add(app->var_item_list, "CRC",
+                                  2, line_crc_cb, app);
+    variable_item_set_current_value_index(item, model->config.with_crc);
+    char temp[10];
+    snprintf(temp, sizeof(temp), "%s",
+             model->config.with_crc ? "Enabled" : "Disabled");
+    variable_item_set_current_value_text(item, temp);
+}
+
+
+static void line_iq_inverted_cb(VariableItem *item)
+{
+    LoraApp *app = variable_item_get_context(item);
+    furi_assert(app);
+    char temp[10];
+    bool new_iq_inverted = variable_item_get_current_value_index(item);
+    snprintf(temp, sizeof(temp), "%s",
+             new_iq_inverted ? "Enabled" : "Disabled");
+    variable_item_set_current_value_text(item, temp);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    model->config.is_iq_inverted = new_iq_inverted;}
+                    , false);
+}
+
+static void line_iq_inverted(LoraApp *app, LoraReceiverModel *model)
+{
+    VariableItem *item;
+    item = variable_item_list_add(app->var_item_list, "IQ Inverted",
+                                  2, line_iq_inverted_cb, app);
+    variable_item_set_current_value_index(item,
+                                          model->config.is_iq_inverted);
+    char temp[10];
+    snprintf(temp, sizeof(temp), "%s",
+             model->config.is_iq_inverted ? "Enabled" : "Disabled");
+    variable_item_set_current_value_text(item, temp);
+}
+
+static void line_public_lorawan_cb(VariableItem *item)
+{
+    LoraApp *app = variable_item_get_context(item);
+    furi_assert(app);
+    char temp[10];
+    bool new_with_public_lorawan =
+        variable_item_get_current_value_index(item);
+    snprintf(temp, sizeof(temp), "%s",
+             new_with_public_lorawan ? "Enabled" : "Disabled");
+    variable_item_set_current_value_text(item, temp);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    model->config.with_public_lorawan =
+                    new_with_public_lorawan;}
+                    , false);
+}
+
+static void line_public_lorawan(LoraApp *app, LoraReceiverModel *model)
+{
+    VariableItem *item;
+    item = variable_item_list_add(app->var_item_list, "Public LoRaWan",
+                                  2, line_public_lorawan_cb, app);
+    variable_item_set_current_value_index(item,
+                                          model->config.
+                                          with_public_lorawan);
+    char temp[10];
+    snprintf(temp, sizeof(temp), "%s",
+             model->config.with_public_lorawan ? "Enabled" : "Disabled");
+    variable_item_set_current_value_text(item, temp);
+}
+
+
 void lora_scene_receive_mode_cfg_on_enter(void *context)
 {
     FURI_LOG_D("LoraSceneReceiveModeCfg",
@@ -154,7 +233,10 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
                     line_bw(app, model);
                     line_tx_preamble(app, model);
                     line_rx_preamble(app, model);
-                    line_power(app, model);}, false);
+                    line_power(app, model);
+                    line_crc(app, model);
+                    line_iq_inverted(app, model);
+                    line_public_lorawan(app, model);}, false);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverCfgView);
 }
