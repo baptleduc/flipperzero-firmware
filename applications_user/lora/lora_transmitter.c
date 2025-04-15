@@ -151,11 +151,13 @@ void lora_transmitter_set_rf_test_config(LoraTransmitter *transmitter,
     furi_assert(transmitter);
     furi_assert(config);
     char temp[256];
+    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
 
     snprintf(temp,
              sizeof(temp),
-             "AT+TEST=RFCFG,%ld,SF%d,%ld,%d,%d,%d,%s,%s,%s\n",
+             "AT+TEST=RFCFG,%ld.%d,SF%d,%ld,%d,%d,%d,%s,%s,%s\n",
              config->freq,
+             canal_list[config->canal_idx],
              config->sf,
              bandwidth_list[config->bw_idx],
              config->tx_preamble,
@@ -166,4 +168,6 @@ void lora_transmitter_set_rf_test_config(LoraTransmitter *transmitter,
              config->with_public_lorawan ? "ON" : "OFF");
 
     transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
+    furi_delay_ms(1000);        // TODO remove this delay by adjusting the state machine
+
 }

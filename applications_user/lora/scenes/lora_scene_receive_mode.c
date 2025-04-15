@@ -1,5 +1,7 @@
 #include "lora_scene.h"
 #include "lora_app.h"
+#include "lora_config.h"
+#include "views/lora_receiver_i.h"
 
 
 void lora_scene_receive_mode_callback(LoraCustomEvent event, void *context)
@@ -35,6 +37,16 @@ bool lora_scene_receive_mode_on_event(void *context,
             scene_manager_next_scene(app->scene_manager,
                                      LoraSceneReceiveModeCfg);
             consumed = true;
+        } else if (event.event == LoraReceiverEventCfgSet) {
+            consumed = true;
+            with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                            // Send the new configuration to the receiver
+                            LoraConfigModel config_copy;
+                            config_copy = model->config;
+                            lora_transmitter_set_rf_test_config
+                            (app->transmitter, &config_copy);}
+                            , false);
+            lora_state_manager_set_state(app->state_manager, RX);
         }
     }
 

@@ -6,7 +6,6 @@
 #include <furi.h>
 
 #define MAX_DATA_SIZE (1 << 8)  // 256 bytes
-#define MAX_CANAL_NUM (8)       // (1-8)
 
 // Default values for LoRa configuration
 #define DEFAULT_FREQ                (868) // Frequency in MHz
@@ -30,6 +29,8 @@
 #define MAX_PREAMBLE (20)       // For RX and TX preamble
 
 #define BANDWIDTH_LIST_SIZE (3) // Number of bandwidth options (125, 250, 500 kHz)
+#define CANAL_LIST_SIZE (3)     // Number of canal options (868.1, 868.3, 868.5 MHz)
+
 
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
