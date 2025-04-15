@@ -22,6 +22,9 @@
 #define MIN_SF (7)              // Minimum Spreading Factor
 #define MAX_SF (12)             // Maximum Spreading Factor
 
+#define MIN_POWER (0)
+#define MAX_POWER (22)          // Power level in dBm
+
 #define MIN_PREAMBLE (6)        // For RX and TX preamble
 #define MAX_PREAMBLE (20)       // For RX and TX preamble
 

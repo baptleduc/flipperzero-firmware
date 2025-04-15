@@ -13,7 +13,8 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;}
+                    model->config.sf = new_sf;
+                    }
                     , false);
 }
 
@@ -39,7 +40,8 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;}
+                    model->config.bw_idx = new_bw;
+                    }
                     , false);
 }
 
@@ -66,7 +68,8 @@ static void line_tx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.tx_preamble = new_preamble;}
+                    model->config.tx_preamble = new_preamble;
+                    }
                     , false);
 }
 
@@ -94,7 +97,8 @@ static void line_rx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.rx_preamble = new_preamble;}
+                    model->config.rx_preamble = new_preamble;
+                    }
                     , false);
 }
 
@@ -112,6 +116,33 @@ static void line_rx_preamble(LoraApp *app, LoraReceiverModel *model)
     variable_item_set_current_value_text(item, temp);
 }
 
+static void line_power_cb(VariableItem *item)
+{
+    LoraApp *app = variable_item_get_context(item);
+    furi_assert(app);
+    char temp[4];
+    uint8_t new_power =
+        variable_item_get_current_value_index(item) + MIN_POWER;
+    snprintf(temp, sizeof(temp), "%u", new_power);
+    variable_item_set_current_value_text(item, temp);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    model->config.power = new_power;
+                    }
+                    , false);
+}
+
+static void line_power(LoraApp *app, LoraReceiverModel *model)
+{
+    VariableItem *item;
+    item = variable_item_list_add(app->var_item_list, "Power",
+                                  MAX_POWER - MIN_POWER + 1,
+                                  line_power_cb, app);
+    variable_item_set_current_value_index(item,
+                                          model->config.power - MIN_POWER);
+    char temp[4];
+    snprintf(temp, sizeof(temp), "%u", model->config.power);
+    variable_item_set_current_value_text(item, temp);
+}
 
 void lora_scene_receive_mode_cfg_on_enter(void *context)
 {
@@ -123,7 +154,7 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
                     line_bw(app, model);
                     line_tx_preamble(app, model);
                     line_rx_preamble(app, model);
-                    }, false);
+                    line_power(app, model);}, false);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverCfgView);
 }
@@ -131,7 +162,7 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
 void lora_scene_receive_mode_cfg_on_exit(void *context)
 {
     LoraApp *app = context;
-    UNUSED(app);
+    variable_item_list_reset(app->var_item_list);
 }
 
 bool lora_scene_receive_mode_cfg_on_event(void *context,
