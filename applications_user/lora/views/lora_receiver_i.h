@@ -1,23 +1,36 @@
 #pragma once
 
 #include "lora_receiver.h"
+#include "../lora_config.h"
 #include "../lora_custom_event.h"
 #include <furi.h>
 
 #define MAX_DATA_SIZE (1 << 8)  // 256 bytes
-#define MAX_CANAL_NUM (8)       // (1-8)
 
 // Default values for LoRa configuration
 #define DEFAULT_FREQ                (868) // Frequency in MHz
-#define DEFAULT_CANAL_NUM           (1) // Canal 1
-#define DEFAULT_SF                  (12) // Spreading Factor 12
-#define DEFAULT_BW                  (125) // Bandwidth 125 kHz
-#define DEFAULT_TX_PREAMBLE         (12) // TX Preamble length
-#define DEFAULT_RX_PREAMBLE         (15) // RX Preamble length
+#define DEFAULT_CANAL_NUM           (0) // Canal
+#define DEFAULT_SF                  (8) // Spreading Factor
+#define DEFAULT_BW                  (125) // Bandwidth (kHz)
+#define DEFAULT_TX_PREAMBLE         (8) // TX Preamble length
+#define DEFAULT_RX_PREAMBLE         (8) // RX Preamble length
 #define DEFAULT_POWER               (14) // Power level (dBm)
 #define DEFAULT_WITH_CRC            (true) // CRC enabled
 #define DEFAULT_IQ_INVERTED         (false) // IQ inversion disabled
 #define DEFAULT_WITH_PUBLIC_LORAWAN (false) // Public LoRaWAN enabled
+
+#define MIN_SF (7)
+#define MAX_SF (12)
+
+#define MIN_POWER (0)
+#define MAX_POWER (22)
+
+#define MIN_PREAMBLE (6)        // For RX and TX preamble
+#define MAX_PREAMBLE (20)       // For RX and TX preamble
+
+#define BANDWIDTH_LIST_SIZE (3) // Number of bandwidth options (125, 250, 500 kHz)
+#define CANAL_LIST_SIZE (3)     // Number of canal options (868.1, 868.3, 868.5 MHz)
+
 
 typedef struct {
     uint8_t margin;             // Link margin in dB (0-254) from the last LinkCheckReq.
@@ -33,21 +46,6 @@ typedef struct {
     bool is_ack;                // True if the last frame was acknowledged by the server.
 } LoraMsgResponseModel;
 
-/**
- * @brief LoRa configuration Object
- */
-typedef struct {
-    uint32_t freq;              // Frequency in MHz
-    uint8_t canal;              // Canal number (1-8)
-    uint8_t sf;                 // Spreading factor
-    uint8_t bw;                 // Bandwidth
-    uint8_t tx_preamble;        // TX preamble length
-    uint8_t rx_preamble;        // RX preamble length
-    uint8_t power;              // Power level (dbm)
-    bool with_crc;              // CRC enabled/disabled
-    bool is_iq_inverted;        // IQ inversion enabled/disabled
-    bool with_public_lorawan;   // Public LoRaWAN enabled/disabled
-} LoraConfigModel;
 
 /**
  * @brief LoRa Receiver Model
@@ -63,7 +61,8 @@ typedef struct {
 struct LoraReceiver {
     View *view;
     void *context;
-    LoraReceiverProcessCallback callback; // Callback function for received messages
+    LoraReceiverViewCallbak view_callback; // Callback function to be called on view events
+    LoraReceiverProcessCallback process_callback; // Callback function for received messages
     LoraStateManager *state_manager;
 };
 

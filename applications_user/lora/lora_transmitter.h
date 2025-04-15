@@ -1,12 +1,12 @@
 #pragma once
 
 #include "lora_state_manager.h"
+#include "lora_config.h"
 #include <furi.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
 
     typedef struct LoraTransmitter LoraTransmitter;
 
@@ -59,7 +59,6 @@ extern "C" {
     void lora_transmitter_otaa_join_procedure(LoraTransmitter *
                                               transmitter);
 
-
 /**
  * @brief Setup configuration for LoRaWAN
  * @param transmitter Pointer to the LoraTransmitter object.
@@ -74,8 +73,6 @@ extern "C" {
     void lora_transmitter_send_cmsg(LoraTransmitter * transmitter,
                                     const char *msg);
 
-
-
 /**
  * @brief Set the state manager for the LoRa Transmitter
  * @param transmitter Pointer to the LoraTransmitter object.
@@ -84,6 +81,14 @@ extern "C" {
     void lora_transmitter_set_state_manager(LoraTransmitter * transmitter,
                                             LoraStateManager *
                                             state_manager);
+
+/**
+ * @brief Set RF configuration in test mode by sending AT command (eg: AT+TEST=RFCFG,866,SF12,125,12,15,14,ON,OFF, OFF)
+ * @param transmitter Pointer to the LoraTransmitter object.
+ * @param config Pointer to the configuration object.
+ */
+    void lora_transmitter_set_rf_test_config(LoraTransmitter * transmitter,
+                                             LoraConfigModel * config);
 
 #ifdef __cplusplus
 }

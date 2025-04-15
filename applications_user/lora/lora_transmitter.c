@@ -1,7 +1,6 @@
 #include "lora_transmitter_i.h"
 #include "lora_app.h"
 
-
 static void lora_transmitter_init_cfg_model(void *context)
 {
     furi_assert(context);
@@ -28,8 +27,6 @@ LoraTransmitter *lora_transmitter_alloc(void *context,
     furi_assert(context);
     LoraTransmitter *transmitter = malloc(sizeof(LoraTransmitter));
     transmitter->model = malloc(sizeof(LoraTransmitterModel));
-    // Allocate a string to store sendings commands
-    transmitter->send_cmd = furi_string_alloc();
     transmitter->context = context;
     transmitter->send_method = send_method;
     transmitter->context_destructor = context_destructor;
@@ -43,7 +40,6 @@ void lora_transmitter_free(LoraTransmitter *transmitter)
 {
     transmitter->context_destructor(transmitter->context);
     free(transmitter->model);
-    furi_string_free(transmitter->send_cmd);
     free(transmitter);
 }
 
@@ -74,7 +70,6 @@ void lora_transmitter_set_state_manager(LoraTransmitter *transmitter,
 
 void lora_transmitter_otaa_join_procedure(LoraTransmitter *transmitter)
 {
-
     int join_attempts = 1;
 
     // Loop until the device is joined to the network
@@ -109,33 +104,33 @@ void lora_transmitter_otaa_join_procedure(LoraTransmitter *transmitter)
 
 void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
 {
-    UartHelper *uart_helper = transmitter->context;
-
+    char temp[64] = { 0 };
     transmitter->send_method(transmitter->context, "AT+ID\n", 7);
     furi_delay_ms(1000);
 
     transmitter->send_method(transmitter->context, "AT+MODE=LWOTAA\n", 16);
     furi_delay_ms(1000);
 
-    furi_string_printf(transmitter->send_cmd, "AT+DR=%d\n",
-                       transmitter->model->cfg.dr);
-    uart_helper_send_string(uart_helper, transmitter->send_cmd);
+    snprintf(temp, sizeof(temp), "AT+DR=%d\n", transmitter->model->cfg.dr);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1); // +1 for \0
     furi_delay_ms(1000);
 
-    furi_string_printf(transmitter->send_cmd, "AT+POWER=%d\n",
-                       transmitter->model->cfg.tx_power);
-    uart_helper_send_string(uart_helper, transmitter->send_cmd);
+    snprintf(temp, sizeof(temp), "AT+POWER=%d\n",
+             transmitter->model->cfg.tx_power);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
     furi_delay_ms(1000);
 
-    transmitter->send_method(transmitter->context, "AT+ADR=ON\n", 11);
+    transmitter->send_method(transmitter->context, "AT+ADR=ON\n",
+                             strlen(temp) + 1);
     furi_delay_ms(1000);
 
-    transmitter->send_method(transmitter->context, "AT+CLASS=A\n", 12);
+    transmitter->send_method(transmitter->context, "AT+CLASS=A\n",
+                             strlen(temp) + 1);
     furi_delay_ms(1000);
 
-    furi_string_printf(transmitter->send_cmd, "AT+KEY=APPKEY,%s\n",
-                       transmitter->model->cfg.appkey);
-    uart_helper_send_string(uart_helper, transmitter->send_cmd);
+    snprintf(temp, sizeof(temp), "AT+KEY=APPKEY,%s\n",
+             transmitter->model->cfg.appkey);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
     furi_delay_ms(1000);
 
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
@@ -144,8 +139,35 @@ void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
 void lora_transmitter_send_cmsg(LoraTransmitter *transmitter,
                                 const char *msg)
 {
-    UartHelper *uart_helper = transmitter->context;
-    furi_string_printf(transmitter->send_cmd, "AT+CMSG=%s\n", msg);
-    uart_helper_send_string(uart_helper, transmitter->send_cmd);
+    char temp[64] = { 0 };
+    snprintf(temp, sizeof(temp), "AT+CMSG=%s\n", msg);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
     furi_delay_ms(1000);
+}
+
+void lora_transmitter_set_rf_test_config(LoraTransmitter *transmitter,
+                                         LoraConfigModel *config)
+{
+    furi_assert(transmitter);
+    furi_assert(config);
+    char temp[256];
+    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
+
+    snprintf(temp,
+             sizeof(temp),
+             "AT+TEST=RFCFG,%ld.%d,SF%d,%ld,%d,%d,%d,%s,%s,%s\n",
+             config->freq,
+             canal_list[config->canal_idx],
+             config->sf,
+             bandwidth_list[config->bw_idx],
+             config->tx_preamble,
+             config->rx_preamble,
+             config->power,
+             config->with_crc ? "ON" : "OFF",
+             config->is_iq_inverted ? "ON" : "OFF",
+             config->with_public_lorawan ? "ON" : "OFF");
+
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
+    furi_delay_ms(1000);        // TODO remove this delay by adjusting the state machine
+
 }
