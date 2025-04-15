@@ -13,21 +13,8 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;
-                    }
+                    model->config.sf = new_sf;}
                     , false);
-}
-
-static void line_sf(LoraApp *app, LoraReceiverModel *model)
-{
-    VariableItem *item;
-    item =
-        variable_item_list_add(app->var_item_list, "SF",
-                               MAX_SF - MIN_SF + 1, line_sf_cb, app);
-    variable_item_set_current_value_index(item, model->config.sf - MIN_SF); // config.sf - MIN_SF because we map the SF to the index
-    char temp[4];
-    snprintf(temp, sizeof(temp), "%u", model->config.sf);
-    variable_item_set_current_value_text(item, temp);
 }
 
 static void line_bw_cb(VariableItem *item)
@@ -40,8 +27,7 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;
-                    }
+                    model->config.bw_idx = new_bw;}
                     , false);
 }
 
@@ -68,23 +54,8 @@ static void line_tx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.tx_preamble = new_preamble;
-                    }
+                    model->config.tx_preamble = new_preamble;}
                     , false);
-}
-
-static void line_tx_preamble(LoraApp *app, LoraReceiverModel *model)
-{
-    VariableItem *item;
-    item = variable_item_list_add(app->var_item_list, "TX Preamble",
-                                  MAX_PREAMBLE - MIN_PREAMBLE + 1,
-                                  line_tx_preamble_cb, app);
-    variable_item_set_current_value_index(item,
-                                          model->config.tx_preamble -
-                                          MIN_PREAMBLE);
-    char temp[4];
-    snprintf(temp, sizeof(temp), "%u", model->config.tx_preamble);
-    variable_item_set_current_value_text(item, temp);
 }
 
 static void line_rx_preamble_cb(VariableItem *item)
@@ -97,23 +68,8 @@ static void line_rx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.rx_preamble = new_preamble;
-                    }
+                    model->config.rx_preamble = new_preamble;}
                     , false);
-}
-
-static void line_rx_preamble(LoraApp *app, LoraReceiverModel *model)
-{
-    VariableItem *item;
-    item = variable_item_list_add(app->var_item_list, "RX Preamble",
-                                  MAX_PREAMBLE - MIN_PREAMBLE + 1,
-                                  line_rx_preamble_cb, app);
-    variable_item_set_current_value_index(item,
-                                          model->config.rx_preamble -
-                                          MIN_PREAMBLE);
-    char temp[4];
-    snprintf(temp, sizeof(temp), "%u", model->config.rx_preamble);
-    variable_item_set_current_value_text(item, temp);
 }
 
 static void line_power_cb(VariableItem *item)
@@ -126,22 +82,8 @@ static void line_power_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_power);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.power = new_power;
-                    }
+                    model->config.power = new_power;}
                     , false);
-}
-
-static void line_power(LoraApp *app, LoraReceiverModel *model)
-{
-    VariableItem *item;
-    item = variable_item_list_add(app->var_item_list, "Power",
-                                  MAX_POWER - MIN_POWER + 1,
-                                  line_power_cb, app);
-    variable_item_set_current_value_index(item,
-                                          model->config.power - MIN_POWER);
-    char temp[4];
-    snprintf(temp, sizeof(temp), "%u", model->config.power);
-    variable_item_set_current_value_text(item, temp);
 }
 
 static void line_crc_cb(VariableItem *item)
@@ -153,8 +95,7 @@ static void line_crc_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%s", new_crc ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.with_crc = new_crc;
-                    }
+                    model->config.with_crc = new_crc;}
                     , false);
 }
 
@@ -168,8 +109,7 @@ static void line_iq_inverted_cb(VariableItem *item)
              new_iq_inverted ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.is_iq_inverted = new_iq_inverted;
-                    }
+                    model->config.is_iq_inverted = new_iq_inverted;}
                     , false);
 }
 
@@ -186,13 +126,29 @@ static void line_public_lorawan_cb(VariableItem *item)
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
                     model->config.with_public_lorawan =
-                    new_with_public_lorawan;
-                    }
+                    new_with_public_lorawan;}
                     , false);
 }
 
+static void add_value_line(LoraApp *app, uint8_t value_model_field,
+                           uint8_t min_value, uint8_t max_value,
+                           char *value_label,
+                           VariableItemChangeCallback callback)
+{
+    VariableItem *item;
+    char temp[4];
 
-static void add_boolean_line(LoraApp *app, bool *boolean_field,
+    item = variable_item_list_add(app->var_item_list, value_label,
+                                  max_value - min_value + 1, callback,
+                                  app);
+    variable_item_set_current_value_index(item,
+                                          value_model_field - min_value);
+
+    snprintf(temp, sizeof(temp), "%u", value_model_field);
+    variable_item_set_current_value_text(item, temp);
+}
+
+static void add_boolean_line(LoraApp *app, bool boolean_model_field,
                              char *boolean_label,
                              VariableItemChangeCallback callback)
 {
@@ -201,10 +157,10 @@ static void add_boolean_line(LoraApp *app, bool *boolean_field,
 
     item = variable_item_list_add(app->var_item_list, boolean_label,
                                   2, callback, app);
-    variable_item_set_current_value_index(item, *boolean_field);
+    variable_item_set_current_value_index(item, boolean_model_field);
 
     snprintf(temp, sizeof(temp), "%s",
-             *boolean_field ? "Enabled" : "Disabled");
+             boolean_model_field ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
 }
 
@@ -214,17 +170,24 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
                "Entering Lora Scene Receive Mode");
     LoraApp *app = context;
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    line_sf(app, model);
+                    add_value_line(app, model->config.sf, MIN_SF, MAX_SF,
+                                   "SF", line_sf_cb);
                     line_bw(app, model);
-                    line_tx_preamble(app, model);
-                    line_rx_preamble(app, model);
-                    line_power(app, model);
-                    add_boolean_line(app, &model->config.with_crc, "CRC",
+                    add_value_line(app, model->config.tx_preamble,
+                                   MIN_PREAMBLE, MAX_PREAMBLE,
+                                   "TX Preamble", line_tx_preamble_cb);
+                    add_value_line(app, model->config.rx_preamble,
+                                   MIN_PREAMBLE, MAX_PREAMBLE,
+                                   "RX Preamble", line_rx_preamble_cb);
+                    add_value_line(app, model->config.power,
+                                   MIN_POWER, MAX_POWER,
+                                   "Power", line_power_cb);
+                    add_boolean_line(app, model->config.with_crc, "CRC",
                                      line_crc_cb);
-                    add_boolean_line(app, &model->config.is_iq_inverted,
+                    add_boolean_line(app, model->config.is_iq_inverted,
                                      "IQ Inverted", line_iq_inverted_cb);
                     add_boolean_line(app,
-                                     &model->config.with_public_lorawan,
+                                     model->config.with_public_lorawan,
                                      "Public LoraWan",
                                      line_public_lorawan_cb);}, false);
     view_dispatcher_switch_to_view(app->view_dispatcher,
