@@ -13,7 +13,8 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;}
+                    model->config.sf = new_sf;
+                    }
                     , false);
 }
 
@@ -39,7 +40,8 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;}
+                    model->config.bw_idx = new_bw;
+                    }
                     , false);
 }
 
@@ -66,7 +68,8 @@ static void line_tx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.tx_preamble = new_preamble;}
+                    model->config.tx_preamble = new_preamble;
+                    }
                     , false);
 }
 
@@ -94,7 +97,8 @@ static void line_rx_preamble_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.rx_preamble = new_preamble;}
+                    model->config.rx_preamble = new_preamble;
+                    }
                     , false);
 }
 
@@ -122,7 +126,8 @@ static void line_power_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_power);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.power = new_power;}
+                    model->config.power = new_power;
+                    }
                     , false);
 }
 
@@ -148,22 +153,10 @@ static void line_crc_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%s", new_crc ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.with_crc = new_crc;}
+                    model->config.with_crc = new_crc;
+                    }
                     , false);
 }
-
-static void line_crc(LoraApp *app, LoraReceiverModel *model)
-{
-    VariableItem *item;
-    item = variable_item_list_add(app->var_item_list, "CRC",
-                                  2, line_crc_cb, app);
-    variable_item_set_current_value_index(item, model->config.with_crc);
-    char temp[10];
-    snprintf(temp, sizeof(temp), "%s",
-             model->config.with_crc ? "Enabled" : "Disabled");
-    variable_item_set_current_value_text(item, temp);
-}
-
 
 static void line_iq_inverted_cb(VariableItem *item)
 {
@@ -175,22 +168,11 @@ static void line_iq_inverted_cb(VariableItem *item)
              new_iq_inverted ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.is_iq_inverted = new_iq_inverted;}
+                    model->config.is_iq_inverted = new_iq_inverted;
+                    }
                     , false);
 }
 
-static void line_iq_inverted(LoraApp *app, LoraReceiverModel *model)
-{
-    VariableItem *item;
-    item = variable_item_list_add(app->var_item_list, "IQ Inverted",
-                                  2, line_iq_inverted_cb, app);
-    variable_item_set_current_value_index(item,
-                                          model->config.is_iq_inverted);
-    char temp[10];
-    snprintf(temp, sizeof(temp), "%s",
-             model->config.is_iq_inverted ? "Enabled" : "Disabled");
-    variable_item_set_current_value_text(item, temp);
-}
 
 static void line_public_lorawan_cb(VariableItem *item)
 {
@@ -204,24 +186,27 @@ static void line_public_lorawan_cb(VariableItem *item)
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
                     model->config.with_public_lorawan =
-                    new_with_public_lorawan;}
+                    new_with_public_lorawan;
+                    }
                     , false);
 }
 
-static void line_public_lorawan(LoraApp *app, LoraReceiverModel *model)
+
+static void add_boolean_line(LoraApp *app, bool *boolean_field,
+                             char *boolean_label,
+                             VariableItemChangeCallback callback)
 {
     VariableItem *item;
-    item = variable_item_list_add(app->var_item_list, "Public LoRaWan",
-                                  2, line_public_lorawan_cb, app);
-    variable_item_set_current_value_index(item,
-                                          model->config.
-                                          with_public_lorawan);
     char temp[10];
+
+    item = variable_item_list_add(app->var_item_list, boolean_label,
+                                  2, callback, app);
+    variable_item_set_current_value_index(item, *boolean_field);
+
     snprintf(temp, sizeof(temp), "%s",
-             model->config.with_public_lorawan ? "Enabled" : "Disabled");
+             *boolean_field ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
 }
-
 
 void lora_scene_receive_mode_cfg_on_enter(void *context)
 {
@@ -234,9 +219,14 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
                     line_tx_preamble(app, model);
                     line_rx_preamble(app, model);
                     line_power(app, model);
-                    line_crc(app, model);
-                    line_iq_inverted(app, model);
-                    line_public_lorawan(app, model);}, false);
+                    add_boolean_line(app, &model->config.with_crc, "CRC",
+                                     line_crc_cb);
+                    add_boolean_line(app, &model->config.is_iq_inverted,
+                                     "IQ Inverted", line_iq_inverted_cb);
+                    add_boolean_line(app,
+                                     &model->config.with_public_lorawan,
+                                     "Public LoraWan",
+                                     line_public_lorawan_cb);}, false);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverCfgView);
 }
