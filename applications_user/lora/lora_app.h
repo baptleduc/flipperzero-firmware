@@ -13,7 +13,7 @@
 
 #include "lora_state_manager.h"
 #include "uart_helper.h"
-#include "views/lora_receiver.h"
+#include "lora_receiver.h"
 #include "lora_transmitter.h"
 #include "lora_custom_event.h"
 

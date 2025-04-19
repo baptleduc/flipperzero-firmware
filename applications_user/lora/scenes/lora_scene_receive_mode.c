@@ -1,7 +1,7 @@
 #include "lora_scene.h"
 #include "lora_app.h"
 #include "lora_config.h"
-#include "views/lora_receiver_i.h"
+#include "lora_receiver_i.h"
 
 
 void lora_scene_receive_mode_callback(LoraCustomEvent event, void *context)

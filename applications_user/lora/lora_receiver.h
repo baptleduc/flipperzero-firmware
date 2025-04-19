@@ -2,8 +2,8 @@
 
 #include <gui/view.h>
 
-#include "../lora_state_manager.h"
-#include "../lora_custom_event.h"
+#include "lora_state_manager.h"
+#include "lora_custom_event.h"
 
 
 #ifdef __cplusplus

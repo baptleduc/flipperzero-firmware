@@ -459,5 +459,5 @@ void lora_receiver_set_view_callback(LoraReceiver *receiver,
         receiver->view_callback = callback;
         receiver->context = context;
     }, false);
-}
 /* *INDENT-ON* */
+}

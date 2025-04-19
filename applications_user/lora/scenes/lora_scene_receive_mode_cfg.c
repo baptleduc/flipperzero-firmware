@@ -1,6 +1,6 @@
 #include "lora_scene.h"
 #include "lora_app.h"
-#include "../views/lora_receiver_i.h"
+#include "lora_receiver_i.h"
 #include <gui/modules/variable_item_list.h>
 
 
@@ -13,7 +13,8 @@ static void line_sf_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%u", new_sf);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.sf = new_sf;}
+                    model->config.sf = new_sf;
+                    }
                     , false);
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
@@ -29,7 +30,8 @@ static void line_bw_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%lu", new_bw);
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.bw_idx = new_bw;}
+                    model->config.bw_idx = new_bw;
+                    }
                     , false);
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
@@ -100,7 +102,8 @@ static void line_crc_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%s", new_crc ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.with_crc = new_crc;}
+                    model->config.with_crc = new_crc;
+                    }
                     , false);
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
