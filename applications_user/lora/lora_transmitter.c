@@ -5,18 +5,88 @@ static void lora_transmitter_init_cfg_model(void *context)
 {
     furi_assert(context);
     LoraTransmitter *transmitter = context;
-    transmitter->model->cfg.baudrate = DEVICE_BAUDRATE;
-    transmitter->model->cfg.dr = DEFAULT_DR;
-    transmitter->model->cfg.tx_power = DEFAULT_TX_POWER;
-    transmitter->model->cfg.port = PORT;
-    strncpy(transmitter->model->cfg.appkey, APPKEY,
-            sizeof(transmitter->model->cfg.appkey));
+    transmitter->model->lorawan_cfg.baudrate = DEVICE_BAUDRATE;
+    transmitter->model->lorawan_cfg.dr = DEFAULT_DR;
+    transmitter->model->lorawan_cfg.tx_power = DEFAULT_TX_POWER;
+    transmitter->model->lorawan_cfg.port = PORT;
+    strncpy(transmitter->model->lorawan_cfg.appkey, APPKEY,
+            sizeof(transmitter->model->lorawan_cfg.appkey));
 }
 
 static void lora_transmitter_init(void *context)
 {
     furi_assert(context);
     lora_transmitter_init_cfg_model(context);
+}
+
+static void _lora_transmitter_set_rf_test_config(LoraTransmitter
+                                                 *transmitter)
+{
+    furi_assert(transmitter);
+    char temp[256];
+
+    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
+
+    snprintf(temp,
+             sizeof(temp),
+             "AT+TEST=RFCFG,%ld.%d,SF%d,%ld,%d,%d,%d,%s,%s,%s\n",
+             transmitter->model->lora_cfg.freq,
+             canal_list[transmitter->model->lora_cfg.canal_idx],
+             transmitter->model->lora_cfg.sf,
+             bandwidth_list[transmitter->model->lora_cfg.bw_idx],
+             transmitter->model->lora_cfg.tx_preamble,
+             transmitter->model->lora_cfg.rx_preamble,
+             transmitter->model->lora_cfg.power,
+             transmitter->model->lora_cfg.with_crc ? "ON" : "OFF",
+             transmitter->model->lora_cfg.is_iq_inverted ? "ON" : "OFF",
+             transmitter->model->lora_cfg.
+             with_public_lorawan ? "ON" : "OFF");
+
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
+    furi_delay_ms(1000);        // TODO remove this delay by adjusting the state machine
+
+}
+
+static void lora_transmitter_enter_test_mode(LoraTransmitter *transmitter)
+{
+    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
+    transmitter->send_method(transmitter->context, "AT+MODE=TEST\n", 14);
+    furi_delay_ms(1000);
+}
+
+static void _lora_transmitter_enter_receive_mode(LoraTransmitter
+                                                 *transmitter)
+{
+    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
+    lora_transmitter_enter_test_mode(transmitter);
+    transmitter->send_method(transmitter->context, "AT+TEST=RXLRPKT\n",
+                             17);
+    furi_delay_ms(1000);
+    lora_state_manager_set_state(transmitter->state_manager, RX);
+}
+
+
+static int32_t lora_transmitter_start(void *context)
+{
+    LoraTransmitter *transmitter = context;
+
+    uint32_t events;
+    do {
+        FURI_LOG_D("lora_transmitter_start", "Waiting for events");
+        events = furi_thread_flags_wait(TransmitterEventEnterReceiveMode |
+                                        TransmitterEventSetRFTestConfig |
+                                        TransmitterEventExciting,
+                                        FuriFlagWaitAny, FuriWaitForever);
+        if (events & TransmitterEventEnterReceiveMode) {
+            _lora_transmitter_enter_receive_mode(transmitter);
+        }
+        if (events & TransmitterEventSetRFTestConfig) {
+            _lora_transmitter_set_rf_test_config(transmitter);
+        }
+    } while ((events & TransmitterEventExciting) !=
+             TransmitterEventExciting);
+    FURI_LOG_D("lora_transmitter_start", "Exiting lora_transmitter_start");
+    return 0;
 }
 
 LoraTransmitter *lora_transmitter_alloc(void *context,
@@ -31,6 +101,10 @@ LoraTransmitter *lora_transmitter_alloc(void *context,
     transmitter->send_method = send_method;
     transmitter->context_destructor = context_destructor;
 
+    transmitter->thread = furi_thread_alloc_ex("LoraTransmitter", 1024UL,
+                                               lora_transmitter_start,
+                                               transmitter);
+    furi_thread_start(transmitter->thread);
     // Init
     lora_transmitter_init(transmitter);
     return transmitter;
@@ -38,26 +112,24 @@ LoraTransmitter *lora_transmitter_alloc(void *context,
 
 void lora_transmitter_free(LoraTransmitter *transmitter)
 {
+    // Signal that we want the worker to exit.  It may be doing other work.
+    furi_thread_flags_set(furi_thread_get_id(transmitter->thread),
+                          TransmitterEventExciting);
+    furi_thread_join(transmitter->thread);
+    furi_thread_free(transmitter->thread);
+
     transmitter->context_destructor(transmitter->context);
     free(transmitter->model);
     free(transmitter);
 }
 
-static void lora_transmitter_enter_test_mode(LoraTransmitter *transmitter)
-{
-    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
-    transmitter->send_method(transmitter->context, "AT+MODE=TEST\n", 14);
-    furi_delay_ms(1000);
-}
+
 
 void lora_transmitter_enter_receive_mode(LoraTransmitter *transmitter)
 {
-    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
-    lora_transmitter_enter_test_mode(transmitter);
-    transmitter->send_method(transmitter->context, "AT+TEST=RXLRPKT\n",
-                             17);
-    furi_delay_ms(1000);
-    lora_state_manager_set_state(transmitter->state_manager, RX);
+    // Possibility to add arg to transmitter here
+    furi_thread_flags_set(furi_thread_get_id(transmitter->thread),
+                          TransmitterEventEnterReceiveMode);
 }
 
 void lora_transmitter_set_state_manager(LoraTransmitter *transmitter,
@@ -111,12 +183,13 @@ void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
     transmitter->send_method(transmitter->context, "AT+MODE=LWOTAA\n", 16);
     furi_delay_ms(1000);
 
-    snprintf(temp, sizeof(temp), "AT+DR=%d\n", transmitter->model->cfg.dr);
+    snprintf(temp, sizeof(temp), "AT+DR=%d\n",
+             transmitter->model->lorawan_cfg.dr);
     transmitter->send_method(transmitter->context, temp, strlen(temp) + 1); // +1 for \0
     furi_delay_ms(1000);
 
     snprintf(temp, sizeof(temp), "AT+POWER=%d\n",
-             transmitter->model->cfg.tx_power);
+             transmitter->model->lorawan_cfg.tx_power);
     transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
     furi_delay_ms(1000);
 
@@ -129,7 +202,7 @@ void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
     furi_delay_ms(1000);
 
     snprintf(temp, sizeof(temp), "AT+KEY=APPKEY,%s\n",
-             transmitter->model->cfg.appkey);
+             transmitter->model->lorawan_cfg.appkey);
     transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
     furi_delay_ms(1000);
 
@@ -148,26 +221,7 @@ void lora_transmitter_send_cmsg(LoraTransmitter *transmitter,
 void lora_transmitter_set_rf_test_config(LoraTransmitter *transmitter,
                                          LoraConfigModel *config)
 {
-    furi_assert(transmitter);
-    furi_assert(config);
-    char temp[256];
-    lora_state_manager_set_state(transmitter->state_manager, CONFIG);
-
-    snprintf(temp,
-             sizeof(temp),
-             "AT+TEST=RFCFG,%ld.%d,SF%d,%ld,%d,%d,%d,%s,%s,%s\n",
-             config->freq,
-             canal_list[config->canal_idx],
-             config->sf,
-             bandwidth_list[config->bw_idx],
-             config->tx_preamble,
-             config->rx_preamble,
-             config->power,
-             config->with_crc ? "ON" : "OFF",
-             config->is_iq_inverted ? "ON" : "OFF",
-             config->with_public_lorawan ? "ON" : "OFF");
-
-    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
-    furi_delay_ms(1000);        // TODO remove this delay by adjusting the state machine
-
+    transmitter->model->lora_cfg = *config;
+    furi_thread_flags_set(furi_thread_get_id(transmitter->thread),
+                          TransmitterEventSetRFTestConfig);
 }

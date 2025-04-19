@@ -7,6 +7,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    typedef enum {
+        TransmitterEventEnterReceiveMode = 1 << 0,
+        TransmitterEventSetRFTestConfig = 1 << 1,
+        TransmitterEventExciting = 1 << 2,
+
+    } TransmitterEventFlags;
 
     typedef struct LoraTransmitter LoraTransmitter;
 

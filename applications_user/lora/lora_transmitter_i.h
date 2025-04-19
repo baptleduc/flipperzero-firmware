@@ -22,7 +22,8 @@ typedef struct {
  * @brief Lora Transmitter Model
  */
 typedef struct {
-    LoraTransmitterCfgModel cfg; // Configuration model
+    LoraTransmitterCfgModel lorawan_cfg; // Configuration model for LoRaWAN mode
+    LoraConfigModel lora_cfg;   // Configuration model for LoRa P2P mode
     // Possibly other models can be added here in the future
 } LoraTransmitterModel;
 
@@ -36,7 +37,6 @@ struct LoraTransmitter {
     LoraStateManager *state_manager;
     LoraTransmitterMethod send_method;
     LoraTransmitterModel *model;
+    FuriThread *thread;
     LoraTransmitterContextDestructor context_destructor;
-
-
 };
