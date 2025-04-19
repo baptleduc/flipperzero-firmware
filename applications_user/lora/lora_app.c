@@ -46,8 +46,8 @@ static LoraApp *lora_app_alloc()
 
     app->var_item_list = variable_item_list_alloc();
     view_dispatcher_add_view(app->view_dispatcher, LoraAppReceiverCfgView,
-                             variable_item_list_get_view(app->
-                                                         var_item_list));
+                             variable_item_list_get_view
+                             (app->var_item_list));
 
 
     // Allocate a transmitter object
@@ -60,7 +60,8 @@ static LoraApp *lora_app_alloc()
 
     app->transmitter =
         lora_transmitter_alloc(uart_helper, send_method,
-                               context_destructor);
+                               context_destructor,
+                               uart_helper_set_transmitter_thread_id);
 
     // Allocate a receiver object
     app->receiver = lora_receiver_alloc();

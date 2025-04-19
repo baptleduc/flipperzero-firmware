@@ -44,9 +44,9 @@ bool lora_scene_receive_mode_on_event(void *context,
                             LoraConfigModel config_copy;
                             config_copy = model->config;
                             lora_transmitter_set_rf_test_config
-                            (app->transmitter, &config_copy);}
+                            (app->transmitter, &config_copy);
+                            }
                             , false);
-            lora_state_manager_set_state(app->state_manager, RX);
         }
     }
 
@@ -57,5 +57,4 @@ void lora_scene_receive_mode_on_exit(void *context)
 {
     LoraApp *app = context;
     UNUSED(app);
-    // text_box_reset(app->text_box);
 }

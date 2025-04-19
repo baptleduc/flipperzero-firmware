@@ -109,24 +109,27 @@ static int32_t uart_helper_worker(void *context)
                         do {
                             // Find the next delimiter in the ring buffer.
                             index =
-                                ring_buffer_find_delim(helper->
-                                                       ring_buffer);
+                                ring_buffer_find_delim
+                                (helper->ring_buffer);
 
                             // If a delimiter was found, extract the line and process it.
                             if (index != FURI_STRING_FAILURE) {
                                 // Extract the line from the ring buffer, advancing the read
                                 // pointer to the next byte after the delimiter.
-                                ring_buffer_extract_line(helper->
-                                                         ring_buffer,
-                                                         index, line);
+                                ring_buffer_extract_line
+                                    (helper->ring_buffer, index, line);
 
                                 // Invoke the callback to process the line.
                                 LoraApp *app = helper->context;
                                 LoraReceiverProcessCallback callback =
-                                    lora_receiver_get_callback(app->
-                                                               receiver);
+                                    lora_receiver_get_callback
+                                    (app->receiver);
                                 if (callback) {
                                     callback(line, app);
+                                    // Notify the transmitter that a response was received.
+                                    furi_thread_flags_set
+                                        (helper->transmitter_thread_id,
+                                         TransmitterEventResponseReceived);
                                 }
                             }
                         } while (index != FURI_STRING_FAILURE);
@@ -141,6 +144,14 @@ static int32_t uart_helper_worker(void *context)
     furi_string_free(line);
 
     return 0;
+}
+
+void uart_helper_set_transmitter_thread_id(void *context,
+                                           FuriThreadId thread_id)
+{
+    UartHelper *helper = context;
+    // Set the thread ID for the transmitter thread.
+    helper->transmitter_thread_id = thread_id;
 }
 
 UartHelper *uart_helper_alloc(uint32_t baudrate, LoraApp *lora_app)
@@ -217,8 +228,10 @@ bool uart_helper_read(UartHelper *helper, FuriString *text)
     return ring_buffer_read(helper->ring_buffer, text);
 }
 
-void uart_helper_send(UartHelper *helper, const char *data, size_t length)
+void uart_helper_send(UartHelper *helper, const char *data, size_t length,
+                      bool wait_response)
 {
+
     if (length == 0) {
         length = strlen(data);  // Exclude the null character.
         char *buf = malloc(length + 2); // Null and delimiter.
@@ -235,6 +248,15 @@ void uart_helper_send(UartHelper *helper, const char *data, size_t length)
         furi_hal_serial_tx(helper->serial_handle, (uint8_t *) data,
                            length);
     }
+
+    if (wait_response) {
+        FURI_LOG_D("uart_helper_send", "Thread %s waits for response",
+                   furi_thread_get_name(helper->transmitter_thread_id));
+        furi_thread_flags_wait(TransmitterEventResponseReceived |
+                               TransmitterEventExciting, FuriFlagWaitAny,
+                               10000);
+    }
+    FURI_LOG_D("uart_helper_send", "Response received");
 }
 
 void uart_helper_send_string(UartHelper *helper, FuriString *string)
@@ -249,7 +271,7 @@ void uart_helper_send_string(UartHelper *helper, FuriString *string)
     }
 
     // Transmit data
-    uart_helper_send(helper, str, length);
+    uart_helper_send(helper, str, length, false);
 }
 
 void uart_helper_free(UartHelper *helper)

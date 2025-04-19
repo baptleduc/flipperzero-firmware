@@ -24,7 +24,8 @@ static void _lora_transmitter_set_rf_test_config(LoraTransmitter
 {
     furi_assert(transmitter);
     char temp[256];
-
+    LoraState previous_state =
+        lora_state_manager_get_state(transmitter->state_manager);
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
 
     snprintf(temp,
@@ -39,18 +40,20 @@ static void _lora_transmitter_set_rf_test_config(LoraTransmitter
              transmitter->model->lora_cfg.power,
              transmitter->model->lora_cfg.with_crc ? "ON" : "OFF",
              transmitter->model->lora_cfg.is_iq_inverted ? "ON" : "OFF",
-             transmitter->model->lora_cfg.
-             with_public_lorawan ? "ON" : "OFF");
+             transmitter->model->
+             lora_cfg.with_public_lorawan ? "ON" : "OFF");
 
-    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
-    furi_delay_ms(1000);        // TODO remove this delay by adjusting the state machine
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1,
+                             true);
+    lora_state_manager_set_state(transmitter->state_manager, previous_state); // Restore previous state
 
 }
 
 static void lora_transmitter_enter_test_mode(LoraTransmitter *transmitter)
 {
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
-    transmitter->send_method(transmitter->context, "AT+MODE=TEST\n", 14);
+    transmitter->send_method(transmitter->context, "AT+MODE=TEST\n", 14,
+                             false);
     furi_delay_ms(1000);
 }
 
@@ -60,7 +63,7 @@ static void _lora_transmitter_enter_receive_mode(LoraTransmitter
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
     lora_transmitter_enter_test_mode(transmitter);
     transmitter->send_method(transmitter->context, "AT+TEST=RXLRPKT\n",
-                             17);
+                             17, true);
     furi_delay_ms(1000);
     lora_state_manager_set_state(transmitter->state_manager, RX);
 }
@@ -83,8 +86,7 @@ static int32_t lora_transmitter_start(void *context)
         if (events & TransmitterEventSetRFTestConfig) {
             _lora_transmitter_set_rf_test_config(transmitter);
         }
-    } while ((events & TransmitterEventExciting) !=
-             TransmitterEventExciting);
+    } while (!transmitter->should_exit);
     FURI_LOG_D("lora_transmitter_start", "Exiting lora_transmitter_start");
     return 0;
 }
@@ -92,7 +94,9 @@ static int32_t lora_transmitter_start(void *context)
 LoraTransmitter *lora_transmitter_alloc(void *context,
                                         LoraTransmitterMethod send_method,
                                         LoraTransmitterContextDestructor
-                                        context_destructor)
+                                        context_destructor,
+                                        SetTransmitterThreadIdMethod
+                                        set_thread_id_method)
 {
     furi_assert(context);
     LoraTransmitter *transmitter = malloc(sizeof(LoraTransmitter));
@@ -105,6 +109,8 @@ LoraTransmitter *lora_transmitter_alloc(void *context,
                                                lora_transmitter_start,
                                                transmitter);
     furi_thread_start(transmitter->thread);
+    set_thread_id_method(transmitter->context,
+                         furi_thread_get_id(transmitter->thread));
     // Init
     lora_transmitter_init(transmitter);
     return transmitter;
@@ -112,9 +118,10 @@ LoraTransmitter *lora_transmitter_alloc(void *context,
 
 void lora_transmitter_free(LoraTransmitter *transmitter)
 {
-    // Signal that we want the worker to exit.  It may be doing other work.
+    // Signal that we want the transmitter to exit.  It may be doing other work.
     furi_thread_flags_set(furi_thread_get_id(transmitter->thread),
                           TransmitterEventExciting);
+    transmitter->should_exit = true;
     furi_thread_join(transmitter->thread);
     furi_thread_free(transmitter->thread);
 
@@ -151,7 +158,7 @@ void lora_transmitter_otaa_join_procedure(LoraTransmitter *transmitter)
                    "Attempting to join the network...");
         // Send the join command
         transmitter->send_method(transmitter->context, "AT+JOIN_CMD\n",
-                                 13);
+                                 13, false);
         furi_delay_ms(10000);
 
         if ((lora_state_manager_get_state(transmitter->state_manager)) ==
@@ -177,33 +184,36 @@ void lora_transmitter_otaa_join_procedure(LoraTransmitter *transmitter)
 void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
 {
     char temp[64] = { 0 };
-    transmitter->send_method(transmitter->context, "AT+ID\n", 7);
+    transmitter->send_method(transmitter->context, "AT+ID\n", 7, false);
     furi_delay_ms(1000);
 
-    transmitter->send_method(transmitter->context, "AT+MODE=LWOTAA\n", 16);
+    transmitter->send_method(transmitter->context, "AT+MODE=LWOTAA\n", 16,
+                             false);
     furi_delay_ms(1000);
 
     snprintf(temp, sizeof(temp), "AT+DR=%d\n",
              transmitter->model->lorawan_cfg.dr);
-    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1); // +1 for \0
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1, false); // +1 for \0
     furi_delay_ms(1000);
 
     snprintf(temp, sizeof(temp), "AT+POWER=%d\n",
              transmitter->model->lorawan_cfg.tx_power);
-    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1,
+                             false);
     furi_delay_ms(1000);
 
     transmitter->send_method(transmitter->context, "AT+ADR=ON\n",
-                             strlen(temp) + 1);
+                             strlen(temp) + 1, false);
     furi_delay_ms(1000);
 
     transmitter->send_method(transmitter->context, "AT+CLASS=A\n",
-                             strlen(temp) + 1);
+                             strlen(temp) + 1, false);
     furi_delay_ms(1000);
 
     snprintf(temp, sizeof(temp), "AT+KEY=APPKEY,%s\n",
              transmitter->model->lorawan_cfg.appkey);
-    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1,
+                             false);
     furi_delay_ms(1000);
 
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
@@ -214,7 +224,8 @@ void lora_transmitter_send_cmsg(LoraTransmitter *transmitter,
 {
     char temp[64] = { 0 };
     snprintf(temp, sizeof(temp), "AT+CMSG=%s\n", msg);
-    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1);
+    transmitter->send_method(transmitter->context, temp, strlen(temp) + 1,
+                             false);
     furi_delay_ms(1000);
 }
 

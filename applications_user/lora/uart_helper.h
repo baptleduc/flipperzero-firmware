@@ -47,12 +47,17 @@ typedef struct {
     // Worker thread that dequeues data from the stream buffer and processes it
     FuriThread *worker_thread;
 
+    FuriThreadId transmitter_thread_id;
+
     // Buffer to hold data until a delimiter is found
     RingBuffer *ring_buffer;
 
     void *context;
 
 } UartHelper;
+
+void uart_helper_set_transmitter_thread_id(void *context,
+                                           FuriThreadId thread_id);
 
 /**
  * Allocates a new UartHelper.  The UartHelper will be initialized with a baud rate of 115200.
@@ -92,7 +97,7 @@ bool uart_helper_read(UartHelper * helper, FuriString * text);
  * Sends data over the UART TX pin.
 */
 void uart_helper_send(UartHelper * helper, const char *data,
-                      size_t length);
+                      size_t length, bool wait_response);
 
 /**
  * Sends a string over the UART TX pin.

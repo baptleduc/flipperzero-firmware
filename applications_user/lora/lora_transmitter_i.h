@@ -39,4 +39,5 @@ struct LoraTransmitter {
     LoraTransmitterModel *model;
     FuriThread *thread;
     LoraTransmitterContextDestructor context_destructor;
+    bool should_exit;
 };
