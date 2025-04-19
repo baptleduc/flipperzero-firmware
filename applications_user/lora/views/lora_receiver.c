@@ -201,13 +201,15 @@ void lora_receiver_decode_msg_response(LoraReceiver *receiver,
 {
     furi_assert(receiver);
     furi_assert(line);
-
+/* *INDENT-OFF* */
     with_view_model(receiver->view, LoraReceiverModel * model, {
                     parse_msg_response(line, &model->msg_response);
                     hex_to_string(model->msg_response.data,
-                                  model->msg_response.decoded_data);},
-                    true);
+                                  model->msg_response.decoded_data);
+                    }, true);
+/* *INDENT-ON* */
 }
+
 
 static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
 {
@@ -240,23 +242,29 @@ static void lora_receiver_draw_callback(Canvas *canvas, void *_model)
 static void lora_receiver_next_canal_callback(LoraReceiver *receiver)
 {
     furi_assert(receiver);
-    with_view_model(receiver->view, LoraReceiverModel * model, {
-                    model->config.canal_idx =
-                    (model->config.canal_idx + 1) % CANAL_LIST_SIZE;},
-                    true);
+/* *INDENT-OFF* */
+    with_view_model(receiver->view, LoraReceiverModel *model, {
+        model->config.canal_idx = (model->config.canal_idx + 1) % CANAL_LIST_SIZE;
+    }, true);
+/* *INDENT-ON* */
 }
+
+
 
 static void lora_receiver_prev_canal_callback(LoraReceiver *receiver)
 {
     furi_assert(receiver);
-    with_view_model(receiver->view, LoraReceiverModel * model, {
-                    if (model->config.canal_idx > 0) {
-                    model->config.canal_idx--;}
-                    else {
-                    model->config.canal_idx = CANAL_LIST_SIZE - 1;}
-                    }
-                    , true);
+/* *INDENT-OFF* */
+    with_view_model(receiver->view, LoraReceiverModel *model, {
+        if (model->config.canal_idx > 0) {
+            model->config.canal_idx--;
+        } else {
+            model->config.canal_idx = CANAL_LIST_SIZE - 1;
+        }
+    }, true);
+/* *INDENT-ON* */
 }
+
 
 static bool lora_receiver_input_callback(InputEvent *event, void *context)
 {
@@ -287,153 +295,169 @@ static void lora_receiver_init_cfg_model(void *context)
 {
     furi_assert(context);
     LoraReceiver *lora_receiver = context;
-    with_view_model(lora_receiver->view, LoraReceiverModel * model, {
-                    model->config.freq = DEFAULT_FREQ;
-                    model->config.canal_idx = DEFAULT_CANAL_NUM;
-                    model->config.sf = DEFAULT_SF;
-                    for (size_t i = 0;
-                         i <
-                         sizeof(bandwidth_list) /
-                         sizeof(bandwidth_list[0]); i++) {
-                    if (bandwidth_list[i] == DEFAULT_BW) {
-                    model->config.bw_idx = i; break;}
-                    }
-                    model->config.tx_preamble = DEFAULT_TX_PREAMBLE;
-                    model->config.rx_preamble = DEFAULT_RX_PREAMBLE;
-                    model->config.power = DEFAULT_POWER;
-                    model->config.with_crc = DEFAULT_WITH_CRC;
-                    model->config.is_iq_inverted = DEFAULT_IQ_INVERTED;
-                    model->config.with_public_lorawan =
-                    DEFAULT_WITH_PUBLIC_LORAWAN;}
-                    , true)
-        }
+/* *INDENT-OFF* */
+    with_view_model(lora_receiver->view, LoraReceiverModel *model, {
+        model->config.freq = DEFAULT_FREQ;
+        model->config.canal_idx = DEFAULT_CANAL_NUM;
+        model->config.sf = DEFAULT_SF;
 
-        static void lora_receiver_init_msg_model(void *context) {
-        furi_assert(context);
-        LoraReceiver *lora_receiver = context;
-        with_view_model(lora_receiver->view, LoraReceiverModel * model, {
-                        model->msg_response.margin = 0;
-                        model->msg_response.gateway_count = 0;
-                        model->msg_response.rx_window = 0;
-                        model->msg_response.rssi = 0;
-                        model->msg_response.snr = 0;
-                        model->msg_response.port = 0;
-                        model->msg_response.is_multicast = false;
-                        model->msg_response.is_pending = false;
-                        model->msg_response.is_ack = false;
-                        model->msg_response.data[0] = '\0';
-                        model->msg_response.decoded_data[0] = '\0';}, true)
-        }
-
-    static void lora_receiver_init(void *context) {
-        furi_assert(context);
-        lora_receiver_init_cfg_model(context);
-        lora_receiver_init_msg_model(context);
-    }
-
-    LoraReceiver *lora_receiver_alloc(void) {
-        LoraReceiver *receiver = malloc(sizeof(LoraReceiver));
-        furi_assert(receiver);
-
-        receiver->process_callback =
-            lora_receiver_default_response_callback;
-        receiver->view = view_alloc();
-        view_allocate_model(receiver->view, ViewModelTypeLocking,
-                            sizeof(LoraReceiverModel));
-
-        lora_receiver_init(receiver);
-
-        view_set_context(receiver->view, receiver);
-        view_set_draw_callback(receiver->view,
-                               lora_receiver_draw_callback);
-        view_set_input_callback(receiver->view,
-                                lora_receiver_input_callback);
-        return receiver;
-    }
-
-    void lora_receiver_free(LoraReceiver * receiver) {
-        furi_assert(receiver);
-        view_free_model(receiver->view);
-        view_free(receiver->view);
-        free(receiver);
-    }
-
-    View *lora_receiver_get_view(LoraReceiver * receiver) {
-        furi_assert(receiver);
-        return receiver->view;
-    }
-
-    void lora_receiver_rx_response_callback(FuriString * line,
-                                            void *context) {
-        furi_assert(context);
-        FURI_LOG_D("lora_receiver_rx_response_callback", "%s",
-                   furi_string_get_cstr(line));
-        LoraApp *app = context;
-        lora_receiver_decode_msg_response(app->receiver, line);
-    }
-
-    void lora_receiver_default_response_callback(FuriString * line,
-                                                 void *context) {
-        UNUSED(line);
-        UNUSED(context);
-        FURI_LOG_D("lora_receiver_default_response_callback",
-                   "received: %s", furi_string_get_cstr(line));
-    }
-
-    void lora_receiver_join_response_callback(FuriString * line,
-                                              void *context) {
-        FURI_LOG_D("lora_receiver_join_response", "%s",
-                   furi_string_get_cstr(line));
-        LoraApp *app = context;
-        if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
-            lora_state_manager_set_state(app->state_manager, JOINED);
-            FURI_LOG_D("lora_receiver_join_response", "Network joined");
-            return;
-        }
-    }
-
-    static LoraReceiverProcessCallback
-        lora_receiver_retrieve_callback(LoraState state) {
-        switch (state) {
-            {
-        case JOINED:
-                return lora_receiver_join_response_callback;
-        case RX:
-                return lora_receiver_rx_response_callback;
+        for(size_t i = 0; i < sizeof(bandwidth_list) / sizeof(bandwidth_list[0]); i++) {
+            if(bandwidth_list[i] == DEFAULT_BW) {
+                model->config.bw_idx = i;
+                break;
             }
-        default:
-            return lora_receiver_default_response_callback;
         }
-    }
 
-    void lora_receiver_update_process_callback(LoraReceiver * receiver,
-                                               LoraState state) {
-        furi_assert(receiver);
-        receiver->process_callback =
-            lora_receiver_retrieve_callback(state);
-    }
+        model->config.tx_preamble = DEFAULT_TX_PREAMBLE;
+        model->config.rx_preamble = DEFAULT_RX_PREAMBLE;
+        model->config.power = DEFAULT_POWER;
+        model->config.with_crc = DEFAULT_WITH_CRC;
+        model->config.is_iq_inverted = DEFAULT_IQ_INVERTED;
+        model->config.with_public_lorawan = DEFAULT_WITH_PUBLIC_LORAWAN;
+    }, true);
+/* *INDENT-ON* */
+}
 
-    LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver *
-                                                           receiver) {
-        furi_assert(receiver);
-        return receiver->process_callback;
-    }
 
-    void lora_receiver_set_state_manager(LoraReceiver * receiver,
-                                         LoraStateManager *
-                                         state_manager) {
-        furi_assert(receiver);
-        furi_assert(state_manager);
-        receiver->state_manager = state_manager;
-    }
+static void lora_receiver_init_msg_model(void *context)
+{
+    furi_assert(context);
+    LoraReceiver *lora_receiver = context;
+/* *INDENT-OFF* */
+    with_view_model(lora_receiver->view, LoraReceiverModel * model, {
+                    model->msg_response.margin = 0;
+                    model->msg_response.gateway_count = 0;
+                    model->msg_response.rx_window = 0;
+                    model->msg_response.rssi = 0;
+                    model->msg_response.snr = 0;
+                    model->msg_response.port = 0;
+                    model->msg_response.is_multicast = false;
+                    model->msg_response.is_pending = false;
+                    model->msg_response.is_ack = false;
+                    model->msg_response.data[0] = '\0';
+                    model->msg_response.decoded_data[0] = '\0';}, true)
+/* *INDENT-ON* */
+}
 
-    void lora_receiver_set_view_callback(LoraReceiver * receiver,
-                                         LoraReceiverViewCallbak callback,
-                                         void *context) {
-        furi_assert(receiver);
-        furi_assert(callback);
-        with_view_model(receiver->view, LoraReceiverModel * model, {
-                        UNUSED(model);
-                        receiver->view_callback = callback;
-                        receiver->context = context;}, false)
+
+static void lora_receiver_init(void *context)
+{
+    furi_assert(context);
+    lora_receiver_init_cfg_model(context);
+    lora_receiver_init_msg_model(context);
+}
+
+LoraReceiver *lora_receiver_alloc(void)
+{
+    LoraReceiver *receiver = malloc(sizeof(LoraReceiver));
+    furi_assert(receiver);
+
+    receiver->process_callback = lora_receiver_default_response_callback;
+    receiver->view = view_alloc();
+    view_allocate_model(receiver->view, ViewModelTypeLocking,
+                        sizeof(LoraReceiverModel));
+
+    lora_receiver_init(receiver);
+
+    view_set_context(receiver->view, receiver);
+    view_set_draw_callback(receiver->view, lora_receiver_draw_callback);
+    view_set_input_callback(receiver->view, lora_receiver_input_callback);
+    return receiver;
+}
+
+void lora_receiver_free(LoraReceiver *receiver)
+{
+    furi_assert(receiver);
+    view_free_model(receiver->view);
+    view_free(receiver->view);
+    free(receiver);
+}
+
+View *lora_receiver_get_view(LoraReceiver *receiver)
+{
+    furi_assert(receiver);
+    return receiver->view;
+}
+
+void lora_receiver_rx_response_callback(FuriString *line, void *context)
+{
+    furi_assert(context);
+    FURI_LOG_D("lora_receiver_rx_response_callback", "%s",
+               furi_string_get_cstr(line));
+    LoraApp *app = context;
+    lora_receiver_decode_msg_response(app->receiver, line);
+}
+
+void lora_receiver_default_response_callback(FuriString *line,
+                                             void *context)
+{
+    UNUSED(line);
+    UNUSED(context);
+    FURI_LOG_D("lora_receiver_default_response_callback",
+               "received: %s", furi_string_get_cstr(line));
+}
+
+void lora_receiver_join_response_callback(FuriString *line, void *context)
+{
+    FURI_LOG_D("lora_receiver_join_response", "%s",
+               furi_string_get_cstr(line));
+    LoraApp *app = context;
+    if (furi_string_start_with(line, "+JOIN_CMD: Network joined")) {
+        lora_state_manager_set_state(app->state_manager, JOINED);
+        FURI_LOG_D("lora_receiver_join_response", "Network joined");
+        return;
     }
+}
+
+static LoraReceiverProcessCallback
+lora_receiver_retrieve_callback(LoraState state)
+{
+    switch (state) {
+        {
+    case JOINED:
+            return lora_receiver_join_response_callback;
+    case RX:
+            return lora_receiver_rx_response_callback;
+        }
+    default:
+        return lora_receiver_default_response_callback;
+    }
+}
+
+void lora_receiver_update_process_callback(LoraReceiver *receiver,
+                                           LoraState state)
+{
+    furi_assert(receiver);
+    receiver->process_callback = lora_receiver_retrieve_callback(state);
+}
+
+LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver
+                                                       *receiver)
+{
+    furi_assert(receiver);
+    return receiver->process_callback;
+}
+
+void lora_receiver_set_state_manager(LoraReceiver *receiver,
+                                     LoraStateManager *state_manager)
+{
+    furi_assert(receiver);
+    furi_assert(state_manager);
+    receiver->state_manager = state_manager;
+}
+
+void lora_receiver_set_view_callback(LoraReceiver *receiver,
+                                     LoraReceiverViewCallbak
+                                     callback, void *context)
+{
+    furi_assert(receiver);
+    furi_assert(callback);
+
+/* *INDENT-OFF* */
+    with_view_model(receiver->view, LoraReceiverModel *model, {
+        UNUSED(model);
+        receiver->view_callback = callback;
+        receiver->context = context;
+    }, false);
+}
+/* *INDENT-ON* */

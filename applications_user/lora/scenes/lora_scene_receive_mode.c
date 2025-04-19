@@ -39,14 +39,14 @@ bool lora_scene_receive_mode_on_event(void *context,
             consumed = true;
         } else if (event.event == LoraReceiverEventCfgSet) {
             consumed = true;
-            with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                            // Send the new configuration to the receiver
-                            LoraConfigModel config_copy;
-                            config_copy = model->config;
-                            lora_transmitter_set_rf_test_config
-                            (app->transmitter, &config_copy);
-                            }
-                            , false);
+            /* *INDENT-OFF* */
+                with_view_model(app->receiver->view, LoraReceiverModel *model, {
+                    // Send the new configuration to the receiver
+                    LoraConfigModel config_copy;
+                    config_copy = model->config;
+                    lora_transmitter_set_rf_test_config(app->transmitter, &config_copy);
+                }, false);
+            /* *INDENT-ON* */
         }
     }
 

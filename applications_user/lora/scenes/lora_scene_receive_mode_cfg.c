@@ -44,9 +44,11 @@ static void line_tx_preamble_cb(VariableItem *item)
         variable_item_get_current_value_index(item) + MIN_PREAMBLE;
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
-    with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.tx_preamble = new_preamble;}
-                    , false);
+    /* *INDENT-OFF* */
+    with_view_model(app->receiver->view, LoraReceiverModel *model, {
+        model->config.tx_preamble = new_preamble;
+    }, false);
+    /* *INDENT-ON* */
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
 }
@@ -60,9 +62,11 @@ static void line_rx_preamble_cb(VariableItem *item)
         variable_item_get_current_value_index(item) + MIN_PREAMBLE;
     snprintf(temp, sizeof(temp), "%u", new_preamble);
     variable_item_set_current_value_text(item, temp);
-    with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.rx_preamble = new_preamble;}
-                    , false);
+    /* *INDENT-OFF* */
+    with_view_model(app->receiver->view, LoraReceiverModel *model, {
+        model->config.rx_preamble = new_preamble;
+    }, false);
+    /* *INDENT-ON* */
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
 
@@ -77,9 +81,11 @@ static void line_power_cb(VariableItem *item)
         variable_item_get_current_value_index(item) + MIN_POWER;
     snprintf(temp, sizeof(temp), "%u", new_power);
     variable_item_set_current_value_text(item, temp);
-    with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.power = new_power;}
-                    , false);
+    /* *INDENT-OFF* */
+    with_view_model(app->receiver->view, LoraReceiverModel *model, {
+        model->config.power = new_power;
+    }, false);
+    /* *INDENT-ON* */
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
 
@@ -109,9 +115,11 @@ static void line_iq_inverted_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%s",
              new_iq_inverted ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
-    with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.is_iq_inverted = new_iq_inverted;}
-                    , false);
+    /* *INDENT-OFF* */
+    with_view_model(app->receiver->view, LoraReceiverModel *model, {
+        model->config.is_iq_inverted = new_iq_inverted;
+    }, false);
+    /* *INDENT-ON* */
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
 
@@ -128,10 +136,11 @@ static void line_public_lorawan_cb(VariableItem *item)
     snprintf(temp, sizeof(temp), "%s",
              new_with_public_lorawan ? "Enabled" : "Disabled");
     variable_item_set_current_value_text(item, temp);
-    with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                    model->config.with_public_lorawan =
-                    new_with_public_lorawan;}
-                    , false);
+    /* *INDENT-OFF* */
+    with_view_model(app->receiver->view, LoraReceiverModel *model, {
+        model->config.with_public_lorawan = new_with_public_lorawan;
+    }, false);
+    /* *INDENT-ON* */
     view_dispatcher_send_custom_event(app->view_dispatcher,
                                       LoraReceiverEventCfgSet);
 
@@ -192,6 +201,7 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
     FURI_LOG_D("LoraSceneReceiveModeCfg",
                "Entering Lora Scene Receive Mode");
     LoraApp *app = context;
+    /* *INDENT-OFF* */
     with_view_model(app->receiver->view, LoraReceiverModel * model, {
                     add_value_line(app, model->config.sf, MIN_SF, MAX_SF,
                                    "SF", line_sf_cb);
@@ -214,7 +224,9 @@ void lora_scene_receive_mode_cfg_on_enter(void *context)
                     add_boolean_line(app,
                                      model->config.with_public_lorawan,
                                      "Public LoraWan",
-                                     line_public_lorawan_cb);}, false);
+                                     line_public_lorawan_cb);
+                    }, false);
+    /* *INDENT-ON* */
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverCfgView);
 }
@@ -233,14 +245,14 @@ bool lora_scene_receive_mode_cfg_on_event(void *context,
     if (event.type == SceneManagerEventTypeCustom) {
         if (event.event == LoraReceiverEventCfgSet) {
             consumed = true;
-            with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                            // Send the new configuration to the receiver
-                            LoraConfigModel config_copy;
-                            config_copy = model->config;
-                            lora_transmitter_set_rf_test_config
-                            (app->transmitter, &config_copy);
-                            }
-                            , false);
+            /* *INDENT-OFF* */
+            with_view_model(app->receiver->view, LoraReceiverModel *model, {
+                // Send the new configuration to the receiver
+                LoraConfigModel config_copy;
+                config_copy = model->config;
+                lora_transmitter_set_rf_test_config(app->transmitter, &config_copy);
+            }, false);
+            /* *INDENT-ON* */
         }
     }
     return consumed;
