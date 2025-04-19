@@ -40,8 +40,8 @@ static void _lora_transmitter_set_rf_test_config(LoraTransmitter
              transmitter->model->lora_cfg.power,
              transmitter->model->lora_cfg.with_crc ? "ON" : "OFF",
              transmitter->model->lora_cfg.is_iq_inverted ? "ON" : "OFF",
-             transmitter->model->
-             lora_cfg.with_public_lorawan ? "ON" : "OFF");
+             transmitter->model->lora_cfg.
+             with_public_lorawan ? "ON" : "OFF");
 
     transmitter->send_method(transmitter->context, temp, strlen(temp) + 1,
                              true);
@@ -64,7 +64,6 @@ static void _lora_transmitter_enter_receive_mode(LoraTransmitter
     lora_transmitter_enter_test_mode(transmitter);
     transmitter->send_method(transmitter->context, "AT+TEST=RXLRPKT\n",
                              17, true);
-    furi_delay_ms(1000);
     lora_state_manager_set_state(transmitter->state_manager, RX);
 }
 
