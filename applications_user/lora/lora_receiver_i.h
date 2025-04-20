@@ -7,17 +7,6 @@
 
 #define MAX_DATA_SIZE (1 << 8)  // 256 bytes
 
-// Default values for LoRa configuration
-#define DEFAULT_FREQ                (868) // Frequency in MHz
-#define DEFAULT_CANAL_NUM           (0) // Canal
-#define DEFAULT_SF                  (8) // Spreading Factor
-#define DEFAULT_BW                  (125) // Bandwidth (kHz)
-#define DEFAULT_TX_PREAMBLE         (8) // TX Preamble length
-#define DEFAULT_RX_PREAMBLE         (8) // RX Preamble length
-#define DEFAULT_POWER               (14) // Power level (dBm)
-#define DEFAULT_WITH_CRC            (true) // CRC enabled
-#define DEFAULT_IQ_INVERTED         (false) // IQ inversion disabled
-#define DEFAULT_WITH_PUBLIC_LORAWAN (false) // Public LoRaWAN enabled
 
 #define MIN_SF (7)
 #define MAX_SF (12)

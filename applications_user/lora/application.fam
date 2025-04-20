@@ -9,10 +9,10 @@ App(
     fap_category="GPIO",
 )
 
-App(
-    appid="test_lora",
-    name="LoRa Test 1",
-    apptype=FlipperAppType.EXTERNAL,
-    entry_point="run_lora_tests",
-    stack_size=1 * 1024,
-)
+# App(
+#     appid="test_lora",
+#     name="LoRa Test 1",
+#     apptype=FlipperAppType.EXTERNAL,
+#     entry_point="run_lora_tests",
+#     stack_size=1 * 1024,
+# )
