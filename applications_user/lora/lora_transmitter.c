@@ -1,22 +1,11 @@
 #include "lora_transmitter_i.h"
 #include "lora_app.h"
 
-static void lora_transmitter_init_cfg_model(void *context)
-{
-    furi_assert(context);
-    LoraTransmitter *transmitter = context;
-    transmitter->model->lorawan_cfg.baudrate = DEVICE_BAUDRATE;
-    transmitter->model->lorawan_cfg.dr = DEFAULT_DR;
-    transmitter->model->lorawan_cfg.tx_power = DEFAULT_TX_POWER;
-    transmitter->model->lorawan_cfg.port = PORT;
-    strncpy(transmitter->model->lorawan_cfg.appkey, APPKEY,
-            sizeof(transmitter->model->lorawan_cfg.appkey));
-}
-
 static void lora_transmitter_init(void *context)
 {
     furi_assert(context);
-    lora_transmitter_init_cfg_model(context);
+    LoraTransmitter *transmitter = context;
+    init_lora_config_default(&transmitter->model->lora_cfg);
 }
 
 static void _lora_transmitter_set_rf_test_config(LoraTransmitter
@@ -40,8 +29,8 @@ static void _lora_transmitter_set_rf_test_config(LoraTransmitter
              transmitter->model->lora_cfg.power,
              transmitter->model->lora_cfg.with_crc ? "ON" : "OFF",
              transmitter->model->lora_cfg.is_iq_inverted ? "ON" : "OFF",
-             transmitter->model->lora_cfg.
-             with_public_lorawan ? "ON" : "OFF");
+             transmitter->model->
+             lora_cfg.with_public_lorawan ? "ON" : "OFF");
 
     transmitter->send_method(transmitter->context, temp, strlen(temp) + 1,
                              true);
@@ -53,7 +42,7 @@ static void lora_transmitter_enter_test_mode(LoraTransmitter *transmitter)
 {
     lora_state_manager_set_state(transmitter->state_manager, CONFIG);
     transmitter->send_method(transmitter->context, "AT+MODE=TEST\n", 14,
-                             false);
+                             true);
     furi_delay_ms(1000);
 }
 
@@ -64,6 +53,7 @@ static void _lora_transmitter_enter_receive_mode(LoraTransmitter
     lora_transmitter_enter_test_mode(transmitter);
     transmitter->send_method(transmitter->context, "AT+TEST=RXLRPKT\n",
                              17, true);
+    _lora_transmitter_set_rf_test_config(transmitter);
     lora_state_manager_set_state(transmitter->state_manager, RX);
 }
 
@@ -117,10 +107,10 @@ LoraTransmitter *lora_transmitter_alloc(void *context,
 
 void lora_transmitter_free(LoraTransmitter *transmitter)
 {
+    transmitter->should_exit = true;
     // Signal that we want the transmitter to exit.  It may be doing other work.
     furi_thread_flags_set(furi_thread_get_id(transmitter->thread),
                           TransmitterEventExciting);
-    transmitter->should_exit = true;
     furi_thread_join(transmitter->thread);
     furi_thread_free(transmitter->thread);
 

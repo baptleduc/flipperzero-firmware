@@ -18,9 +18,6 @@ void lora_scene_receive_mode_on_enter(void *context)
     LoraApp *app = context;
     lora_receiver_set_view_callback(app->receiver,
                                     lora_scene_receive_mode_callback, app);
-    // Initialize the receiver configuration model 
-    app->receiver->view_callback(LoraReceiverEventCfgSet,
-                                 app->receiver->context);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverView);
 }

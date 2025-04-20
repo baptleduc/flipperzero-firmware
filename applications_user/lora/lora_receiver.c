@@ -4,17 +4,7 @@
 
 #include <gui/elements.h>
 
-const uint32_t bandwidth_list[] = {
-    125,
-    250,
-    500,
-};
 
-const uint8_t canal_list[] = {
-    1,                          // 868.1 is canal 0
-    3,                          // 868.3 is canal 1
-    5,                          // 868.5 is canal 2
-};
 
 /**
  * @brief Convert a hex string to a string.
@@ -297,23 +287,7 @@ static void lora_receiver_init_cfg_model(void *context)
     LoraReceiver *lora_receiver = context;
 /* *INDENT-OFF* */
     with_view_model(lora_receiver->view, LoraReceiverModel *model, {
-        model->config.freq = DEFAULT_FREQ;
-        model->config.canal_idx = DEFAULT_CANAL_NUM;
-        model->config.sf = DEFAULT_SF;
-
-        for(size_t i = 0; i < sizeof(bandwidth_list) / sizeof(bandwidth_list[0]); i++) {
-            if(bandwidth_list[i] == DEFAULT_BW) {
-                model->config.bw_idx = i;
-                break;
-            }
-        }
-
-        model->config.tx_preamble = DEFAULT_TX_PREAMBLE;
-        model->config.rx_preamble = DEFAULT_RX_PREAMBLE;
-        model->config.power = DEFAULT_POWER;
-        model->config.with_crc = DEFAULT_WITH_CRC;
-        model->config.is_iq_inverted = DEFAULT_IQ_INVERTED;
-        model->config.with_public_lorawan = DEFAULT_WITH_PUBLIC_LORAWAN;
+        init_lora_config_default(&model->config);
     }, true);
 /* *INDENT-ON* */
 }
