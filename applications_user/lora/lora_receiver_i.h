@@ -1,8 +1,8 @@
 #pragma once
 
 #include "lora_receiver.h"
-#include "../lora_config.h"
-#include "../lora_custom_event.h"
+#include "lora_config.h"
+#include "lora_custom_event.h"
 #include <furi.h>
 
 #define MAX_DATA_SIZE (1 << 8)  // 256 bytes

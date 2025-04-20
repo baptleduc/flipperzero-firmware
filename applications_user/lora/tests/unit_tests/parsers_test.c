@@ -1,7 +1,7 @@
 #include <furi.h>
 #include <stdbool.h>
 
-#include "../../views/lora_receiver_i.h"
+#include "../../lora_receiver_i.h"
 
 /**
  * Test case for parsing a FPENDING message.

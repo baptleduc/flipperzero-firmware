@@ -1,7 +1,7 @@
 #include "lora_scene.h"
 #include "lora_app.h"
 #include "lora_config.h"
-#include "views/lora_receiver_i.h"
+#include "lora_receiver_i.h"
 
 
 void lora_scene_receive_mode_callback(LoraCustomEvent event, void *context)
@@ -18,6 +18,9 @@ void lora_scene_receive_mode_on_enter(void *context)
     LoraApp *app = context;
     lora_receiver_set_view_callback(app->receiver,
                                     lora_scene_receive_mode_callback, app);
+    // Initialize the receiver configuration model 
+    app->receiver->view_callback(LoraReceiverEventCfgSet,
+                                 app->receiver->context);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppReceiverView);
 }
@@ -39,14 +42,14 @@ bool lora_scene_receive_mode_on_event(void *context,
             consumed = true;
         } else if (event.event == LoraReceiverEventCfgSet) {
             consumed = true;
-            with_view_model(app->receiver->view, LoraReceiverModel * model, {
-                            // Send the new configuration to the receiver
-                            LoraConfigModel config_copy;
-                            config_copy = model->config;
-                            lora_transmitter_set_rf_test_config
-                            (app->transmitter, &config_copy);}
-                            , false);
-            lora_state_manager_set_state(app->state_manager, RX);
+            /* *INDENT-OFF* */
+                with_view_model(app->receiver->view, LoraReceiverModel *model, {
+                    // Send the new configuration to the receiver
+                    LoraConfigModel config_copy;
+                    config_copy = model->config;
+                    lora_transmitter_set_rf_test_config(app->transmitter, &config_copy);
+                }, false);
+            /* *INDENT-ON* */
         }
     }
 
@@ -57,5 +60,4 @@ void lora_scene_receive_mode_on_exit(void *context)
 {
     LoraApp *app = context;
     UNUSED(app);
-    // text_box_reset(app->text_box);
 }
