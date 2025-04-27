@@ -15,6 +15,7 @@
 #include "uart_helper.h"
 #include "lora_receiver.h"
 #include "lora_transmitter.h"
+#include "bt_transmitter.h"
 #include "lora_custom_event.h"
 
 #define DEVICE_BAUDRATE  9600
@@ -44,6 +45,7 @@ typedef struct {
     uint32_t index;
     LoraReceiver *receiver;
     LoraTransmitter *transmitter;
+    BtTransmitter *bt_transmitter;
     LoraState current_state;
 } LoraApp;
 

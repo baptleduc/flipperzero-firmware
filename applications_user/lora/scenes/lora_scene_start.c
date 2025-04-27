@@ -25,6 +25,10 @@ static void lora_submenu_item_callback(void *context, uint32_t index)
         lora_transmitter_send_cmsg(app->transmitter, "Hello World");
         // scene_manager_next_scene(app->scene_manager, LoraSceneLorawan);
         break;
+    case 3:
+        bt_transmitter_start(app->bt_transmitter);
+        break;
+
     default:
         break;
     }
@@ -46,6 +50,8 @@ static void lora_submenu_add_default_entries(Submenu *submenu,
                      lora_submenu_item_callback, context);
     submenu_add_item(submenu, "Send Msg", 2, lora_submenu_item_callback,
                      context);
+    submenu_add_item(submenu, "Blutooth", 3,
+                     lora_submenu_item_callback, context);
 
     app->index = 3;
 }

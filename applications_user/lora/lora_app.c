@@ -23,14 +23,10 @@ static LoraApp *lora_app_alloc()
 {
     LoraApp *app = malloc(sizeof(LoraApp));
 
-    // Initialize the GUI. Create a view dispatcher and attach it to the GUI.
-    // Create a submenu, add default entries and add the submenu to the view
-    // dispatcher. Set the submenu as the current view.
     app->gui = furi_record_open(RECORD_GUI);
     app->scene_manager = scene_manager_alloc(&lora_scene_handlers, app);
 
     app->view_dispatcher = view_dispatcher_alloc();
-    view_dispatcher_set_event_callback_context(app->view_dispatcher, app);
     view_dispatcher_set_event_callback_context(app->view_dispatcher, app);
     view_dispatcher_set_custom_event_callback(app->view_dispatcher,
                                               lora_app_custom_event_callback);
@@ -48,9 +44,10 @@ static LoraApp *lora_app_alloc()
     view_dispatcher_add_view(app->view_dispatcher, LoraAppReceiverCfgView,
                              variable_item_list_get_view
                              (app->var_item_list));
+    // Allocate a Bluetooth transmitter
+    app->bt_transmitter = bt_transmitter_alloc();
 
-
-    // Allocate a transmitter object
+    // Allocate a serial transmitter object
     UartHelper *uart_helper = uart_helper_alloc(DEVICE_BAUDRATE, app);
     LoraTransmitterMethod send_method =
         (LoraTransmitterMethod) uart_helper_send;
@@ -74,6 +71,8 @@ static LoraApp *lora_app_alloc()
     lora_receiver_set_state_manager(app->receiver, app->state_manager);
     lora_transmitter_set_state_manager(app->transmitter,
                                        app->state_manager);
+    bt_transmitter_set_state_manager(app->bt_transmitter,
+                                     app->state_manager);
 
 
 
@@ -104,8 +103,13 @@ static void lora_app_free(LoraApp *app)
     view_dispatcher_free(app->view_dispatcher);
     scene_manager_free(app->scene_manager);
     submenu_free(app->submenu);
+    lora_state_manager_free(app->state_manager);
+
+    // Free all objects
+    bt_transmitter_free(app->bt_transmitter);
     lora_receiver_free(app->receiver);
     lora_transmitter_free(app->transmitter);
+
     furi_record_close(RECORD_GUI);
 
     free(app);
