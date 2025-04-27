@@ -48,11 +48,9 @@ void bt_transmitter_start(BtTransmitter *bt_transmitter)
 
     furi_check(bt_transmitter->ble_serial_profile);
 
-    ble_profile_serial_set_event_callback(bt_transmitter->
-                                          ble_serial_profile,
-                                          BT_SERIAL_BUFFER_SIZE,
-                                          bt_serial_callback,
-                                          bt_transmitter);
+    ble_profile_serial_set_event_callback
+        (bt_transmitter->ble_serial_profile, BT_SERIAL_BUFFER_SIZE,
+         bt_serial_callback, bt_transmitter);
     furi_hal_bt_start_advertising();
 
     bt_transmitter->bt_state = BtStateWaiting;
@@ -85,9 +83,9 @@ void bt_transmitter_start(BtTransmitter *bt_transmitter)
 
 void bt_transmitter_stop(BtTransmitter *bt_transmitter)
 {
-    ble_profile_serial_set_event_callback(bt_transmitter->
-                                          ble_serial_profile, 0, NULL,
-                                          NULL);
+    furi_hal_bt_stop_advertising();
+    ble_profile_serial_set_event_callback
+        (bt_transmitter->ble_serial_profile, 0, NULL, NULL);
 
     bt_disconnect(bt_transmitter->bt);
 
@@ -112,7 +110,11 @@ BtTransmitter *bt_transmitter_alloc(void)
 
 void bt_transmitter_free(BtTransmitter *bt_transmitter)
 {
-    bt_transmitter_stop(bt_transmitter);
+    if (bt_transmitter->bt_state == BtStateWaiting) {
+        FURI_LOG_D("bt_transmitter_free",
+                   "Stopping Bluetooth transmitter");
+        bt_transmitter_stop(bt_transmitter);
+    }
 
     furi_message_queue_free(bt_transmitter->event_queue);
     furi_record_close(RECORD_NOTIFICATION);
