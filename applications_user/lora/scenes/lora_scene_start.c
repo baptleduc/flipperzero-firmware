@@ -25,6 +25,7 @@ static void lora_submenu_item_callback(void *context, uint32_t index)
         lora_transmitter_send_cmsg(app->transmitter, "Hello World");
         // scene_manager_next_scene(app->scene_manager, LoraSceneLorawan);
         break;
+
     default:
         break;
     }
@@ -53,6 +54,7 @@ static void lora_submenu_add_default_entries(Submenu *submenu,
 void lora_scene_start_on_enter(void *context)
 {
     LoraApp *app = context;
+    bt_transmitter_start(app->bt_transmitter); // Start Bluetooth transmitter
     lora_submenu_add_default_entries(app->submenu, app);
     view_dispatcher_switch_to_view(app->view_dispatcher,
                                    LoraAppSubMenuView);

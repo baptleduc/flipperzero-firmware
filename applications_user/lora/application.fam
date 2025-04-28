@@ -3,7 +3,7 @@ App(
     name="LoRa",
     apptype=FlipperAppType.EXTERNAL,
     entry_point="lora_app_main",
-    requires=["gui"],
+    requires=["bt", "gui"],
     stack_size=1 * 1024,
     fap_icon="lora_10px.png",
     fap_category="GPIO",

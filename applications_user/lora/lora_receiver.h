@@ -49,14 +49,11 @@ extern "C" {
                                              uint32_t size);
 
 /**
- * @brief Parse and decode the raw data received from the LoRa module. Stores the result in
- * in the decoded_data field of the msg_response model.
+ * @brief Set the data message response and update the view.
  * @param receiver Pointer to the LoraReceiver object.
- * @param line Pointer to the FuriString object containing the raw data.
- * 
- * @return void
+ * @param line string to be decoded.
  */
-    void lora_receiver_decode_msg_response(LoraReceiver * receiver,
+    void lora_receiver_decode_msg_response(void *context,
                                            FuriString * line);
 
 /**

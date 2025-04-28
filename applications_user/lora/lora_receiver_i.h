@@ -3,6 +3,7 @@
 #include "lora_receiver.h"
 #include "lora_config.h"
 #include "lora_custom_event.h"
+#include "bt_transmitter.h"
 #include <furi.h>
 
 #define MAX_DATA_SIZE (1 << 8)  // 256 bytes
@@ -54,6 +55,16 @@ struct LoraReceiver {
     LoraReceiverProcessCallback process_callback; // Callback function for received messages
     LoraStateManager *state_manager;
 };
+
+typedef enum {
+    LoraPacketFpending,         // +{MSG, CMSG}: FPENDING
+    LoraPacketLinkInfo,         // +{MSG, CMSG}: Link <margin>,<gateway_count>
+    LoraPacketRxwinInfo,        // +{MSG, CMSG, TEST}: RXWIN<rx_window>, RSSI <rssi>, SNR <snr>
+    LoraPacketAck,              // +{MSG, CMSG}: ACK Received
+    LoraPacketMulticast,        // +{MSG, CMSG}: MULTICAST
+    LoraPacketRxPacket,         // +{MSG, TEST} PORT: <port>; RX: "<hex data>"
+} LoraPacketType;
+
 
 // DEBUG MACRO
 #define DEBUG_LORA_MSG_RESPONSE(lora_receiver)                                                   \
