@@ -163,18 +163,18 @@ static int parse_msg_response(FuriString *line,
     }
     // Try each parser until one succeeds
     if (parse_pending(line, msg_response) == 0)
-        return 0;
+        return LoraPacketFpending;
     if (parse_link_info(line, msg_response) == 0)
-        return 0;
+        return LoraPacketLinkInfo;
     if (parse_rxwin_info(line, msg_response) == 0)
-        return 0;
+        return LoraPacketRxwinInfo;
     if (parse_ack(line, msg_response) == 0)
-        return 0;
+        return LoraPacketAck;
     if (parse_multicast(line, msg_response) == 0)
-        return 0;
+        return LoraPacketMulticast;
     if (parse_rx_packet(line, msg_response) == 0) {
         if (parse_port(line, msg_response) == 0) { // Port and Data are in the same line in MSG
-            return 0;
+            return LoraPacketRxPacket;
         }
     }
     // If none matched, fallback to RX packet
@@ -186,18 +186,28 @@ static int parse_msg_response(FuriString *line,
  * @param receiver Pointer to the LoraReceiver object.
  * @param data Pointer to the data to be set.
  */
-void lora_receiver_decode_msg_response(LoraReceiver *receiver,
-                                       FuriString *line)
+void lora_receiver_decode_msg_response(void *context, FuriString *line)
 {
-    furi_assert(receiver);
+    LoraApp *app = context;
+    furi_assert(app);
     furi_assert(line);
 /* *INDENT-OFF* */
-    with_view_model(receiver->view, LoraReceiverModel * model, {
-                    parse_msg_response(line, &model->msg_response);
-                    hex_to_string(model->msg_response.data,
-                                  model->msg_response.decoded_data);
+    with_view_model(app->receiver->view, LoraReceiverModel * model, {
+                    LoraPacketType type_packet = parse_msg_response(line, &model->msg_response);
+    
+                    // Copy the string data to be sent by Bluetooth
+                    if (type_packet == LoraPacketRxPacket){
+                        hex_to_string(model->msg_response.data, model->msg_response.decoded_data);
+                        strncpy(app->bt_transmitter->data.str_data,
+                               model->msg_response.decoded_data,
+                               sizeof(model->msg_response.decoded_data));
+                    }
+                    
+                    // Can add more data to be sent by Bluetooth here
+
                     }, true);
 /* *INDENT-ON* */
+
 }
 
 
@@ -359,7 +369,9 @@ void lora_receiver_rx_response_callback(FuriString *line, void *context)
     FURI_LOG_D("lora_receiver_rx_response_callback", "%s",
                furi_string_get_cstr(line));
     LoraApp *app = context;
-    lora_receiver_decode_msg_response(app->receiver, line);
+    lora_receiver_decode_msg_response(app, line);
+
+    bt_transmitter_send(app->bt_transmitter);
 }
 
 void lora_receiver_default_response_callback(FuriString *line,

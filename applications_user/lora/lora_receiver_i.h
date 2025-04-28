@@ -56,6 +56,16 @@ struct LoraReceiver {
     LoraStateManager *state_manager;
 };
 
+typedef enum {
+    LoraPacketFpending,         // +{MSG, CMSG}: FPENDING
+    LoraPacketLinkInfo,         // +{MSG, CMSG}: Link <margin>,<gateway_count>
+    LoraPacketRxwinInfo,        // +{MSG, CMSG, TEST}: RXWIN<rx_window>, RSSI <rssi>, SNR <snr>
+    LoraPacketAck,              // +{MSG, CMSG}: ACK Received
+    LoraPacketMulticast,        // +{MSG, CMSG}: MULTICAST
+    LoraPacketRxPacket,         // +{MSG, TEST} PORT: <port>; RX: "<hex data>"
+} LoraPacketType;
+
+
 // DEBUG MACRO
 #define DEBUG_LORA_MSG_RESPONSE(lora_receiver)                                                   \
     FURI_LOG_D("DebugMsgResponse", "LoRaMsgResponseModel Debug:");                               \

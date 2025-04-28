@@ -1,7 +1,6 @@
 
 #include "bt_transmitter.h"
 
-
 static uint16_t bt_serial_callback(SerialServiceEvent event, void *context)
 {
     furi_assert(context);
@@ -16,7 +15,7 @@ static uint16_t bt_serial_callback(SerialServiceEvent event, void *context)
         if (event.data.size == sizeof(DataStruct)) {
             memcpy(&bt_transmitter->data, event.data.buffer,
                    sizeof(DataStruct));
-            bt_transmitter->bt_state = BtStateRecieving;
+            bt_transmitter->bt_state = BtStateReceiving;
             bt_transmitter->last_packet = furi_hal_rtc_get_timestamp();
 
             // Elegant solution, the backlight is only on when there is continuous communication
@@ -33,6 +32,11 @@ static uint16_t bt_serial_callback(SerialServiceEvent event, void *context)
 
 void bt_transmitter_start(BtTransmitter *bt_transmitter)
 {
+    if (bt_transmitter->bt_state == BtStateWaiting) {
+        FURI_LOG_D(TAG, "Bluetooth is already started");
+        return;
+    }
+
     bt_disconnect(bt_transmitter->bt);
     // Wait 2nd core to update nvm storage
     furi_delay_ms(200);
@@ -48,44 +52,84 @@ void bt_transmitter_start(BtTransmitter *bt_transmitter)
 
     furi_check(bt_transmitter->ble_serial_profile);
 
-    ble_profile_serial_set_event_callback
-        (bt_transmitter->ble_serial_profile, BT_SERIAL_BUFFER_SIZE,
-         bt_serial_callback, bt_transmitter);
+    ble_profile_serial_set_event_callback(bt_transmitter->
+                                          ble_serial_profile,
+                                          BT_SERIAL_BUFFER_SIZE,
+                                          bt_serial_callback,
+                                          bt_transmitter);
     furi_hal_bt_start_advertising();
 
     bt_transmitter->bt_state = BtStateWaiting;
     FURI_LOG_D(TAG, "Bluetooth is active!");
+}
 
+/**
+ * @brief Send string by Bluetooth
+ */
+static bool
+bt_transmitter_send_str(BtTransmitter *bt_transmitter, const char *msg,
+                        uint16_t size)
+{
+    furi_assert(bt_transmitter);
+    furi_assert(msg);
+    furi_assert(size);
 
-    // Main loop
-    InputEvent event;
-    while (true) {
-        if (furi_message_queue_get(bt_transmitter->event_queue, &event, 1)
-            == FuriStatusOk) {
-            if (event.type == InputTypeShort && event.key == InputKeyBack)
-                break;
-        }
+    FURI_LOG_D("bt_transmitter_send_str", "Send data: %s", msg);
+    bool res =
+        ble_profile_serial_tx(bt_transmitter->ble_serial_profile,
+                              (uint8_t *) msg, size);
+    FURI_LOG_D("bt_transmitter_send_str", "%s", res ? "OK" : "Fail");
 
-        if (bt_transmitter->bt_state == BtStateRecieving &&
-            (furi_hal_rtc_get_timestamp() - bt_transmitter->last_packet >
-             5))
-            bt_transmitter->bt_state = BtStateLost;
+    return res;
+}
 
-        char *text = "Hello World!";
-
-        bool res =
-            ble_profile_serial_tx(bt_transmitter->ble_serial_profile,
-                                  (uint8_t *) text, sizeof(text));
-        FURI_LOG_D(TAG, "Send data: %s", res ? "OK" : "Fail");
-        furi_delay_ms(1000);
+static bool is_data_ready(BtTransmitter *bt_transmitter)
+{
+    furi_assert(bt_transmitter);
+    if (strlen(bt_transmitter->data.str_data) == 0) {
+        FURI_LOG_D(TAG, "No str_data to send");
+        return false;
     }
+
+    return true;
+}
+
+static void reset_data(BtTransmitter *bt_transmitter)
+{
+    memset(bt_transmitter->data.str_data, 0,
+           sizeof(bt_transmitter->data.str_data));
+}
+
+bool bt_transmitter_send(BtTransmitter *bt_transmitter)
+{
+    if (bt_transmitter->bt_state != BtStateWaiting) {
+        FURI_LOG_D(TAG, "Bluetooth is not ready");
+        return false;
+    }
+
+    if (!is_data_ready(bt_transmitter)) {
+        return false;
+    }
+
+    bool res = false;
+    bt_transmitter->bt_state = BtStateSending;
+    res |=
+        bt_transmitter_send_str(bt_transmitter,
+                                bt_transmitter->data.str_data,
+                                strlen(bt_transmitter->data.str_data));
+
+    reset_data(bt_transmitter);
+    bt_transmitter->bt_state = BtStateWaiting;
+
+    return res;
 }
 
 void bt_transmitter_stop(BtTransmitter *bt_transmitter)
 {
     furi_hal_bt_stop_advertising();
-    ble_profile_serial_set_event_callback
-        (bt_transmitter->ble_serial_profile, 0, NULL, NULL);
+    ble_profile_serial_set_event_callback(bt_transmitter->
+                                          ble_serial_profile, 0, NULL,
+                                          NULL);
 
     bt_disconnect(bt_transmitter->bt);
 
@@ -121,7 +165,6 @@ void bt_transmitter_free(BtTransmitter *bt_transmitter)
     furi_record_close(RECORD_BT);
     free(bt_transmitter);
 }
-
 
 void bt_transmitter_set_state_manager(BtTransmitter *bt_transmitter,
                                       LoraStateManager *state_manager)

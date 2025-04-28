@@ -12,9 +12,9 @@
 #include <storage/storage.h>
 #include "lora_state_manager.h"
 
-
 #define TAG                   "BTTransmitter"
 #define BT_SERIAL_BUFFER_SIZE 128
+#define MAX_DATA_SIZE         (1 << 8) // 256 bytes
 
 #define SCREEN_HEIGHT 64
 #define LINE_HEIGHT   11
@@ -26,21 +26,15 @@ typedef enum {
     BtStateChecking,
     BtStateInactive,
     BtStateWaiting,
-    BtStateRecieving,
+    BtStateReceiving,
+    BtStateSending,
     BtStateNoData,
     BtStateLost
 } BtState;
 
 #pragma pack(push, 1)
 typedef struct {
-    uint8_t cpu_usage;
-    uint16_t ram_max;
-    uint8_t ram_usage;
-    char ram_unit[4];
-    uint8_t gpu_usage;
-    uint16_t vram_max;
-    uint8_t vram_usage;
-    char vram_unit[4];
+    char str_data[MAX_DATA_SIZE];
 } DataStruct;
 #pragma pack(pop)
 
@@ -79,3 +73,8 @@ void bt_transmitter_set_state_manager(BtTransmitter * bt_transmitter,
  * @brief Start the Bluetooth transmitter.
  */
 void bt_transmitter_start(BtTransmitter * bt_transmitter);
+
+/**
+ * @brief Send by Bluetooth all data in its field data if ready
+ */
+bool bt_transmitter_send(BtTransmitter * bt_transmitter);
