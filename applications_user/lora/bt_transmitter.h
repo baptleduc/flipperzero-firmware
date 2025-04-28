@@ -78,3 +78,13 @@ void bt_transmitter_start(BtTransmitter * bt_transmitter);
  * @brief Send by Bluetooth all data in its field data if ready
  */
 bool bt_transmitter_send(BtTransmitter * bt_transmitter);
+
+
+// -- PREPARE DATA TO BE SENT FUNCTIONS -----------------------------------------------
+
+/**
+ * @brief Set the str_data field of the DataStruct in the BtTransmitter instance
+ * @param bt_transmitter Pointer to the BtTransmitter instance.
+ * @param data String to be sent.
+ */
+void prepare_bt_data_str(BtTransmitter * bt_transmitter, const char *data);

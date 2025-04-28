@@ -198,12 +198,10 @@ void lora_receiver_decode_msg_response(void *context, FuriString *line)
                     // Copy the string data to be sent by Bluetooth
                     if (type_packet == LoraPacketRxPacket){
                         hex_to_string(model->msg_response.data, model->msg_response.decoded_data);
-                        strncpy(app->bt_transmitter->data.str_data,
-                               model->msg_response.decoded_data,
-                               sizeof(model->msg_response.decoded_data));
+                        prepare_bt_data_str(app->bt_transmitter, model->msg_response.decoded_data);
                     }
                     
-                    // Can add more data to be sent by Bluetooth here
+                    // Can call more prepare bluetooth data functions here depending of the type of packet
 
                     }, true);
 /* *INDENT-ON* */
