@@ -1,0 +1,110 @@
+@startuml
+
+package "App" {
+    enum BtState {
+        BtStateChecking
+        BtStateInactive
+        BtStateWaiting
+        BtStateSending,
+        BtStateNoData,
+        BtStateLost
+    }
+
+    enum DataStruct{
+        char str_data[MAX_DATA_SIZE]
+    }
+
+    class BtTransmitter {
+        - Bt *bt
+        - FuriMutex *app_mutex
+        - FuriMessageQueue *event_queue
+        - NotificationApp *notification 
+        - FuriHalBleProfileBase *ble_serial_base
+        - BtState *bt_state
+        + BtTransmitter *bt_transmitter_alloc(void)
+        + void bt_transmitter_set_state_manager(BtTransmitter * bt_transmitter,
+                                        LoraStateManager * state_manager)
+        + void bt_transmitter_start(BtTransmitter * bt_transmitter);
+        + void prepare_bt_data_str(BtTransmitter *bt_transmitter, const char *data)
+    }
+
+    BtTransmitter -> BtState
+
+
+    enum LoraState{
+        INIT
+        CONFIG
+        JOINED
+        SENDING
+        RX
+    }
+
+    class LoraStateManager{
+        + LoraStateManager *lora_state_manager_alloc(void *context)
+        + void lora_state_manager_set_state(LoraStateManager *state_manager, LoraState state)
+        + LoraState lora_state_manager_get_state(LoraStateManager *state_manager)
+        + void lora_state_manager_free(LoraStateManager *state_manager)
+    }
+
+    note top of LoraStateManager
+        Singleton to manage the state of the LoRa module
+    end note
+
+    LoraStateManager -> LoraState
+
+    class LoraTransmitter {
+        + LoraTransmitter *lora_transmitter_alloc(void *context, LoraTransmitterMethod send_method, LoraTransmitterContextDestructor context_destructor, SetTransmitterThreadIdMethod set_thread_id_method)
+        + void lora_transmitter_free(LoraTransmitter *transmitter)
+        + void lora_transmitter_enter_receive_mode(LoraTransmitter *transmitter)
+        + lora_transmitter_otaa_join_procedure(LoraTransmitter *transmitter)
+        + void lora_transmitter_setup_lorawan(LoraTransmitter *transmitter)
+        + void lora_transmitter_send_cmsg(LoraTransmitter *transmitter, const char *msg)
+        + void lora_transmitter_set_state_manager(LoraTransmitter *transmitter, LoraStateManager *state_manager)
+        + void lora_transmitter_set_rf_test_config(LoraTransmitter *transmitter, LoraConfigModel *config)
+    }
+    LoraTransmitter *-- LoraStateManager: uses
+
+
+    class LoraReceiver{
+        + LoraReceiver *lora_receiver_alloc(void)
+        + void lora_receiver_free(LoraReceiver *receiver)
+        + View *lora_receiver_get_view(LoraReceiver *receiver)
+        + void lora_receiver_set_data_msg_response(LoraReceiver *receiver, uint8_t *data, uint32_t size)
+        + void lora_receiver_decode_msg_response(void *context, FuriString *line)
+        + void lora_receiver_update_process_callback(LoraReceiver *receiver, LoraState state)
+        + LoraReceiverProcessCallback lora_receiver_get_callback(LoraReceiver *receiver)
+        + void lora_receiver_set_view_callback(LoraReceiver *receiver, LoraReceiverViewCallbak callback, void *context)
+        + void lora_receiver_set_state_manager(LoraReceiver *receiver, LoraStateManager *state_manager)
+    }
+    LoraReceiver *-- LoraStateManager: uses
+
+    class LoraApp {
+        - Gui *gui
+        - FuriTimer *timer
+        - ViewDispatcher *view_dispatcher
+        - SceneManager *scene_manager
+        - LoraStateManager *state_manager
+        - Submenu *submenu
+        - VariableItemList *var_item_list
+        - uint32_t index
+        - LoraReceiver *receiver
+        - LoraTransmitter *transmitter
+        - BtTransmitter *bt_transmitter
+        - LoraState current_state
+
+        + LoraApp *lora_app_alloc()
+        + void lora_app_free(LoraApp *app)
+        + int32_t lora_app_main(void *p)
+    }
+}
+
+package "Presentation" {
+    class LoraSceneReceiveMode{}
+    class LoraSceneReceiveModeCfg{}
+    class LoraSceneStart{}
+    
+}
+App ..> Presentation: update
+Presentation ..> App: notify
+@enduml
+
