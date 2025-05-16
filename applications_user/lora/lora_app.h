@@ -56,6 +56,7 @@ typedef enum {
 } LoraAppView;
 
 // Callback to handle UART responses
+// TODO: remove this
 void handle_default_response(FuriString * line, void *context);
 void lora_receiver_default_response_callback(FuriString * line,
                                              void *context);
@@ -70,8 +71,10 @@ void handle_join_response(FuriString * line, void *context);
  */
 void lora_receiver_rx_response_callback(FuriString * line, void *context);
 
+// TODO: is this needed?
 extern LoraState lora_app_state;
 
+// TODO: remove this
 // void lora_enter_receive_mode(void *context);
 // void send_cmsg(LoraApp * app, const char *msg);
 // void lora_transmitter_setup_lorawan(void *context);
