@@ -1,5 +1,5 @@
 @startuml
-
+left to right direction
 package "App" {
     enum BtState {
         BtStateChecking
@@ -29,6 +29,7 @@ package "App" {
     }
 
     BtTransmitter -> BtState
+    BtTransmitter "1" -- "1..*" DataStruct
 
 
     enum LoraState{
@@ -96,6 +97,11 @@ package "App" {
         + void lora_app_free(LoraApp *app)
         + int32_t lora_app_main(void *p)
     }
+
+    LoraApp *-> LoraTransmitter
+    LoraApp *-> LoraReceiver
+    LoraApp *-> LoraStateManager
+    LoraApp *-> BtTransmitter
 }
 
 package "Presentation" {
