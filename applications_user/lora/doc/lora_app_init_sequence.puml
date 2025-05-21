@@ -2,9 +2,7 @@
 title Sequence Diagram: LoRaApp Initialization
 
 actor User
-actor System
-participant "lora_app_main()" as Main
-participant "lora_app_alloc()" as Alloc
+participant "LoraApp" as App
 participant "ViewDispatcher" as View
 participant "SceneManager" as SceneMgr
 participant "LoraTransmitter" as LT
@@ -15,46 +13,37 @@ participant "UartHelper" as UART
 participant "GUI System" as GUI
 
 == Launch Application ==
-User -> System : Press button to launch LoRa app
-System -> Main : call lora_app_main()
+User -> App : lora_app_main() 
 
-== Allocate and Initialize App ==
-Main -> Alloc : lora_app_alloc()
+== Allocation & Initialization ==
+App -> GUI : furi_record_open(RECORD_GUI)
+App -> SceneMgr : scene_manager_alloc(...)
 
-== GUI & Scene Setup ==
-Alloc -> GUI : furi_record_open(RECORD_GUI)
-Alloc -> SceneMgr : scene_manager_alloc(...)
-
-Alloc -> View : view_dispatcher_alloc()
+App -> View : view_dispatcher_alloc()
 View -> View : set_event_callback_context(app)
 View -> View : set_custom_event_callback()
 View -> View : set_navigation_event_callback()
 View -> GUI : attach_to_gui(...)
 
 == Register Views ==
-Alloc -> View : add_view(LoraAppSubMenuView)
-Alloc -> View : add_view(LoraAppReceiverCfgView)
+App -> View : add_view(LoraAppSubMenuView)
+App -> View : add_view(LoraAppReceiverCfgView)
 
 == Object Creation ==
-Alloc -> BT : bt_transmitter_alloc()
-Alloc -> UART : uart_helper_alloc()
-Alloc -> LT : lora_transmitter_alloc(UART, send_method, ...)
-Alloc -> LR : lora_receiver_alloc()
-Alloc -> View : add_view(LoraAppReceiverView)
+App -> BT : bt_transmitter_alloc()
+App -> UART : uart_helper_alloc()
+App -> LT : lora_transmitter_alloc(UART, send_method, ...)
+App -> LR : lora_receiver_alloc()
+App -> View : add_view(LoraAppReceiverView)
 
 == Link State Manager ==
-Alloc -> StateMgr : lora_state_manager_alloc(receiver)
-Alloc -> LR : lora_receiver_set_state_manager(StateMgr)
-Alloc -> LT : lora_transmitter_set_state_manager(StateMgr)
-Alloc -> BT : bt_transmitter_set_state_manager(StateMgr)
+App -> StateMgr : lora_state_manager_alloc(receiver)
+App -> LR : lora_receiver_set_state_manager(StateMgr)
+App -> LT : lora_transmitter_set_state_manager(StateMgr)
+App -> BT : bt_transmitter_set_state_manager(StateMgr)
 
-== Start Initial Scene ==
-Alloc -> SceneMgr : next_scene(LoraSceneStart)
-
-Alloc --> Main : return app instance
-
-== Run App ==
-Main -> View : view_dispatcher_run()
-
+== Start Application ==
+App -> SceneMgr : next_scene(LoraSceneStart)
+App -> View : view_dispatcher_run()
 
 @enduml
