@@ -1,0 +1,39 @@
+@startuml
+title Sequence Diagram: AT Commands Sending (LoRa)
+
+== App Initialization ==
+actor User
+participant "LoraApp" as App
+participant "LoraTransmitter" as LT
+participant "UartHelper" as UART
+participant "UART Driver" as HW
+
+User -> App : lora_app_main()
+App -> LT : lora_transmitter_alloc()
+LT -> LT : lora_transmitter_start()\n(thread waits on flag)
+
+
+== Configuration Request ==
+activate LT 
+User -> App : Request to send AT command (configure LoRa RF)
+App -> LT : furi_thread_flags_set() // Wake up transmitter thread
+
+== Prepare and Send AT Command ==
+LT -> LT : prepare_at_command("AT+TEST=RFCFG, SF7")
+LT -> UART : send_method(context, cmd, len, wait_response)
+activate UART
+UART -> HW : furi_hal_serial_tx()
+HW --> UART : TX complete
+deactivate UART
+
+== (Optional) Wait for Response ==
+alt wait_response == true
+    LT -> LT : furi_thread_flags_wait() // Transmitter thread waits for response
+    UART -> HW : furi_hal_serial_rx()
+    HW --> UART : RX data
+    UART -> LT : furi_thread_flags_set() // Notify transmitter thread
+end
+
+deactivate LT
+
+@enduml
