@@ -1,0 +1,37 @@
+    @startuml
+    title Sequence Diagram: Change Frequency from Receiver View
+
+    actor User
+    participant "LoraApp" as App
+    participant "ViewDispatcher" as View
+    participant "LoraReceiver" as LR
+    participant "LoraTransmitter" as LT
+    participant "LoraConfigModel" as ConfigModel
+
+    == Enter Receiver Mode ==
+    User -> App : Request to enter LoRa receiver mode
+    App -> App : SceneManager -> lora_scene_receive_mode_on_enter()
+
+    App -> LT : lora_transmitter_enter_receive_mode()
+    note right of LT
+    Send AT command to enter "TEST" mode (LoRa P2P)
+    end note
+
+    == User Changes Frequency ==
+    User -> View : press UP/DOWN button (flipper)
+    View -> LR : lora_receiver_callback(LoraReceiverEventChangeFreq)
+
+    LR -> ConfigModel : adjust_frequency(+/- step)
+    note right of ConfigModel
+    Increment or decrement frequency value
+    end note
+
+    LR -> LT : lora_transmitter_set_frequency(ConfigModel.frequency)
+    note right of LT
+    Send AT command with new frequency
+    end note
+
+    LT -> LR : frequency_set_status(success/fail)
+    LR -> View : update frequency display
+
+    @enduml
