@@ -1,0 +1,65 @@
+@startuml
+title Sequence Diagram: LoRa Receiver Configuration
+
+actor User
+participant "LoraApp" as App
+participant "ViewDispatcher" as View
+participant "LoraStateManager" as LSM
+participant "LoraTransmitter" as LT
+participant "LoraReceiver" as LR
+participant "LoraConfigModel" as ConfigModel
+
+== App Initialization ==
+User -> App : lora_app_main()
+
+== Enter Receiver Mode ==
+User -> App : Request to enter LoRa receiver mode
+App -> App : SceneManager -> lora_scene_receive_mode_on_enter()
+
+App -> LT : lora_transmitter_enter_receive_mode()
+note right of LT
+Send AT command to enter "TEST" mode (LoRa P2P)
+end note
+
+App -> LSM : lora_state_manager_set_state(LoRaStateReceive)
+
+== Update Receiving View ==
+App -> View : switch to LoraAppReceiverView
+LR -> View : update view with default config values
+
+== Open Configuration Menu ==
+User -> App : press right button (Flipper)
+App -> LR : lora_receiver_callback(LoraReceiverEventConfig)
+LR -> App : request scene change to ReceiverModeCfg
+App -> View : switch to LoraAppReceiverCfgView
+
+== User Updates Configuration ==
+User -> View : change RX Mode
+View -> ConfigModel : update(mode)
+View -> LT : lora_transmitter_set_rf_test_config(ConfigModel)
+note right of LT
+Send AT command with updated mode
+end note
+
+User -> View : change Spread Factor (e.g. SF7)
+View -> ConfigModel : update(spread_factor)
+View -> LT : lora_transmitter_set_rf_test_config(ConfigModel)
+note right of LT
+Send AT command with updated spread factor
+end note
+
+User -> View : change Preamble Length
+View -> ConfigModel : update(preamble)
+View -> LT : lora_transmitter_set_rf_test_config(ConfigModel)
+note right of LT
+Send AT command with updated preamble
+end note
+
+User -> View : change TX Power
+View -> ConfigModel : update(power)
+View -> LT : lora_transmitter_set_rf_test_config(ConfigModel)
+note right of LT
+Send AT command with updated power
+end note
+
+@enduml
