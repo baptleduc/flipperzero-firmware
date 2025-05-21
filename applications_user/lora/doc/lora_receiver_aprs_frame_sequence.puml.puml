@@ -1,0 +1,51 @@
+@startuml
+title Sequence Diagram: LoRa Receiver APRS-IS Frame
+
+== Initialization ==
+actor User
+participant "LoraApp" as App
+participant "LoraReceiver" as LR
+participant "UartHelper" as UART
+participant "UART Driver" as HW
+participant "LoraTransmitter" as LT
+participant "BtTransmitter" as BT
+participant "LoraStateManager" as LSM
+participant "ViewDispatcher" as View
+
+== Enter Receiver Mode ==
+User -> App : lora_app_main()
+User -> App : Request to enter LoRa receiver mode
+App -> App : SceneManager -> lora_scene_receive_mode_on_enter()
+
+App -> LT : lora_transmitter_enter_receive_mode()
+note right of LT
+Send AT command to enter "TEST" mode (LoRa P2P)
+end note
+
+App -> LSM : lora_state_manager_set_state(LoRaStateReceive)
+
+== Update Receiving View ==
+App -> View : switch to LoraAppReceiverView
+LR -> View : update view with default config values
+
+== Data Reception ==
+activate UART
+HW -> UART : RX interrupt / data available
+UART -> LR : lora_receiver_rx_response_callback()
+note right of LR
+Triggered by UART callback on data reception
+end note
+
+LR -> LR : lora_receiver_decode_msg_response()
+note right of LR
+Parse APRS-IS fram
+Apply filters based on current state
+end note
+
+LR -> View : update view with decoded frame
+
+== Send Data by Bluetooth ==
+LR -> BT : bt_transmitter_send(data)
+deactivate UART
+
+@enduml
