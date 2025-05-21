@@ -1,0 +1,37 @@
+@startuml
+title Sequence Diagram: LoRaApp Exit
+
+actor User
+participant "ViewDispatcher" as View
+participant "SceneManager" as SceneMgr
+participant "LoraSceneStart" as SceneStart
+participant "LoraApp" as App
+
+== App Active ==
+note over SceneStart
+App is currently in LoraSceneStart
+and waiting for user interaction
+end note
+
+== User Presses Back ==
+User -> View : press Return button (Back)
+
+== Event Callback ==
+View -> App : call back_event_callback()
+
+App -> SceneMgr : scene_manager_handle_back_event()
+
+== Scene Manager Handles Exit ==
+SceneMgr -> SceneMgr : current_scene == LoraSceneStart?
+alt Yes
+    SceneMgr -> View : request app exit
+else No
+    SceneMgr -> SceneMgr : go to previous scene
+end
+
+== Exit Application ==
+View -> App : view_dispatcher_run() returns
+App -> App : lora_app_free()
+App -> App: furi_record_close(RECORD_EXPANSION)
+
+@enduml
