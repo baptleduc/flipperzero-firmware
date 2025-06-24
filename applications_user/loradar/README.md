@@ -1,16 +1,63 @@
-# LoRa Satellite Balloon Tracker App
+# LoRadar - The Flipper Application to localize stratospheric ballon via LoRa
+
+LoRadar is an app that allows users to localize stratospheric balloons using their Flipper Zero and LoRa modules.
+
+This Flipper app works in tandem with a [companion mobile app](https://github.com/nahel-b/flipperApp) via Bluetooth. The mobile app records detected balloon locations, displays them on a map, and can optionally forward the data to a backend server.
+
+
+
+> ⚠️ Currently tested on Flipper Zero Firmware SDK **v1.2.0**  
+> Compatibility with other versions is not guaranteed – firmware update may be required.
+
+## App structure
+```
+loradar/
+├── application.fam # Flipper app manifest file
+├── lora_app.c / .h # Main app entry and global logic
+├── bt_transmitter.c / .h
+├── lora_config.c / .h
+├── lora_custom_event.h
+├── lora_receiver.c / .h
+├── lora_receiver_i.h 
+├── lora_transmitter.c / .h
+├── lora_transmitter_i.h # (private header)
+├── lora_state_manager.c / .h
+├── ring_buffer.c / .h
+├── uart_helper.c / .h
+├── lora_10px.png # App icon
+├── helpers/ # Utility code (e.g., drawing, timing)
+├── scenes/ # UI scene management (Flipper UI structure)
+├── tests/ # Unit tests
+├── doc/ # Project documentation including UML diagrams
+└── README.md
+```
+
+## Supported LoRa Modules
+
+| Module Name          | Chipset       | Compatible | Notes                                               |
+|----------------------|---------------|------------|-----------------------------------------------------|
+| Grove - Wio-E5       | STM32WLE5JC   | ✅         | Tested and working over UART with Flipper GPIO      |
+
+
+More modules can be added (see the contribute guideline)
+
 ## Connection Instructions
 
-### LoRa Grove-Wio-E5 Module
+### Grove-Wio-E5 Module
 To connect the Grove-Wio-E5 module to the Flipper zero, simply connect the pins as follows: 
 
-Pinout: Grove cable on Flipper GPIO
-* `Red` on `3V3` (9)
-* `Black` on `GND` (11)
-* `White` on `TX` (13)
-* `Yellow` on `RX` (14)
+**Pinout: Grove cable on Flipper GPIO**
+- `Red` → `3V3` (pin 9)
+- `Black` → `GND` (pin 11)
+- `White` → `TX` (pin 13)
+- `Yellow` → `RX` (pin 14)
+
+**Default baudrate**: 9600
 
 ## Build Instructions
+
+** For the moment, the app has been tested on SDK 1.2.0 version of the FlipperZero Firmware**
+
 
 There are two build modes: **Debug** (default) and **Release**.
 
@@ -36,7 +83,7 @@ To upload and launch the compiled app via USB, run:
 ./fbt DEBUG=0 launch APPSRC=lora_app
 ```
 
-To **build** and **upload** all FAP apps in one command:
+To **build** and **flash** all FAP apps in one command:
 
 ```sh
 ./fbt DEBUG=0 fap_deploy  # Release mode
@@ -49,3 +96,20 @@ To view log traces from the device's CLI, use:
 ```sh
 ./fbt cli
 ```
+
+
+## TODO
+
+- [x] Basic UART communication with Wio-E5
+- [x] Display LoRa response in Flipper UI
+- [x] Bluetooth connection with mobile app
+- [x] Map display of balloon location in app
+- [x] Add settings menu in Flipper app
+- [ ] Add an internal APRS-IS trames parser
+- [ ] Update the app to work with new SDK firmware.
+
+
+
+## License
+
+This project is open source and available under the [MIT License](./LICENSE).
