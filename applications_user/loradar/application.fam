@@ -1,6 +1,6 @@
 App(
     appid="lora_app",
-    name="LoRa",
+    name="LoRadar",
     apptype=FlipperAppType.EXTERNAL,
     entry_point="lora_app_main",
     requires=["bt", "gui"],
